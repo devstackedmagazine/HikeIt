@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { env } from "@/config/env";
+import * as relations from "@/lib/db/relations";
 import * as schema from "@/lib/db/schema";
 
 /**
@@ -12,6 +13,8 @@ import * as schema from "@/lib/db/schema";
  *   statements.
  * - The client is cached on `globalThis` in non-production so Next.js HMR
  *   doesn't open a new connection pool on every reload.
+ * - Tables and relations are both registered so the relational query API
+ *   (`db.query.*`) works.
  */
 const globalForDb = globalThis as unknown as {
   client: ReturnType<typeof postgres> | undefined;
@@ -24,4 +27,9 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.client = client;
 }
 
-export const db = drizzle(client, { schema });
+export const db = drizzle(client, { schema: { ...schema, ...relations } });
+
+// Re-export tables, enums, inferred types, and relations so callers can pull
+// everything they need from `@/lib/db`.
+export * from "@/lib/db/relations";
+export * from "@/lib/db/schema";
