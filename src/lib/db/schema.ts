@@ -421,6 +421,16 @@ export const auditLogs = pgTable(
   ],
 );
 
+/** Early-access signups captured from the public landing page. */
+export const waitlist = pgTable("waitlist", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  source: text("source").notNull().default("landing"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 /**
  * Better Auth-owned tables. Better Auth reads/writes these via the Drizzle
  * adapter; field (property) names must match Better Auth's expected schema.
@@ -497,6 +507,9 @@ export const verifications = pgTable(
   },
   (t) => [index("verifications_identifier_idx").on(t.identifier)],
 );
+
+export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type NewWaitlistEntry = typeof waitlist.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
