@@ -106,6 +106,9 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   bio: text("bio"),
   role: userRole("role").notNull().default("hiker"),
+  onboardingCompleted: boolean("onboarding_completed")
+    .notNull()
+    .default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

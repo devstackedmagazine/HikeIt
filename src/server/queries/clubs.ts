@@ -1,8 +1,15 @@
-import { and, asc, count, eq, ilike, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { Organization } from "@/lib/db/schema";
-import { organizations, users } from "@/lib/db/schema";
+import type { AuditLog, Organization } from "@/lib/db/schema";
+import {
+  auditLogs,
+  organizationMembers,
+  organizations,
+  tripRegistrations,
+  trips,
+  users,
+} from "@/lib/db/schema";
 
 export interface ClubWithStats extends Organization {
   memberCount: number;
@@ -117,4 +124,168 @@ export async function getClubBySlug(
 
   const row = rows[0];
   return row ? rowToClub(row) : null;
+}
+
+export interface ClubStats {
+  memberCount: number;
+  membersThisMonth: number;
+  activeTrips: number;
+  completedTrips: number;
+  revenue: number;
+}
+
+/** Aggregate stat counters for a club admin dashboard. */
+export async function getClubStats(organizationId: string): Promise<ClubStats> {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [members, monthMembers, active, completed, revenue] = await Promise.all(
+    [
+      db
+        .select({ value: count() })
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organizationId),
+            isNull(organizationMembers.leftAt),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organizationId),
+            isNull(organizationMembers.leftAt),
+            sql`${organizationMembers.joinedAt} >= ${startOfMonth.toISOString()}`,
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(trips)
+        .where(
+          and(
+            eq(trips.organizationId, organizationId),
+            eq(trips.status, "open"),
+            isNull(trips.deletedAt),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(trips)
+        .where(
+          and(
+            eq(trips.organizationId, organizationId),
+            eq(trips.status, "completed"),
+            isNull(trips.deletedAt),
+          ),
+        ),
+      db
+        .select({
+          value: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
+        })
+        .from(tripRegistrations)
+        .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
+        .where(eq(trips.organizationId, organizationId)),
+    ],
+  );
+
+  return {
+    memberCount: members[0]?.value ?? 0,
+    membersThisMonth: monthMembers[0]?.value ?? 0,
+    activeTrips: active[0]?.value ?? 0,
+    completedTrips: completed[0]?.value ?? 0,
+    revenue: Number(revenue[0]?.value ?? 0),
+  };
+}
+
+export interface MemberWithUser {
+  membershipId: string;
+  userId: string;
+  role: "admin" | "organizer" | "member";
+  joinedAt: Date;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+}
+
+export interface GetClubMembersParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+/** Paginated, searchable members of a club. */
+export async function getClubMembers(
+  organizationId: string,
+  { search, page = 1, limit = 20 }: GetClubMembersParams = {},
+): Promise<{ members: MemberWithUser[]; total: number }> {
+  const offset = (Math.max(1, page) - 1) * limit;
+  const filters = [
+    eq(organizationMembers.organizationId, organizationId),
+    isNull(organizationMembers.leftAt),
+  ];
+  if (search) {
+    const term = `%${search}%`;
+    const match = or(ilike(users.name, term), ilike(users.email, term));
+    if (match) filters.push(match);
+  }
+  const where = and(...filters);
+
+  const [rows, totalResult] = await Promise.all([
+    db
+      .select({
+        membershipId: organizationMembers.id,
+        userId: organizationMembers.userId,
+        role: organizationMembers.role,
+        joinedAt: organizationMembers.joinedAt,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(organizationMembers)
+      .innerJoin(users, eq(users.id, organizationMembers.userId))
+      .where(where)
+      .orderBy(asc(users.name))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ value: count() })
+      .from(organizationMembers)
+      .innerJoin(users, eq(users.id, organizationMembers.userId))
+      .where(where),
+  ]);
+
+  return { members: rows, total: totalResult[0]?.value ?? 0 };
+}
+
+/** Total collected revenue (sum of paid amounts) for a club. */
+export async function getClubRevenue(organizationId: string): Promise<number> {
+  const [row] = await db
+    .select({
+      value: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
+    })
+    .from(tripRegistrations)
+    .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
+    .where(eq(trips.organizationId, organizationId));
+  return Number(row?.value ?? 0);
+}
+
+/** Recent audit-log activity for a club (trip + club events). */
+export async function getClubActivity(
+  organizationId: string,
+  limit = 10,
+): Promise<AuditLog[]> {
+  return db
+    .select()
+    .from(auditLogs)
+    .where(
+      or(
+        sql`${auditLogs.metadata}->>'organizationId' = ${organizationId}`,
+        eq(auditLogs.entityId, organizationId),
+      ),
+    )
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
 }

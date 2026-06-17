@@ -45,6 +45,30 @@ export const featureLabels: Record<string, string> = {
   monastery: "Manastir",
 };
 
+export const tripStatusLabels: Record<string, string> = {
+  draft: "Draft",
+  open: "I hapur",
+  full: "I plotë",
+  in_progress: "Në progres",
+  completed: "Përfunduar",
+  canceled: "Anuluar",
+};
+
+export const registrationStatusLabels: Record<string, string> = {
+  pending: "Në pritje",
+  confirmed: "Konfirmuar",
+  waitlisted: "Lista e pritjes",
+  canceled: "Anuluar",
+  attended: "Mori pjesë",
+  no_show: "Nuk erdhi",
+};
+
+export const memberRoleLabels: Record<string, string> = {
+  admin: "Administrator",
+  organizer: "Organizator",
+  member: "Anëtar",
+};
+
 export const SEASON_ORDER = ["spring", "summer", "autumn", "winter"] as const;
 
 export function labelFor(
