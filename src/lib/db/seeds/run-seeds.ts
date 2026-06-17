@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -42,15 +43,20 @@ async function main() {
       .select({ id: organizations.id, slug: organizations.slug })
       .from(organizations);
     const allTrails = await db
-      .select({ id: trails.id, slug: trails.slug })
+      .select({
+        id: trails.id,
+        slug: trails.slug,
+        startLat: trails.startLat,
+        startLng: trails.startLng,
+      })
       .from(trails);
     const clubBySlug = new Map(allClubs.map((c) => [c.slug, c.id]));
-    const trailBySlug = new Map(allTrails.map((t) => [t.slug, t.id]));
+    const trailBySlug = new Map(allTrails.map((t) => [t.slug, t]));
 
     const tripValues = tripSeeds
       .map((t) => {
         const organizationId = clubBySlug.get(t.clubSlug);
-        const trailId = trailBySlug.get(t.trailSlug) ?? null;
+        const trail = trailBySlug.get(t.trailSlug);
         if (!organizationId) return null;
         const start = new Date();
         start.setDate(start.getDate() + t.daysFromNow);
@@ -58,11 +64,14 @@ async function main() {
         return {
           slug: t.slug,
           organizationId,
-          trailId,
+          trailId: trail?.id ?? null,
           title: t.title,
           description: t.description,
           startDatetime: start,
           meetingPoint: t.meetingPoint,
+          // Meeting point coordinates default to the linked trail's start.
+          meetingLat: trail?.startLat ?? null,
+          meetingLng: trail?.startLng ?? null,
           maxParticipants: t.maxParticipants,
           priceEur: t.priceEur,
           status: "open" as const,
@@ -70,12 +79,20 @@ async function main() {
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
 
+    // Upsert so re-running backfills meeting coordinates on existing trips.
     const insertedTrips = await db
       .insert(trips)
       .values(tripValues)
-      .onConflictDoNothing({ target: trips.slug })
+      .onConflictDoUpdate({
+        target: trips.slug,
+        set: {
+          meetingLat: sql`excluded.meeting_lat`,
+          meetingLng: sql`excluded.meeting_lng`,
+          startDatetime: sql`excluded.start_datetime`,
+        },
+      })
       .returning({ slug: trips.slug });
-    console.log(`Trips: ${insertedTrips.length} inserted.`);
+    console.log(`Trips: ${insertedTrips.length} upserted.`);
   } finally {
     await client.end();
   }
