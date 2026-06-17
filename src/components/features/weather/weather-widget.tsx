@@ -1,7 +1,6 @@
 import {
   Cloud,
   CloudDrizzle,
-  CloudFog,
   CloudLightning,
   CloudRain,
   CloudSnow,
@@ -13,19 +12,15 @@ import {
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
-import {
-  getWeatherForLocation,
-  type WeatherCondition,
-  type WeatherData,
-} from "@/lib/weather/client";
+import { getWeatherForLocation } from "@/lib/weather/client";
 import { evaluateWeatherAlert } from "@/lib/weather/thresholds";
 
-const CONDITION_ICON: Record<WeatherCondition, LucideIcon> = {
+const CONDITION_ICON: Record<string, LucideIcon> = {
   thunderstorm: CloudLightning,
   drizzle: CloudDrizzle,
   rain: CloudRain,
   snow: CloudSnow,
-  mist: CloudFog,
+  mist: Wind,
   clear: Sun,
   clouds: Cloud,
 };
@@ -35,11 +30,13 @@ const BANNER: Record<
   { className: string; text: string }
 > = {
   warning: {
-    className: "bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200",
+    className:
+      "bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200",
     text: "⚠️ Kushte të pafavorshme",
   },
   alert: {
-    className: "bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200",
+    className:
+      "bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200",
     text: "🟠 Kushte të rrezikshme",
   },
   danger: {
@@ -61,12 +58,9 @@ export async function WeatherWidget({
 }) {
   if (lat === null || lng === null) return null;
 
-  let current: WeatherData;
-  let forecast: WeatherData[];
+  let data;
   try {
-    const data = await getWeatherForLocation(lat, lng);
-    current = data.current;
-    forecast = data.forecast;
+    data = await getWeatherForLocation(lat, lng);
   } catch {
     return (
       <Card>
@@ -77,8 +71,9 @@ export async function WeatherWidget({
     );
   }
 
+  const { current, daily } = data;
   const alert = evaluateWeatherAlert(current);
-  const CurrentIcon = CONDITION_ICON[current.condition];
+  const CurrentIcon = CONDITION_ICON[current.condition] ?? Cloud;
 
   return (
     <Card className="overflow-hidden">
@@ -115,26 +110,36 @@ export async function WeatherWidget({
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-2 border-t pt-3">
-          {forecast.map((day) => {
-            const Icon = CONDITION_ICON[day.condition];
+        <div className="grid grid-cols-3 gap-2 border-t pt-3">
+          {daily.slice(0, 3).map((day) => {
+            const Icon = CONDITION_ICON[day.condition] ?? Cloud;
             return (
               <div
-                key={day.forecastFor.toISOString()}
+                key={day.date.toISOString()}
                 className="flex flex-col items-center gap-1 text-center"
               >
                 <span className="text-xs text-muted-foreground">
-                  {dayLabel(day.forecastFor)}
+                  {dayLabel(day.date)}
                 </span>
                 <Icon className="size-5 text-muted-foreground" />
-                <span className="text-sm font-medium">{day.temperature}°</span>
+                <span className="text-sm font-medium">
+                  {day.tempMax}° / {day.tempMin}°
+                </span>
               </div>
             );
           })}
         </div>
 
         <p className="text-right text-[10px] text-muted-foreground">
-          Të dhënat nga OpenWeatherMap
+          Të dhënat nga{" "}
+          <a
+            href="https://open-meteo.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Open-Meteo.com
+          </a>
         </p>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, count, eq, gte, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
@@ -24,6 +24,7 @@ export interface CreateTripResult {
   tripId?: string;
   slug?: string;
   error?: string;
+  upgradeRequired?: boolean;
 }
 
 export async function createTrip(
@@ -35,6 +36,31 @@ export async function createTrip(
 
   const access = await requireClubAdmin(session.user.id, clubSlug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  // Free tier: cap at 3 trips per calendar month.
+  if (access.organization.subscriptionTier === "free") {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const [tripCount] = await db
+      .select({ value: count() })
+      .from(trips)
+      .where(
+        and(
+          eq(trips.organizationId, access.organization.id),
+          gte(trips.createdAt, monthStart),
+          ne(trips.status, "canceled"),
+        ),
+      );
+    if ((tripCount?.value ?? 0) >= 3) {
+      return {
+        success: false,
+        error:
+          "Keni arritur limitin e 3 udhëtimeve në muaj. Kaloni te Pro për udhëtime të pakufizuara.",
+        upgradeRequired: true,
+      };
+    }
+  }
 
   const parsed = createTripSchema.safeParse(data);
   if (!parsed.success) {

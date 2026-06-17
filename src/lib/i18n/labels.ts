@@ -11,7 +11,7 @@ export const difficultyLabels: Record<string, string> = {
 };
 
 export const trailTypeLabels: Record<string, string> = {
-  loop: "Unazë",
+  loop: "Vajtje-Ardhje",
   out_and_back: "Vajtje-ardhje",
   point_to_point: "Pikë në pikë",
 };

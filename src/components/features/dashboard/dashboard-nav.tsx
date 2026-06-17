@@ -3,6 +3,7 @@
 import {
   Building2,
   Calendar,
+  CreditCard,
   LayoutDashboard,
   type LucideIcon,
   Map,
@@ -41,6 +42,11 @@ function buildItems(adminClubSlug: string | null): NavItem[] {
       href: `/dashboard/club/${adminClubSlug}`,
       label: "Klubi im",
       icon: Building2,
+    });
+    base.push({
+      href: "/dashboard/billing",
+      label: "Faturimi",
+      icon: CreditCard,
     });
   }
   return base;

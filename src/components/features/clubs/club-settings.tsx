@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ConnectButton } from "@/components/features/billing/connect-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -138,6 +139,21 @@ export function ClubSettings({
             {saving ? <Loader2 className="animate-spin" /> : null}
             Ruaj ndryshimet
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pagesat</CardTitle>
+          <CardDescription>
+            Aktivizo Stripe Connect për të marrë pagesa për udhëtimet.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ConnectButton
+            organizationId={club.id}
+            connected={Boolean(club.stripeConnectAccountId)}
+          />
         </CardContent>
       </Card>
 

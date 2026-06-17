@@ -13,7 +13,10 @@ import {
 import { sendEmail } from "@/lib/email";
 import { WeatherAlert } from "@/lib/email/templates/weather-alert";
 import { formatTripDateTime } from "@/lib/utils/datetime";
-import { getWeatherForLocation } from "@/lib/weather/client";
+import {
+  getWeatherForLocation,
+  type WeatherData,
+} from "@/lib/weather/client";
 import {
   type AlertLevel,
   evaluateWeatherAlert,
@@ -85,9 +88,25 @@ export async function runWeatherCheck(): Promise<WeatherCheckResult> {
         trip.meetingLat!,
         trip.meetingLng!,
       );
-      const target =
-        forecast.forecast.find((f) => sameDay(f.forecastFor, trip.startDatetime)) ??
-        forecast.current;
+      // Evaluate against the forecast for the trip's day if available, else now.
+      const day = forecast.daily.find((d) =>
+        sameDay(d.date, trip.startDatetime),
+      );
+      const target: WeatherData = day
+        ? {
+            temperature: day.tempMin,
+            feelsLike: day.tempMin,
+            humidity: 0,
+            windSpeed: day.windSpeedMax,
+            windGust: day.windSpeedMax,
+            precipitation: day.precipitationSum,
+            rainProbability:
+              day.precipitationSum > 5 ? 80 : day.precipitationSum > 1 ? 50 : 0,
+            condition: day.condition,
+            conditionDescription: day.conditionDescription,
+            forecastFor: day.date,
+          }
+        : forecast.current;
       const alert = evaluateWeatherAlert(target);
 
       const previous = trip.weatherAlertLevel as AlertLevel;

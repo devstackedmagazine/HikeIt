@@ -4,6 +4,7 @@ import { Check, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { UpgradeButton } from "@/components/features/billing/upgrade-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { PlanTier } from "@/lib/stripe/client";
 import { cn } from "@/lib/utils/cn";
 
 interface Feature {
@@ -28,6 +30,7 @@ interface Tier {
   freeForever?: boolean;
   features: Feature[];
   cta: { label: string; href: string };
+  checkout?: PlanTier;
   highlighted?: boolean;
   badge?: string;
 }
@@ -66,6 +69,7 @@ const TIERS: Tier[] = [
       label: "Fillo provën 14-ditore",
       href: "/register?type=club&plan=pro",
     },
+    checkout: "pro",
     highlighted: true,
     badge: "Më popullor",
   },
@@ -182,14 +186,24 @@ export function PricingToggle() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button
-                  className="w-full"
-                  size="lg"
-                  variant={tier.highlighted ? "default" : "outline"}
-                  render={<Link href={tier.cta.href} />}
-                >
-                  {tier.cta.label}
-                </Button>
+                {tier.checkout ? (
+                  <UpgradeButton
+                    tier={tier.checkout}
+                    interval={annual ? "yearly" : "monthly"}
+                    label={tier.cta.label}
+                    variant={tier.highlighted ? "default" : "outline"}
+                    className="w-full"
+                  />
+                ) : (
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    variant={tier.highlighted ? "default" : "outline"}
+                    render={<Link href={tier.cta.href} />}
+                  >
+                    {tier.cta.label}
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           );

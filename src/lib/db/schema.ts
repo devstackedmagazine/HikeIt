@@ -151,6 +151,7 @@ export const organizations = pgTable("organizations", {
     .default("free"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeConnectAccountId: text("stripe_connect_account_id"),
   subscriptionStatus: text("subscription_status"),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })

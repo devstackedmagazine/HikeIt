@@ -27,7 +27,14 @@ export default async function CreateTripPage({
         </h1>
         <p className="text-muted-foreground">{access.organization.name}</p>
       </div>
-      <TripForm clubSlug={slug} trailOptions={trailOptions} />
+      <TripForm
+        clubSlug={slug}
+        trailOptions={trailOptions}
+        canCollectPayments={
+          access.organization.subscriptionTier === "pro" ||
+          access.organization.subscriptionTier === "team"
+        }
+      />
     </div>
   );
 }

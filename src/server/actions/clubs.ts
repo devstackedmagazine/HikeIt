@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
@@ -223,6 +223,26 @@ export async function inviteMember(
 
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  // Free tier: cap at 50 active members.
+  if (access.organization.subscriptionTier === "free") {
+    const [memberCount] = await db
+      .select({ value: count() })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, access.organization.id),
+          isNull(organizationMembers.leftAt),
+        ),
+      );
+    if ((memberCount?.value ?? 0) >= 50) {
+      return {
+        success: false,
+        error:
+          "Keni arritur limitin e 50 anëtarëve. Kaloni te Pro për anëtarë të pakufizuar.",
+      };
+    }
+  }
 
   const normalized = email.trim().toLowerCase();
   const clubUrl = `${env.NEXT_PUBLIC_APP_URL}/clubs/${slug}`;

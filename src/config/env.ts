@@ -25,6 +25,10 @@ export const env = createEnv({
     // Stripe — optional until billing ships.
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    STRIPE_PRO_MONTHLY_PRICE_ID: z.string().min(1).optional(),
+    STRIPE_PRO_YEARLY_PRICE_ID: z.string().min(1).optional(),
+    STRIPE_TEAM_MONTHLY_PRICE_ID: z.string().min(1).optional(),
+    STRIPE_TEAM_YEARLY_PRICE_ID: z.string().min(1).optional(),
 
     // Cloudflare R2 — optional until uploads ship.
     R2_ACCOUNT_ID: z.string().min(1).optional(),
@@ -33,8 +37,7 @@ export const env = createEnv({
     R2_BUCKET_NAME: z.string().min(1).optional(),
     R2_PUBLIC_URL: z.url().optional(),
 
-    // OpenWeatherMap — optional until weather ships.
-    OPENWEATHER_API_KEY: z.string().min(1).optional(),
+    // Weather uses Open-Meteo — no API key required.
 
     // Cron secret protecting scheduled endpoints — optional in dev.
     CRON_SECRET: z.string().min(1).optional(),
@@ -75,12 +78,15 @@ export const env = createEnv({
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+    STRIPE_PRO_YEARLY_PRICE_ID: process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+    STRIPE_TEAM_MONTHLY_PRICE_ID: process.env.STRIPE_TEAM_MONTHLY_PRICE_ID,
+    STRIPE_TEAM_YEARLY_PRICE_ID: process.env.STRIPE_TEAM_YEARLY_PRICE_ID,
     R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
     R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
-    OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
     CRON_SECRET: process.env.CRON_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,

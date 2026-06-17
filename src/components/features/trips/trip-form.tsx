@@ -33,9 +33,11 @@ const DIFFICULTIES = ["easy", "moderate", "hard", "expert"] as const;
 export function TripForm({
   clubSlug,
   trailOptions,
+  canCollectPayments,
 }: {
   clubSlug: string;
   trailOptions: TrailOption[];
+  canCollectPayments: boolean;
 }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -252,6 +254,12 @@ export function TripForm({
                         type="number"
                         min={0}
                         step="0.01"
+                        disabled={!canCollectPayments}
+                        title={
+                          canCollectPayments
+                            ? undefined
+                            : "Kaloni te Pro për të mbledhur pagesa"
+                        }
                         value={field.value}
                         onChange={(e) =>
                           field.onChange(Number(e.target.value) || 0)
@@ -263,10 +271,14 @@ export function TripForm({
                 )}
               />
             </div>
-            {Number(priceValue) > 0 ? (
+            {!canCollectPayments ? (
+              <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                Kaloni te Pro për të mbledhur pagesa online.
+              </p>
+            ) : Number(priceValue) > 0 ? (
               <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
-                Stripe Connect kërkohet për të mbledhur pagesa — konfigurojeni te
-                Cilësimet (vjen së shpejti).
+                Aktivizoni Stripe Connect te Cilësimet e klubit për të marrë
+                pagesat.
               </p>
             ) : null}
             <FormField

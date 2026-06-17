@@ -238,7 +238,7 @@ export const trailSeeds: NewTrail[] = [
     slug: "brod-restelica-loop",
     name: "Brod — Restelicë Alpine Loop",
     description:
-      "Unazë alpine në Gorën e Kosovës. Fshatrat tradicionale dhe kullotat e larta.",
+      "Vajtje-Ardhje alpine në Gorën e Kosovës. Fshatrat tradicionale dhe kullotat e larta.",
     region: "Sharr",
     city: "Dragash",
     countryCode: "XK",
