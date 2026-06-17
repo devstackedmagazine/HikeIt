@@ -55,7 +55,7 @@ const STEPS = [
   },
   {
     icon: Mountain,
-    title: "Hik bashkë",
+    title: "Ngjitu bashkë",
     description: "Bashkohu me komunitetin dhe ngjit majat",
   },
 ];
@@ -69,7 +69,7 @@ const FEATURES = [
   },
   {
     icon: CloudLightning,
-    title: "Alerts Moti",
+    title: "Njoftime Moti",
     description:
       "Paralajmërime automatike të motit përpara kushteve të rrezikshme.",
   },
@@ -83,7 +83,7 @@ const FEATURES = [
 const CLUB_BENEFITS = [
   "Mbledh pagesa online",
   "Menaxho anëtarët",
-  "Dërgo alerts automatike",
+  "Dërgo njoftime automatike",
 ];
 
 const TESTIMONIALS = [
@@ -101,7 +101,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "Alerts e motit më shpëtuan një herë nga një stuhi. Komunitet i mrekullueshëm!",
+      "Njoftimet e motit më shpëtuan një herë nga një stuhi. Komunitet i mrekullueshëm!",
     name: "Driton S.",
     city: "Gjakovë",
   },

@@ -5,6 +5,8 @@ import {
   DashboardMobileTabs,
   DashboardSidebar,
 } from "@/components/features/dashboard/dashboard-nav";
+import { NotificationsBell } from "@/components/features/notifications/notifications-bell";
+import { Brand } from "@/components/shared/brand";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 
 /**
@@ -30,7 +32,11 @@ export default async function DashboardLayout({
         adminClubSlug={adminClub?.slug ?? null}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="flex-1 px-4 pb-20 pt-6 sm:px-8 md:pb-8">
+        <header className="flex items-center justify-between border-b px-4 py-2 sm:px-8">
+          <Brand className="inline-flex md:hidden" />
+          <NotificationsBell />
+        </header>
+        <main className="flex-1 px-4 pt-6 pb-20 sm:px-8 md:pb-8">
           {children}
         </main>
       </div>

@@ -1,10 +1,11 @@
-import { CalendarDays, ChevronRight, CloudSun, MapPin } from "lucide-react";
+import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { RegisterCard } from "@/components/features/trips/register-card";
+import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -162,12 +163,7 @@ export default async function PublicTripPage({
             </section>
           ) : null}
 
-          <Card>
-            <CardContent className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
-              <CloudSun className="size-5 text-accent" />
-              Statusi i motit — së shpejti
-            </CardContent>
-          </Card>
+          <WeatherWidget lat={mapLat} lng={mapLng} />
         </div>
 
         <aside>

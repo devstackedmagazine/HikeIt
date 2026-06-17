@@ -24,13 +24,13 @@ const HIKER_POINTS = [
   "Gjej shtigje",
   "Bashkohu me udhëtime të klubeve",
   "Ndjek historikun tënd",
-  "Merr alerts moti",
+  "Merr njoftime moti",
 ];
 const CLUB_POINTS = [
   "Menaxho anëtarët",
   "Krijo udhëtime",
   "Mbledh pagesa",
-  "Dërgo alerts",
+  "Dërgo njoftime",
 ];
 
 export default async function OnboardingPage() {

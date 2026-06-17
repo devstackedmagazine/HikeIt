@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   Map,
+  User,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,7 @@ function buildItems(adminClubSlug: string | null): NavItem[] {
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
     { href: "/clubs", label: "Klube", icon: Users },
     { href: "/trails", label: "Shtigje", icon: Map },
+    { href: "/dashboard/profile", label: "Profili", icon: User },
   ];
   if (adminClubSlug) {
     base.push({

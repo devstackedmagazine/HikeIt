@@ -27,8 +27,8 @@ export function MyTripsView({
   waitlisted: RegisteredTrip[];
 }) {
   return (
-    <Tabs defaultValue="upcoming">
-      <TabsList>
+    <Tabs defaultValue="upcoming" className="flex flex-col">
+      <TabsList className="w-full justify-start border-b">
         <TabsTrigger value="upcoming">Të ardhshme</TabsTrigger>
         <TabsTrigger value="past">Të kaluara</TabsTrigger>
         <TabsTrigger value="waitlisted">Lista e pritjes</TabsTrigger>
@@ -56,7 +56,7 @@ function List({
 }) {
   if (items.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed px-6 py-10 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
         {variant === "upcoming"
           ? "Asnjë udhëtim i ardhshëm."
           : variant === "past"
@@ -103,7 +103,7 @@ function TripRow({
           >
             {item.trip.title}
           </Link>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 text-sm">
             <span>{item.club.name}</span>
             <span className="flex items-center gap-1">
               <CalendarDays className="size-3.5" />
@@ -120,12 +120,12 @@ function TripRow({
 
         <div className="flex items-center gap-3">
           {variant === "upcoming" && days >= 0 ? (
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
               {days === 0 ? "Sot" : `${days} ditë`}
             </span>
           ) : null}
           {variant === "waitlisted" ? (
-            <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-medium text-accent">
+            <span className="bg-accent/15 text-accent rounded-full px-2.5 py-0.5 text-xs font-medium">
               Në pritje
             </span>
           ) : null}

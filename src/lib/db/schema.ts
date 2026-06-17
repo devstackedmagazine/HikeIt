@@ -105,6 +105,15 @@ export const users = pgTable("users", {
   name: text("name"),
   avatarUrl: text("avatar_url"),
   bio: text("bio"),
+  phone: text("phone"),
+  dateOfBirth: date("date_of_birth"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  // User preferences: language + weather alert sensitivity.
+  preferences: jsonb("preferences").$type<{
+    language?: "sq" | "en";
+    alertSensitivity?: "low" | "medium" | "high";
+  }>(),
   role: userRole("role").notNull().default("hiker"),
   onboardingCompleted: boolean("onboarding_completed")
     .notNull()

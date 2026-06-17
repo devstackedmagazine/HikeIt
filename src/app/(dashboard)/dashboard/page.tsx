@@ -36,6 +36,11 @@ export default async function DashboardPage() {
   return <HikerHome userId={user.id} name={displayName} />;
 }
 
+const getFirstName = (displayName: string) => {
+  if (!displayName) return ""; // Senior move: handle edge cases/empty inputs
+  return displayName.trim().split(" ")[0];
+};
+
 async function HikerHome({ userId, name }: { userId: string; name: string }) {
   const [stats, upcoming, suggested, clubsResult] = await Promise.all([
     getHikerStats(userId),
@@ -47,7 +52,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <h1 className="text-2xl font-bold tracking-tight">
-        Mirë se vini, {name}! 👋
+        Mirë se vjen, {getFirstName(name)}! 👋
       </h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -69,15 +74,15 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
               <Link
                 key={reg.registrationId}
                 href={`/trips/${reg.trip.slug}`}
-                className="flex items-center justify-between rounded-xl border p-4 transition-colors hover:bg-muted"
+                className="hover:bg-muted flex items-center justify-between rounded-xl border p-4 transition-colors"
               >
                 <div>
                   <p className="font-medium">{reg.trip.title}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {reg.club.name} · {formatTripDate(reg.trip.startDatetime)}
                   </p>
                 </div>
-                <CheckCircle2 className="size-5 text-primary" />
+                <CheckCircle2 className="text-primary size-5" />
               </Link>
             ))}
           </div>
@@ -96,7 +101,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
           <h2 className="text-lg font-semibold">Shtigje të sugjeruara</h2>
           <Link
             href="/trails"
-            className="text-sm text-primary underline-offset-4 hover:underline"
+            className="text-primary text-sm underline-offset-4 hover:underline"
           >
             Të gjitha
           </Link>
@@ -114,7 +119,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
             <h2 className="text-lg font-semibold">Zbulo klube</h2>
             <Link
               href="/clubs"
-              className="text-sm text-primary underline-offset-4 hover:underline"
+              className="text-primary text-sm underline-offset-4 hover:underline"
             >
               Të gjitha
             </Link>
@@ -124,10 +129,10 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
               <Link
                 key={club.id}
                 href={`/clubs/${club.slug}`}
-                className="rounded-xl border p-4 transition-colors hover:bg-muted"
+                className="hover:bg-muted rounded-xl border p-4 transition-colors"
               >
                 <p className="font-medium">{club.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {club.city} · {club.memberCount} anëtarë
                 </p>
               </Link>
@@ -152,13 +157,16 @@ async function ClubAdminHome({
     return (
       <div className="mx-auto max-w-5xl space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">
-          Mirë se vini, {name}! 👋
+          Mirë se vjen, {getFirstName(name)}! 👋
         </h1>
         <EmptyState
           icon={Building2}
           title="Ende pa klub"
           description="Krijo klubin tënd për të filluar organizimin e udhëtimeve."
-          action={{ label: "Krijo klubin tënd", href: "/dashboard/club/create" }}
+          action={{
+            label: "Krijo klubin tënd",
+            href: "/dashboard/club/create",
+          }}
         />
       </div>
     );
@@ -174,7 +182,7 @@ async function ClubAdminHome({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Mirë se vini, {name}! 👋
+            Mirë se vjen, {getFirstName(name)}! 👋
           </h1>
           <p className="text-muted-foreground">{club.name}</p>
         </div>
@@ -195,7 +203,11 @@ async function ClubAdminHome({
               : undefined
           }
         />
-        <StatCard icon={Calendar} label="Udhëtime aktive" value={stats.activeTrips} />
+        <StatCard
+          icon={Calendar}
+          label="Udhëtime aktive"
+          value={stats.activeTrips}
+        />
         <StatCard icon={Route} label="Të kryera" value={stats.completedTrips} />
         <StatCard
           icon={TrendingUp}
@@ -210,9 +222,7 @@ async function ClubAdminHome({
           <Button
             variant="outline"
             size="sm"
-            render={
-              <Link href={`/dashboard/club/${club.slug}/trips/create`} />
-            }
+            render={<Link href={`/dashboard/club/${club.slug}/trips/create`} />}
           >
             Krijo udhëtim
           </Button>
@@ -223,15 +233,15 @@ async function ClubAdminHome({
               <Link
                 key={trip.id}
                 href={`/dashboard/club/${club.slug}/trips/${trip.slug}`}
-                className="flex items-center justify-between rounded-xl border p-4 transition-colors hover:bg-muted"
+                className="hover:bg-muted flex items-center justify-between rounded-xl border p-4 transition-colors"
               >
                 <div>
                   <p className="font-medium">{trip.title}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {formatTripDate(trip.startDatetime)}
                   </p>
                 </div>
-                <Map className="size-5 text-muted-foreground" />
+                <Map className="text-muted-foreground size-5" />
               </Link>
             ))}
           </div>

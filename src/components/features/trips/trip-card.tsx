@@ -21,8 +21,18 @@ function spotsLabel(trip: TripWithClub): string {
   return left === 0 ? "Plot — listë pritjeje" : `${left} vende të lira`;
 }
 
+const WEATHER_BADGE: Record<string, { className: string; label: string }> = {
+  warning: { className: "bg-yellow-100 text-yellow-900", label: "⚠️" },
+  alert: { className: "bg-orange-100 text-orange-900", label: "🟠" },
+  danger: {
+    className: "bg-red-100 text-red-900",
+    label: "🔴 Kushte të rrezikshme",
+  },
+};
+
 export function TripCard({ trip }: { trip: TripWithClub }) {
   const free = Number(trip.priceEur) === 0;
+  const weather = WEATHER_BADGE[trip.weatherAlertLevel];
 
   return (
     <Card className="flex flex-col">
@@ -35,6 +45,14 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
             <DifficultyBadge difficulty={trip.difficulty} />
           ) : null}
         </div>
+
+        {weather ? (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${weather.className}`}
+          >
+            {weather.label}
+          </span>
+        ) : null}
 
         <h3 className="font-semibold leading-tight">{trip.title}</h3>
 

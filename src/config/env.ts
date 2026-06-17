@@ -36,6 +36,9 @@ export const env = createEnv({
     // OpenWeatherMap — optional until weather ships.
     OPENWEATHER_API_KEY: z.string().min(1).optional(),
 
+    // Cron secret protecting scheduled endpoints — optional in dev.
+    CRON_SECRET: z.string().min(1).optional(),
+
     // Resend — optional until transactional email ships.
     RESEND_API_KEY: z.string().min(1).optional(),
     EMAIL_FROM: z.string().min(1).optional(),
@@ -78,6 +81,7 @@ export const env = createEnv({
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
     OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
+    CRON_SECRET: process.env.CRON_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
     SENTRY_ORG: process.env.SENTRY_ORG,

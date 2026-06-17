@@ -43,7 +43,7 @@ const TIERS: Tier[] = [
       { label: "Shfleto të gjitha shtigjet", included: true },
       { label: "Bashkohu me udhëtime falas", included: true },
       { label: "Profil personal", included: true },
-      { label: "Alerts moti", included: true },
+      { label: "Njoftime moti", included: true },
       { label: "Krijo udhëtime", included: false },
       { label: "Menaxho klub", included: false },
     ],

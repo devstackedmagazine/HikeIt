@@ -4,7 +4,6 @@ import {
   CalendarDays,
   ChevronRight,
   Clock,
-  CloudSun,
   Download,
   MapPin,
   Mountain,
@@ -19,6 +18,7 @@ import { ReviewsSection } from "@/components/features/trails/reviews-section";
 import { ShareButtons } from "@/components/features/trails/share-buttons";
 import { TrailCard } from "@/components/features/trails/trail-card";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
+import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -330,12 +330,10 @@ export default async function TrailDetailPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
-              <CloudSun className="size-5 text-accent" />
-              Moti — së shpejti
-            </CardContent>
-          </Card>
+          <WeatherWidget
+            lat={trail.startLat ? Number(trail.startLat) : null}
+            lng={trail.startLng ? Number(trail.startLng) : null}
+          />
 
           <Button
             variant="outline"
