@@ -86,7 +86,7 @@ export const tripSeeds: TripSeed[] = [
     clubSlug: "alpinistet-e-pejes",
     trailSlug: "bjeshket-e-nemuna-loop",
     title: "Aventurë te Laku i Zi",
-    description: "Vajtje-Ardhje alpine kërkuese nëpër Bjeshkët e Nemuna.",
+    description: "Unazë alpine kërkuese nëpër Bjeshkët e Nemuna.",
     daysFromNow: 30,
     priceEur: "35",
     maxParticipants: 12,
