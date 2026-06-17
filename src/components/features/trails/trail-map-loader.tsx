@@ -2,23 +2,19 @@
 
 import dynamic from "next/dynamic";
 
-import type { TrailMapProps } from "@/components/features/trails/trail-map";
+import { TrailMapSkeleton } from "@/components/features/trails/trail-map-skeleton";
 
 /**
- * Loads the Mapbox map only on the client — mapbox-gl touches `window`, so it
- * must never be server-rendered. This client wrapper is what server pages
- * import.
+ * Loads the Leaflet map only on the client — Leaflet touches `window`, so it
+ * must never be server-rendered. Server pages import `TrailMap` from here.
  */
 const TrailMap = dynamic(
-  () => import("@/components/features/trails/trail-map"),
+  () =>
+    import("@/components/features/trails/trail-map").then((mod) => mod.TrailMap),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[400px] w-full animate-pulse rounded-xl border bg-muted" />
-    ),
+    loading: () => <TrailMapSkeleton />,
   },
 );
 
-export function TrailMapLoader(props: TrailMapProps) {
-  return <TrailMap {...props} />;
-}
+export { TrailMap };

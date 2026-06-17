@@ -53,8 +53,7 @@ export const env = createEnv({
     // Stripe (publishable) — optional until billing ships.
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
 
-    // Mapbox — optional until maps ship.
-    NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
+    // Maps use Leaflet + OpenStreetMap — no token required.
 
     // Sentry / PostHog — optional.
     NEXT_PUBLIC_SENTRY_DSN: z.string().min(1).optional(),
@@ -87,7 +86,6 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-    NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

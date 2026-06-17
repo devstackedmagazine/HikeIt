@@ -116,6 +116,11 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Keep Leaflet maps below sticky header / dropdowns. */
+.leaflet-container {
+  z-index: 0;
+}
+
 @layer base {
   * {
     border-color: var(--border);

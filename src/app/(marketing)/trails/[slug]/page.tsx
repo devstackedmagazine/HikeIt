@@ -18,7 +18,7 @@ import { notFound } from "next/navigation";
 import { ReviewsSection } from "@/components/features/trails/reviews-section";
 import { ShareButtons } from "@/components/features/trails/share-buttons";
 import { TrailCard } from "@/components/features/trails/trail-card";
-import { TrailMapLoader } from "@/components/features/trails/trail-map-loader";
+import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -228,8 +228,8 @@ export default async function TrailDetailPage({
 
       {/* Map */}
       <div className="mt-8">
-        <TrailMapLoader
-          name={trail.name}
+        <TrailMap
+          trailName={trail.name}
           startLat={Number(trail.startLat)}
           startLng={Number(trail.startLng)}
           endLat={trail.endLat ? Number(trail.endLat) : null}
