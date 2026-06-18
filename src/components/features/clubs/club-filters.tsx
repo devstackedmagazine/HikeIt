@@ -29,7 +29,7 @@ export function ClubFilters() {
         <Input
           className="h-10 pl-9"
           placeholder="Kërko klube…"
-          defaultValue={filters.search}
+          value={filters.search}
           onChange={(e) =>
             setFilters({ search: e.target.value, page: 1 }, { throttleMs: 400 })
           }

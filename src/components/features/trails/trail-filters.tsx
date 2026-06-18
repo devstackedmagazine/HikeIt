@@ -86,7 +86,7 @@ export function TrailFilters({ regions }: { regions: string[] }) {
               id="trail-search"
               className="h-9 pl-9"
               placeholder="Emri i shtegut…"
-              defaultValue={filters.search}
+              value={filters.search}
               onChange={(e) =>
                 setFilters(
                   { search: e.target.value, page: 1 },
