@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { TripCoverField } from "@/components/features/trips/trip-cover-field";
 import { TripForm } from "@/components/features/trips/trip-form";
 import { TripGpxSection } from "@/components/features/trips/trip-gpx-section";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
@@ -82,6 +83,8 @@ export default async function EditTripPage({
           publish: trip.status === "open",
         }}
       />
+
+      <TripCoverField tripId={trip.id} initialPublicId={trip.coverImageUrl} />
 
       <TripGpxSection tripId={trip.id} existingGpxUrl={trip.gpxUrl} />
     </div>

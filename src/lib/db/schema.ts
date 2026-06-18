@@ -354,7 +354,52 @@ export const tripPhotos = pgTable("trip_photos", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   url: text("url").notNull(),
+  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  format: text("format"),
   caption: text("caption"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isApproved: boolean("is_approved").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const trailPhotos = pgTable(
+  "trail_photos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trailId: uuid("trail_id")
+      .notNull()
+      .references(() => trails.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+    url: text("url").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    caption: text("caption"),
+    season: text("season"),
+    isApproved: boolean("is_approved").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("trail_photos_trail_id_idx").on(t.trailId)],
+);
+
+export const imageHashes = pgTable("image_hashes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hash: text("hash").unique().notNull(),
+  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+  cloudinaryUrl: text("cloudinary_url").notNull(),
+  uploadedBy: uuid("uploaded_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  entityType: text("entity_type").notNull(),
+  entityId: uuid("entity_id").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -557,6 +602,12 @@ export type NewReview = typeof reviews.$inferInsert;
 
 export type TripPhoto = typeof tripPhotos.$inferSelect;
 export type NewTripPhoto = typeof tripPhotos.$inferInsert;
+
+export type TrailPhoto = typeof trailPhotos.$inferSelect;
+export type NewTrailPhoto = typeof trailPhotos.$inferInsert;
+
+export type ImageHash = typeof imageHashes.$inferSelect;
+export type NewImageHash = typeof imageHashes.$inferInsert;
 
 export type WeatherAlert = typeof weatherAlerts.$inferSelect;
 export type NewWeatherAlert = typeof weatherAlerts.$inferInsert;

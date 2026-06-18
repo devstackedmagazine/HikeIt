@@ -14,11 +14,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PhotoGallery } from "@/components/features/images/photo-gallery";
 import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewsSection } from "@/components/features/trails/reviews-section";
 import { ShareButtons } from "@/components/features/trails/share-buttons";
 import { TrailCard } from "@/components/features/trails/trail-card";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
+import { TrailPhotoSection } from "@/components/features/trails/trail-photo-section";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,7 @@ import {
   seasonLabels,
   trailTypeLabels,
 } from "@/lib/i18n/labels";
+import { getTrailPhotos } from "@/server/queries/photos";
 import { getTrailReviews } from "@/server/queries/reviews";
 import {
   getTrailBySlug,
@@ -144,12 +147,14 @@ export default async function TrailDetailPage({
   const trail = await getTrailBySlug(slug);
   if (!trail) notFound();
 
-  const [session, reviewData, upcomingTrips, regionTrails] = await Promise.all([
-    getOptionalSession(),
-    getTrailReviews(trail.id),
-    getUpcomingTripsByTrail(trail.id),
-    trail.region ? getTrailsByRegion(trail.region) : Promise.resolve([]),
-  ]);
+  const [session, reviewData, upcomingTrips, regionTrails, trailPhotos] =
+    await Promise.all([
+      getOptionalSession(),
+      getTrailReviews(trail.id),
+      getUpcomingTripsByTrail(trail.id),
+      trail.region ? getTrailsByRegion(trail.region) : Promise.resolve([]),
+      getTrailPhotos(trail.id),
+    ]);
 
   const nearbyTrails = regionTrails
     .filter((t) => t.id !== trail.id)
@@ -358,6 +363,32 @@ export default async function TrailDetailPage({
 
           <ShareButtons title={trail.name} />
         </aside>
+      </div>
+
+      {/* Photo wall */}
+      <div className="mt-14">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-2xl font-bold tracking-tight">Foto nga Shtigjet</h2>
+          <TrailPhotoSection
+            trailId={trail.id}
+            trailSlug={trail.slug}
+            isLoggedIn={!!session}
+          />
+        </div>
+        {trailPhotos.length > 0 ? (
+          <PhotoGallery
+            photos={trailPhotos.map((p) => ({
+              id: p.id,
+              publicId: p.cloudinaryPublicId,
+              photographer: p.photographer,
+              caption: p.caption,
+            }))}
+          />
+        ) : (
+          <p className="rounded-xl border border-dashed px-6 py-8 text-center text-sm text-muted-foreground">
+            Ende pa foto për këtë shteg.
+          </p>
+        )}
       </div>
 
       {/* Reviews */}

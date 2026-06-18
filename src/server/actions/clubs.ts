@@ -347,3 +347,27 @@ export async function removeMember(
   revalidatePath(`/dashboard/club/${slug}`);
   return { success: true };
 }
+
+/** Admin: set club logo / cover Cloudinary public ids. */
+export async function setClubImages(
+  slug: string,
+  images: { logoUrl?: string | null; coverUrl?: string | null },
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  const access = await requireClubAdmin(session.user.id, slug);
+  if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  await db
+    .update(organizations)
+    .set({
+      ...(images.logoUrl !== undefined ? { logoUrl: images.logoUrl } : {}),
+      ...(images.coverUrl !== undefined ? { coverUrl: images.coverUrl } : {}),
+    })
+    .where(eq(organizations.id, access.organization.id));
+
+  revalidatePath(`/dashboard/club/${slug}`);
+  revalidatePath(`/clubs/${slug}`);
+  return { success: true };
+}

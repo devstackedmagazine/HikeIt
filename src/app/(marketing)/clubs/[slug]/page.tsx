@@ -5,13 +5,14 @@ import {
   Globe,
   MapPin,
   Mountain,
-  Users,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { JoinClubButton } from "@/components/features/clubs/join-club-button";
+import { CloudImage } from "@/components/features/images/cloud-image";
+import { PhotoGallery } from "@/components/features/images/photo-gallery";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import {
@@ -23,6 +24,7 @@ import {
 import { getOptionalSession } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
 import { getClubBySlug } from "@/server/queries/clubs";
+import { getClubPhotos } from "@/server/queries/photos";
 import { getUpcomingTripsByClub } from "@/server/queries/trips";
 
 export async function generateMetadata({
@@ -86,9 +88,10 @@ export default async function ClubProfilePage({
   const club = await getClubBySlug(slug);
   if (!club) notFound();
 
-  const [session, upcomingTrips] = await Promise.all([
+  const [session, upcomingTrips, clubPhotos] = await Promise.all([
     getOptionalSession(),
     getUpcomingTripsByClub(club.id),
+    getClubPhotos(club.id),
   ]);
 
   const yearsActive = club.foundedYear
@@ -119,10 +122,24 @@ export default async function ClubProfilePage({
   return (
     <div>
       {/* Cover + logo */}
-      <div className="relative h-48 bg-gradient-to-br from-primary to-emerald-950 sm:h-56">
+      <div className="relative h-48 sm:h-56">
+        <CloudImage
+          publicId={club.coverUrl}
+          size="cover"
+          alt={`${club.name} cover`}
+          fallback="club"
+          className="h-full w-full"
+          priority
+        />
         <div className="mx-auto h-full max-w-5xl px-4 sm:px-6">
-          <div className="absolute -bottom-10 flex size-24 items-center justify-center rounded-2xl border-4 border-background bg-muted">
-            <Users className="size-10 text-primary" />
+          <div className="absolute -bottom-10 size-24 overflow-hidden rounded-2xl border-4 border-background bg-muted">
+            <CloudImage
+              publicId={club.logoUrl}
+              size="avatar"
+              alt={`${club.name} logo`}
+              fallback="club"
+              className="h-full w-full"
+            />
           </div>
         </div>
       </div>
@@ -209,6 +226,20 @@ export default async function ClubProfilePage({
             />
           )}
         </section>
+
+        {clubPhotos.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="mb-4 text-xl font-bold">Galeria</h2>
+            <PhotoGallery
+              photos={clubPhotos.map((p) => ({
+                id: p.id,
+                publicId: p.cloudinaryPublicId,
+                photographer: p.photographer,
+                caption: p.caption,
+              }))}
+            />
+          </section>
+        ) : null}
 
         {/* Members + join */}
         <section className="mt-10 mb-16 grid gap-6 sm:grid-cols-2">

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PhotoGallery } from "@/components/features/images/photo-gallery";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { RegisterCard } from "@/components/features/trips/register-card";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
@@ -13,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { tripStatusLabels } from "@/lib/i18n/labels";
 import { formatTripDateTime } from "@/lib/utils/datetime";
+import { getTripPhotos } from "@/server/queries/photos";
 import { getTripById, getUserRegistration } from "@/server/queries/trips";
 
 export async function generateMetadata({
@@ -50,7 +52,10 @@ export default async function PublicTripPage({
   const trip = await getTripById(tripId);
   if (!trip) notFound();
 
-  const session = await getOptionalSession();
+  const [session, photos] = await Promise.all([
+    getOptionalSession(),
+    getTripPhotos(trip.id),
+  ]);
   const registration = session
     ? await getUserRegistration(trip.id, session.user.id)
     : null;
@@ -165,6 +170,31 @@ export default async function PublicTripPage({
           ) : null}
 
           <WeatherWidget lat={mapLat} lng={mapLng} />
+
+          <section>
+            <h2 className="mb-3 text-xl font-bold">
+              Foto
+              {photos.length > 0 ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  {photos.length} foto
+                </span>
+              ) : null}
+            </h2>
+            {photos.length > 0 ? (
+              <PhotoGallery
+                photos={photos.map((p) => ({
+                  id: p.id,
+                  publicId: p.cloudinaryPublicId,
+                  photographer: p.photographer,
+                  caption: p.caption,
+                }))}
+              />
+            ) : (
+              <p className="rounded-xl border border-dashed px-6 py-8 text-center text-sm text-muted-foreground">
+                Bëhu i pari që ndan kujtimet e këtij udhëtimi.
+              </p>
+            )}
+          </section>
         </div>
 
         <aside className="space-y-4">

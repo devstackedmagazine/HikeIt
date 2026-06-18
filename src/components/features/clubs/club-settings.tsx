@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { ConnectButton } from "@/components/features/billing/connect-button";
+import { ImageUploader } from "@/components/features/images/image-uploader";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Organization } from "@/lib/db/schema";
 import { CLUB_CITIES } from "@/lib/validations/club";
-import { deleteClub, updateClub } from "@/server/actions/clubs";
+import { deleteClub, setClubImages, updateClub } from "@/server/actions/clubs";
 
 export function ClubSettings({
   club,
@@ -139,6 +140,43 @@ export function ClubSettings({
             {saving ? <Loader2 className="animate-spin" /> : null}
             Ruaj ndryshimet
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Imazhet</CardTitle>
+          <CardDescription>Logo dhe foto kryesore e klubit.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <p className="mb-2 text-sm font-medium">Logo</p>
+            <ImageUploader
+              entityType="club"
+              entityId={club.id}
+              maxFiles={1}
+              existingImages={club.logoUrl ? [club.logoUrl] : []}
+              onUploadComplete={(ids) => {
+                void setClubImages(club.slug, { logoUrl: ids[0] ?? null }).then(
+                  () => router.refresh(),
+                );
+              }}
+            />
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium">Foto kryesore</p>
+            <ImageUploader
+              entityType="club"
+              entityId={club.id}
+              maxFiles={1}
+              existingImages={club.coverUrl ? [club.coverUrl] : []}
+              onUploadComplete={(ids) => {
+                void setClubImages(club.slug, {
+                  coverUrl: ids[0] ?? null,
+                }).then(() => router.refresh());
+              }}
+            />
+          </div>
         </CardContent>
       </Card>
 

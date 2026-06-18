@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
+import { CloudImage } from "@/components/features/images/cloud-image";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -35,8 +36,17 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
   const weather = WEATHER_BADGE[trip.weatherAlertLevel];
 
   return (
-    <Card className="flex flex-col">
-      <CardContent className="flex-1 space-y-3 pt-6">
+    <Card className="flex flex-col overflow-hidden pt-0">
+      <div className="relative h-36">
+        <CloudImage
+          publicId={trip.coverImageUrl}
+          size="cover"
+          alt={trip.title}
+          fallback="trip"
+          className="h-full w-full"
+        />
+      </div>
+      <CardContent className="flex-1 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-medium text-muted-foreground">
             {trip.club.name}

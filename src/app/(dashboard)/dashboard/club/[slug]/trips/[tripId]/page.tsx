@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TripAdminActions } from "@/components/features/trips/trip-admin-actions";
+import { TripPhotosManager } from "@/components/features/trips/trip-photos-manager";
 import { TripRegistrationsPanel } from "@/components/features/trips/trip-registrations-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import { tripStatusLabels } from "@/lib/i18n/labels";
 import { formatTripDateTime } from "@/lib/utils/datetime";
+import { getTripPhotos } from "@/server/queries/photos";
 import {
   getTripById,
   getTripRegistrations,
@@ -35,7 +37,10 @@ export default async function AdminTripDetailPage({
   const trip = await getTripById(tripId);
   if (!trip || trip.club.id !== access.organization.id) notFound();
 
-  const registrations = await getTripRegistrations(trip.id);
+  const [registrations, photos] = await Promise.all([
+    getTripRegistrations(trip.id),
+    getTripPhotos(trip.id),
+  ]);
   const confirmed = registrations.filter((r) => r.status === "confirmed");
   const waitlisted = registrations.filter((r) => r.status === "waitlisted");
   const active = registrations.filter((r) => r.status !== "canceled");
@@ -61,6 +66,7 @@ export default async function AdminTripDetailPage({
         <TabsList>
           <TabsTrigger value="overview">Përmbledhje</TabsTrigger>
           <TabsTrigger value="registrations">Regjistrimet</TabsTrigger>
+          <TabsTrigger value="photos">Foto</TabsTrigger>
           <TabsTrigger value="settings">Cilësimet</TabsTrigger>
         </TabsList>
 
@@ -93,6 +99,17 @@ export default async function AdminTripDetailPage({
           <TripRegistrationsPanel
             tripId={trip.id}
             registrations={registrations}
+          />
+        </TabsContent>
+
+        <TabsContent value="photos" className="pt-6">
+          <TripPhotosManager
+            tripId={trip.id}
+            photos={photos.map((p) => ({
+              id: p.id,
+              publicId: p.cloudinaryPublicId,
+            }))}
+            manage
           />
         </TabsContent>
 
