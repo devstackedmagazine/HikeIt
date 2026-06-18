@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HikeIt
 
-## Getting Started
+Hiking club management SaaS for Kosovo. Hikers discover trails, join club trips,
+and get weather alerts; clubs manage members, organize trips, and (optionally)
+collect payments.
 
-First, run the development server:
+## Tech stack
+
+- **Next.js 16** (App Router, Turbopack) + React 19, TypeScript strict
+- **Drizzle ORM** + PostgreSQL (Supabase)
+- **Better Auth** (email/password, verification, password reset)
+- **Tailwind CSS v4** + shadcn/ui (base-nova)
+- **Leaflet** + OpenStreetMap (maps), **Open-Meteo** (weather, no API key)
+- **Resend** (email) + React Email
+- **Cloudflare R2** (avatars, GPX, photos)
+- **Stripe** (club subscriptions + Connect foundation)
+- **recharts** (elevation charts), **nuqs** (URL filters), **cmdk** (search)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local   # fill in the values below
+pnpm db:push                 # push schema to your database
+pnpm db:seed                 # seed trails, clubs, demo trips
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Required environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` / `DIRECT_URL` | Supabase pooled / direct connection |
+| `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL` | Auth |
+| `NEXT_PUBLIC_APP_URL` | App base URL |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Optional (features degrade gracefully when unset)
 
-## Learn More
+| Variable | Enables |
+| --- | --- |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Transactional email |
+| `R2_*` | Avatar / GPX / photo uploads |
+| `CRON_SECRET` | Protects `/api/cron/*` endpoints |
+| `STRIPE_*` (+ price IDs) | Club subscriptions & payments |
 
-To learn more about Next.js, take a look at the following resources:
+Weather (Open-Meteo) and maps (OpenStreetMap) need **no keys**.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Script | Description |
+| --- | --- |
+| `pnpm dev` | Start the dev server |
+| `pnpm build` / `pnpm start` | Production build / serve |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm lint` / `pnpm lint:fix` | ESLint |
+| `pnpm db:push` / `db:seed` / `db:studio` | Drizzle schema / seed / studio |
 
-## Deploy on Vercel
+## Cron jobs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`vercel.json` schedules `/api/cron/weather-check` (every 3h) and
+`/api/cron/trip-reminders` (daily). Both require the `Authorization: Bearer
+$CRON_SECRET` header.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Deployed on Vercel with a Supabase production database. See the next session's
+deployment runbook for prod env vars, DNS, and email verification.
+
+## Roadmap (Phase 2)
+
+- Service worker + offline trail caching (PWA today is install-only)
+- Full Stripe Connect onboarding + paid trip checkout
+- Postgres full-text search (currently `ilike`)
+- Trip photos upload, super-admin trail verification UI

@@ -265,6 +265,7 @@ export const trips = pgTable(
     difficulty: difficultyEnum("difficulty"),
     requirements: text("requirements"),
     included: text("included"),
+    gpxUrl: text("gpx_url"),
     status: tripStatusEnum("status").notNull().default("draft"),
     canceledReason: text("canceled_reason"),
     weatherAlertLevel: weatherAlertLevelEnum("weather_alert_level")

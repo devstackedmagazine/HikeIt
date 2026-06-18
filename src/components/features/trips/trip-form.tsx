@@ -25,38 +25,48 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { difficultyLabels } from "@/lib/i18n/labels";
 import { type CreateTripInput,createTripSchema } from "@/lib/validations/trips";
-import { createTrip } from "@/server/actions/trips";
+import { createTrip, updateTrip } from "@/server/actions/trips";
 import type { TrailOption } from "@/server/queries/trails";
 
 const DIFFICULTIES = ["easy", "moderate", "hard", "expert"] as const;
+
+const EMPTY_VALUES: CreateTripInput = {
+  title: "",
+  description: "",
+  trailId: "",
+  startDatetime: "",
+  endDatetime: "",
+  meetingPoint: "",
+  minParticipants: 1,
+  priceEur: 0,
+  requirements: "",
+  included: "",
+  publish: false,
+};
 
 export function TripForm({
   clubSlug,
   trailOptions,
   canCollectPayments,
+  mode = "create",
+  tripId,
+  tripSlug,
+  initialValues,
 }: {
   clubSlug: string;
   trailOptions: TrailOption[];
   canCollectPayments: boolean;
+  mode?: "create" | "edit";
+  tripId?: string;
+  tripSlug?: string;
+  initialValues?: Partial<CreateTripInput>;
 }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<CreateTripInput>({
     resolver: zodResolver(createTripSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      trailId: "",
-      startDatetime: "",
-      endDatetime: "",
-      meetingPoint: "",
-      minParticipants: 1,
-      priceEur: 0,
-      requirements: "",
-      included: "",
-      publish: false,
-    },
+    defaultValues: { ...EMPTY_VALUES, ...initialValues },
   });
 
   const priceValue = useWatch({ control: form.control, name: "priceEur" });
@@ -66,6 +76,18 @@ export function TripForm({
     form.setValue("publish", publish);
     const valid = await form.trigger();
     if (!valid) return;
+
+    if (mode === "edit" && tripId) {
+      const result = await updateTrip(tripId, form.getValues());
+      if (!result.success) {
+        setFormError(result.error ?? "Diçka shkoi keq.");
+        return;
+      }
+      router.push(`/dashboard/club/${clubSlug}/trips/${tripSlug ?? ""}`);
+      router.refresh();
+      return;
+    }
+
     const result = await createTrip(clubSlug, form.getValues());
     if (!result.success || !result.slug) {
       setFormError(result.error ?? "Diçka shkoi keq.");
@@ -315,27 +337,42 @@ export function TripForm({
         ) : null}
 
         <div className="flex flex-wrap gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={form.formState.isSubmitting}
-            onClick={() => submit(false)}
-          >
-            {form.formState.isSubmitting ? (
-              <Loader2 className="animate-spin" />
-            ) : null}
-            Ruaj si Draft
-          </Button>
-          <Button
-            type="button"
-            disabled={form.formState.isSubmitting}
-            onClick={() => submit(true)}
-          >
-            {form.formState.isSubmitting ? (
-              <Loader2 className="animate-spin" />
-            ) : null}
-            Publiko Tani
-          </Button>
+          {mode === "edit" ? (
+            <Button
+              type="button"
+              disabled={form.formState.isSubmitting}
+              onClick={() => submit(initialValues?.publish ?? true)}
+            >
+              {form.formState.isSubmitting ? (
+                <Loader2 className="animate-spin" />
+              ) : null}
+              Ruaj Ndryshimet
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={form.formState.isSubmitting}
+                onClick={() => submit(false)}
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="animate-spin" />
+                ) : null}
+                Ruaj si Draft
+              </Button>
+              <Button
+                type="button"
+                disabled={form.formState.isSubmitting}
+                onClick={() => submit(true)}
+              >
+                {form.formState.isSubmitting ? (
+                  <Loader2 className="animate-spin" />
+                ) : null}
+                Publiko Tani
+              </Button>
+            </>
+          )}
         </div>
       </form>
     </Form>

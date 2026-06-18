@@ -2,6 +2,7 @@ import { Mountain } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { SearchCommand } from "@/components/features/search/search-command";
 import { Brand } from "@/components/shared/brand";
 import { MobileNav, type NavLink } from "@/components/shared/mobile-nav";
 import { Button } from "@/components/ui/button";
@@ -35,8 +36,8 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Ligjore",
     links: [
-      { href: "#", label: "Privatësia" },
-      { href: "#", label: "Kushtet" },
+      { href: "/privacy", label: "Privatësia" },
+      { href: "/terms", label: "Kushtet" },
     ],
   },
 ];
@@ -68,6 +69,7 @@ export default async function MarketingLayout({
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
+            <SearchCommand className="mr-1" />
             {isLoggedIn ? (
               <Button render={<Link href="/dashboard" />}>Shko te paneli</Button>
             ) : (

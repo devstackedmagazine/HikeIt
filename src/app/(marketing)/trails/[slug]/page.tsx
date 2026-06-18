@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewsSection } from "@/components/features/trails/reviews-section";
 import { ShareButtons } from "@/components/features/trails/share-buttons";
 import { TrailCard } from "@/components/features/trails/trail-card";
@@ -236,6 +237,14 @@ export default async function TrailDetailPage({
           endLng={trail.endLng ? Number(trail.endLng) : null}
         />
       </div>
+
+      {/* Elevation profile */}
+      {trail.elevationProfile && trail.elevationProfile.length > 1 ? (
+        <div className="mt-6">
+          <h2 className="mb-2 text-lg font-semibold">Profili i lartësisë</h2>
+          <ElevationChart data={trail.elevationProfile} />
+        </div>
+      ) : null}
 
       {/* Info grid */}
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">

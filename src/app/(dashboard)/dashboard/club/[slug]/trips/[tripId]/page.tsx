@@ -1,10 +1,12 @@
-import { CloudSun } from "lucide-react";
+import { CloudSun, Pencil } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TripAdminActions } from "@/components/features/trips/trip-admin-actions";
 import { TripRegistrationsPanel } from "@/components/features/trips/trip-registrations-panel";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -95,9 +97,18 @@ export default async function AdminTripDetailPage({
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4 pt-6">
+          <Button
+            render={
+              <Link
+                href={`/dashboard/club/${slug}/trips/${trip.slug}/edit`}
+              />
+            }
+          >
+            <Pencil />
+            Ndrysho Udhëtimin
+          </Button>
           <p className="text-sm text-muted-foreground">
-            Për të anuluar udhëtimin, përdor butonin lart. Redaktimi i plotë i
-            fushave vjen së shpejti.
+            Për të anuluar udhëtimin, përdor butonin lart në faqe.
           </p>
         </TabsContent>
       </Tabs>

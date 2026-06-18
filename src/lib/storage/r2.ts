@@ -60,3 +60,29 @@ export async function deleteFile(key: string): Promise<void> {
     new DeleteObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: key }),
   );
 }
+
+/** Upload a GPX document (string) and return its public URL. */
+export async function uploadGpx(key: string, content: string): Promise<string> {
+  return uploadFile(key, Buffer.from(content, "utf-8"), "application/gpx+xml");
+}
+
+/**
+ * Presigned PUT URL for direct browser uploads of larger files (optional).
+ * Lazily imports the presigner so it's only pulled in when used.
+ */
+export async function getSignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 600,
+): Promise<string> {
+  const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+  return getSignedUrl(
+    getClient(),
+    new PutObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn },
+  );
+}

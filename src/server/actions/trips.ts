@@ -9,12 +9,18 @@ import { db } from "@/lib/db";
 import {
   auditLogs,
   organizationMembers,
+  organizations,
   trails,
+  tripRegistrations,
   trips,
   users,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { NewTripNotification } from "@/lib/email/templates/new-trip-notification";
+import {
+  type TripChange,
+  TripUpdated,
+} from "@/lib/email/templates/trip-updated";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
 import { type CreateTripInput,createTripSchema } from "@/lib/validations/trips";
@@ -164,6 +170,169 @@ export async function publishTrip(
   revalidatePath(`/dashboard/club/${clubSlug}`);
   revalidatePath(`/dashboard/club/${clubSlug}/trips/${trip.slug}`);
   return { success: true };
+}
+
+export async function updateTrip(
+  tripId: string,
+  data: CreateTripInput,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
+  if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
+
+  const club = await db.query.organizations.findFirst({
+    where: eq(organizations.id, trip.organizationId),
+    columns: { slug: true },
+  });
+  if (!club) return { success: false, error: "Klubi nuk u gjet." };
+
+  const access = await requireClubAdmin(session.user.id, club.slug);
+  if (!access || access.organization.id !== trip.organizationId) {
+    return { success: false, error: "Nuk keni qasje." };
+  }
+  const clubSlug = club.slug;
+
+  const parsed = createTripSchema.safeParse(data);
+  if (!parsed.success) {
+    return { success: false, error: "Të dhëna të pavlefshme." };
+  }
+  const input = parsed.data;
+
+  const newStart = new Date(input.startDatetime);
+  if (newStart.getTime() < Date.now()) {
+    return { success: false, error: "Data e nisjes nuk mund të jetë në të kaluarën." };
+  }
+
+  // Registration-based locks.
+  const [confirmed] = await db
+    .select({ value: count() })
+    .from(tripRegistrations)
+    .where(
+      and(
+        eq(tripRegistrations.tripId, tripId),
+        eq(tripRegistrations.status, "confirmed"),
+      ),
+    );
+  const confirmedCount = confirmed?.value ?? 0;
+
+  if (
+    input.maxParticipants != null &&
+    input.maxParticipants < confirmedCount
+  ) {
+    return {
+      success: false,
+      error: `Nuk mund të ulni max nën regjistrimet aktuale (${confirmedCount}).`,
+    };
+  }
+
+  const newPrice = String(input.priceEur);
+  if (newPrice !== trip.priceEur) {
+    const [paid] = await db
+      .select({ value: count() })
+      .from(tripRegistrations)
+      .where(
+        and(
+          eq(tripRegistrations.tripId, tripId),
+          eq(tripRegistrations.paymentStatus, "paid"),
+        ),
+      );
+    if ((paid?.value ?? 0) > 0) {
+      return {
+        success: false,
+        error: "Nuk mund të ndryshoni çmimin pas pagesave të kryera.",
+      };
+    }
+  }
+
+  // Diff the important, user-facing fields for the change email + audit log.
+  const changes: TripChange[] = [];
+  if (trip.startDatetime.getTime() !== newStart.getTime()) {
+    changes.push({
+      label: "Data dhe ora",
+      from: formatTripDateTime(trip.startDatetime),
+      to: formatTripDateTime(newStart),
+    });
+  }
+  const newMeeting = input.meetingPoint || null;
+  if ((trip.meetingPoint ?? null) !== newMeeting) {
+    changes.push({
+      label: "Pika e takimit",
+      from: trip.meetingPoint ?? "—",
+      to: newMeeting ?? "—",
+    });
+  }
+
+  await db
+    .update(trips)
+    .set({
+      title: input.title,
+      description: input.description || null,
+      trailId: input.trailId || null,
+      startDatetime: newStart,
+      endDatetime: input.endDatetime ? new Date(input.endDatetime) : null,
+      meetingPoint: newMeeting,
+      maxParticipants: input.maxParticipants ?? null,
+      minParticipants: input.minParticipants,
+      requirements: input.requirements || null,
+      included: input.included || null,
+      priceEur: newPrice,
+      difficulty: input.difficulty ?? trip.difficulty,
+    })
+    .where(eq(trips.id, tripId));
+
+  await db.insert(auditLogs).values({
+    userId: session.user.id,
+    action: "trip.updated",
+    entityType: "trip",
+    entityId: tripId,
+    metadata: {
+      organizationId: trip.organizationId,
+      changes: changes.map((c) => c.label),
+    },
+  });
+
+  // Notify confirmed registrants when date/time or meeting point changed.
+  if (changes.length > 0) {
+    void notifyRegistrantsOfUpdate(tripId, trip.title, trip.slug, changes);
+  }
+
+  revalidatePath(`/dashboard/club/${clubSlug}/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}`);
+  return { success: true };
+}
+
+async function notifyRegistrantsOfUpdate(
+  tripId: string,
+  tripTitle: string,
+  tripSlug: string,
+  changes: TripChange[],
+): Promise<void> {
+  try {
+    const recipients = await db
+      .select({ email: users.email })
+      .from(tripRegistrations)
+      .innerJoin(users, eq(users.id, tripRegistrations.userId))
+      .where(
+        and(
+          eq(tripRegistrations.tripId, tripId),
+          eq(tripRegistrations.status, "confirmed"),
+        ),
+      );
+    const tripUrl = `${env.NEXT_PUBLIC_APP_URL}/trips/${tripSlug}`;
+    await Promise.allSettled(
+      recipients.map((r) =>
+        sendEmail({
+          to: r.email,
+          subject: `Ndryshime: ${tripTitle}`,
+          template: TripUpdated({ tripName: tripTitle, changes, tripUrl }),
+        }),
+      ),
+    );
+  } catch {
+    // best-effort
+  }
 }
 
 async function notifyMembers(

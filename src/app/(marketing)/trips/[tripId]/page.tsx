@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, MapPin } from "lucide-react";
+import { CalendarDays, ChevronRight, Download, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +8,7 @@ import { RegisterCard } from "@/components/features/trips/register-card";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { tripStatusLabels } from "@/lib/i18n/labels";
@@ -166,7 +167,7 @@ export default async function PublicTripPage({
           <WeatherWidget lat={mapLat} lng={mapLng} />
         </div>
 
-        <aside>
+        <aside className="space-y-4">
           <RegisterCard
             tripId={trip.id}
             slug={trip.slug}
@@ -181,6 +182,16 @@ export default async function PublicTripPage({
                 : null
             }
           />
+          {trip.gpxUrl ? (
+            <Button
+              variant="outline"
+              className="w-full"
+              render={<a href={trip.gpxUrl} download />}
+            >
+              <Download />
+              Shkarko GPX
+            </Button>
+          ) : null}
         </aside>
       </div>
     </div>
