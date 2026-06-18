@@ -1,16 +1,14 @@
 import { Mountain } from "lucide-react";
 
-import { difficultyLabels } from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
 
 type Difficulty = "easy" | "moderate" | "hard" | "expert";
 
-const STYLES: Record<Difficulty, string> = {
-  easy: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-  moderate:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
-  hard: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
-  expert: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+const CONFIG: Record<Difficulty, { label: string; className: string }> = {
+  easy: { label: "E LEHTË", className: "bg-moss text-abyss border-moss" },
+  moderate: { label: "E MESME", className: "bg-alert text-abyss border-alert" },
+  hard: { label: "E VËSHTIRË", className: "bg-sunset text-summit border-sunset" },
+  expert: { label: "EKSPERT", className: "bg-danger text-summit border-danger" },
 };
 
 export function DifficultyBadge({
@@ -23,13 +21,13 @@ export function DifficultyBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        STYLES[difficulty],
+        "inline-flex items-center gap-1 border-2 px-2.5 py-0.5 text-xs font-bold uppercase tracking-widest",
+        CONFIG[difficulty].className,
         className,
       )}
     >
       <Mountain className="size-3" />
-      {difficultyLabels[difficulty]}
+      {CONFIG[difficulty].label}
     </span>
   );
 }

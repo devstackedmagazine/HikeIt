@@ -14,14 +14,14 @@ export function Brand({
   const content = (
     <span
       className={cn(
-        "inline-flex items-center gap-2 text-xl font-bold tracking-tight",
+        "inline-flex items-center gap-2 font-heading text-xl font-extrabold uppercase tracking-tight",
         className,
       )}
     >
-      <Mountain className="size-6 text-primary" />
-      <span>
-        Hike<span className="text-primary">It</span>
+      <span className="flex size-7 items-center justify-center bg-forest text-summit">
+        <Mountain className="size-4" />
       </span>
+      <span>HIKEIT</span>
     </span>
   );
 
