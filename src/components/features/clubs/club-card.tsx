@@ -1,71 +1,68 @@
-import { ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
+import { Calendar, Mountain, Users } from "lucide-react";
 import Link from "next/link";
 
-import { CloudImage } from "@/components/features/images/cloud-image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { ClubWithStats } from "@/server/queries/clubs";
 
+/** "1.2K" for ≥1000, otherwise the plain integer. */
+function formatCount(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+}
+
 export function ClubCard({ club }: { club: ClubWithStats }) {
+  const location = [
+    club.city?.toUpperCase(),
+    club.foundedYear ? `THEMELUAR ${club.foundedYear}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Card className="flex flex-col overflow-hidden pt-0">
-      {/* Cover + overlapping logo */}
-      <div className="relative h-28">
-        <CloudImage
-          publicId={club.coverUrl}
-          size="cover"
-          alt={club.name}
-          fallback="club"
-          className="h-full w-full"
-        />
-        <div className="absolute -bottom-6 left-4 size-14 overflow-hidden rounded-full border-4 border-background bg-muted">
-          <CloudImage
-            publicId={club.logoUrl}
-            size="avatar"
-            alt={`${club.name} logo`}
-            fallback="club"
-            className="h-full w-full"
-          />
+    <div className="flex flex-col overflow-hidden bg-pine">
+      {/* Cover block (solid colour, not a photo) + overlapping circular logo */}
+      <div className="relative h-[120px] bg-forest">
+        <div className="absolute -bottom-4 left-3.5 z-10 flex size-9 items-center justify-center rounded-full border-2 border-moss bg-abyss text-moss">
+          <Mountain className="size-[18px]" />
         </div>
       </div>
 
-      <CardContent className="flex-1 space-y-3 pt-8">
-        <div>
-          <h3 className="font-semibold leading-tight">{club.name}</h3>
-          <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="size-3.5" />
-            {[club.city, club.foundedYear].filter(Boolean).join(" · ")}
+      {/* Body */}
+      <div className="flex flex-1 flex-col px-3.5 pt-7 pb-3.5">
+        <h3 className="font-heading text-base font-extrabold tracking-[-0.01em] text-summit uppercase">
+          {club.name}
+        </h3>
+        {location ? (
+          <p className="mt-1 text-[9px] font-semibold tracking-[0.08em] text-moss uppercase">
+            {location}
           </p>
-        </div>
+        ) : null}
 
         {club.description ? (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
+          <p className="mt-2.5 line-clamp-2 text-xs leading-[1.6] text-summit/60">
             {club.description}
           </p>
         ) : null}
 
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Users className="size-3.5" />
-            {club.memberCount} anëtarë
+        <div className="mt-3.5 h-px w-full bg-summit/10" />
+
+        <div className="mt-3 mb-3.5 flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.04em] text-summit/60 uppercase">
+            <Users className="size-3 text-summit/40" />
+            {formatCount(club.memberCount)} Anëtarë
           </span>
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="size-3.5" />
-            {club.upcomingTripsCount} udhëtime
+          <span aria-hidden className="h-2.5 w-px bg-summit/15" />
+          <span className="flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.04em] text-summit/60 uppercase">
+            <Calendar className="size-3 text-summit/40" />
+            {club.upcomingTripsCount} Udhëtime
           </span>
         </div>
-      </CardContent>
 
-      <CardFooter>
-        <Button
-          variant="outline"
-          className="w-full"
-          render={<Link href={`/clubs/${club.slug}`} />}
+        <Link
+          href={`/clubs/${club.slug}`}
+          className="mt-auto block border border-moss/30 bg-moss/15 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/50 hover:bg-moss/25"
         >
-          Shiko Klubin
-          <ArrowRight />
-        </Button>
-      </CardFooter>
-    </Card>
+          Shiko Klubin →
+        </Link>
+      </div>
+    </div>
   );
 }

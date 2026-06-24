@@ -32,6 +32,61 @@ export const clubSeeds: NewOrganization[] = [
     instagram: "sharrioutdoor",
     subscriptionTier: "free",
   },
+  // Clubs from the redesigned clubs-listing design.
+  {
+    slug: "sharri",
+    name: "Sharri",
+    description:
+      "Klubi më i vjetër i kryeqytetit me fokus në eksplorimin e maleve të Sharrit dhe rajoneve përreth.",
+    city: "Prishtinë",
+    foundedYear: 2012,
+    subscriptionTier: "pro",
+  },
+  {
+    slug: "alpin-kosova",
+    name: "Alpin Kosova",
+    description:
+      "Specialistët e ngjitjes teknike dhe ekspeditave të larta në Bjeshkët e Namuna.",
+    city: "Pejë",
+    foundedYear: 2015,
+    subscriptionTier: "pro",
+  },
+  {
+    slug: "pashtriku",
+    name: "Pashtriku",
+    description:
+      "Komuniteti i Prizrenit që bashkon natyrën me trashëgiminë kulturore në çdo ecje.",
+    city: "Prizren",
+    foundedYear: 2010,
+    subscriptionTier: "pro",
+  },
+  {
+    slug: "gjeravica",
+    name: "Gjeravica",
+    description:
+      "Klub dinamik me fokus në sportet malore dhe mbrojtjen e mjedisit në rajonin e Gjakovës.",
+    city: "Gjakovë",
+    foundedYear: 2018,
+    subscriptionTier: "free",
+  },
+  {
+    slug: "karradaku",
+    name: "Karradaku",
+    description:
+      "Eksploruesit e maleve të Karradakut, të njohur për mikpritjen dhe udhëtimet e organizuara mirë.",
+    city: "Gjilan",
+    foundedYear: 2014,
+    subscriptionTier: "free",
+  },
+  {
+    slug: "shala-e-bajgores",
+    name: "Shala e Bajgorës",
+    description:
+      "Promovimi i bukurisë së Shalës dhe zhvillimi i turizmit aktiv në veriun e Kosovës.",
+    city: "Mitrovicë",
+    foundedYear: 2020,
+    subscriptionTier: "free",
+  },
 ];
 
 export interface TripSeed {
