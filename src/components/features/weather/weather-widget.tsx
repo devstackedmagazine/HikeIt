@@ -4,16 +4,12 @@ import {
   CloudLightning,
   CloudRain,
   CloudSnow,
-  Droplets,
   type LucideIcon,
   Sun,
   Wind,
 } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils/cn";
 import { getWeatherForLocation } from "@/lib/weather/client";
-import { evaluateWeatherAlert } from "@/lib/weather/thresholds";
 
 const CONDITION_ICON: Record<string, LucideIcon> = {
   thunderstorm: CloudLightning,
@@ -25,28 +21,11 @@ const CONDITION_ICON: Record<string, LucideIcon> = {
   clouds: Cloud,
 };
 
-const BANNER: Record<
-  "warning" | "alert" | "danger",
-  { className: string; text: string }
-> = {
-  warning: {
-    className:
-      "bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200",
-    text: "⚠️ Kushte të pafavorshme",
-  },
-  alert: {
-    className:
-      "bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200",
-    text: "🟠 Kushte të rrezikshme",
-  },
-  danger: {
-    className: "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200",
-    text: "🔴 RREZIK — Udhëtimi nuk rekomandohet",
-  },
-};
-
+/** Full weekday in Albanian, uppercased (e.g. "E HËNË"). */
 function dayLabel(date: Date): string {
-  return new Intl.DateTimeFormat("sq-AL", { weekday: "short" }).format(date);
+  return new Intl.DateTimeFormat("sq-AL", { weekday: "long" })
+    .format(date)
+    .toUpperCase();
 }
 
 export async function WeatherWidget({
@@ -63,85 +42,56 @@ export async function WeatherWidget({
     data = await getWeatherForLocation(lat, lng);
   } catch {
     return (
-      <Card>
-        <CardContent className="py-4 text-sm text-muted-foreground">
-          Moti nuk disponohet
-        </CardContent>
-      </Card>
+      <div className="border border-summit/10 bg-summit/[0.03] p-4 text-xs text-summit/40">
+        Moti nuk disponohet
+      </div>
     );
   }
 
   const { current, daily } = data;
-  const alert = evaluateWeatherAlert(current);
   const CurrentIcon = CONDITION_ICON[current.condition] ?? Cloud;
 
   return (
-    <Card className="overflow-hidden">
-      {alert.level !== "clear" ? (
-        <div
-          className={cn(
-            "px-4 py-2 text-sm font-medium",
-            BANNER[alert.level].className,
-          )}
-        >
-          {BANNER[alert.level].text}
+    <div className="border border-summit/10 bg-summit/[0.03] p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="mb-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+            Moti Sot
+          </p>
+          <p className="font-heading text-[32px] leading-none font-extrabold tracking-[-0.02em] text-summit">
+            {current.temperature}°C
+          </p>
         </div>
-      ) : null}
-      <CardContent className="space-y-4 py-4">
-        <div className="flex items-center gap-4">
-          <CurrentIcon className="size-10 text-primary" />
-          <div>
-            <p className="text-3xl font-bold leading-none">
-              {current.temperature}°C
-            </p>
-            <p className="text-sm capitalize text-muted-foreground">
-              {current.conditionDescription}
-            </p>
-          </div>
-          <div className="ml-auto space-y-1 text-sm text-muted-foreground">
-            <p className="flex items-center justify-end gap-1.5">
-              <Wind className="size-4" />
-              {current.windSpeed} km/h
-            </p>
-            <p className="flex items-center justify-end gap-1.5">
-              <Droplets className="size-4" />
-              {current.rainProbability}%
-            </p>
-          </div>
-        </div>
+        <CurrentIcon className="size-7 text-summit/50" />
+      </div>
 
-        <div className="grid grid-cols-3 gap-2 border-t pt-3">
-          {daily.slice(0, 3).map((day) => {
-            const Icon = CONDITION_ICON[day.condition] ?? Cloud;
-            return (
-              <div
-                key={day.date.toISOString()}
-                className="flex flex-col items-center gap-1 text-center"
-              >
-                <span className="text-xs text-muted-foreground">
-                  {dayLabel(day.date)}
-                </span>
-                <Icon className="size-5 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  {day.tempMax}° / {day.tempMin}°
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <p className="text-right text-[10px] text-muted-foreground">
-          Të dhënat nga{" "}
-          <a
-            href="https://open-meteo.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
+      <div className="mt-3">
+        {daily.slice(0, 3).map((day) => (
+          <div
+            key={day.date.toISOString()}
+            className="flex items-center justify-between border-b border-summit/[0.06] py-1.5"
           >
-            Open-Meteo.com
-          </a>
-        </p>
-      </CardContent>
-    </Card>
+            <span className="text-[11px] font-medium text-summit/50 uppercase">
+              {dayLabel(day.date)}
+            </span>
+            <span className="text-[11px] font-semibold text-summit/60">
+              {day.tempMax}° / {day.tempMin}°
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-2 text-[9px] text-summit/20">
+        Burimi:{" "}
+        <a
+          href="https://open-meteo.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-summit/40"
+        >
+          Open-Meteo.com
+        </a>
+      </p>
+    </div>
   );
 }
