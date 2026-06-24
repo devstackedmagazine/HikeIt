@@ -1,43 +1,75 @@
-import { ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { CloudImage } from "@/components/features/images/cloud-image";
-import { DifficultyBadge } from "@/components/shared/difficulty-badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { formatTripDate } from "@/lib/utils/datetime";
+import type { Trip } from "@/lib/db/schema";
+import { cn } from "@/lib/utils/cn";
 import type { TripWithClub } from "@/server/queries/trips";
 
-function spotsTone(trip: TripWithClub): string {
-  if (trip.maxParticipants === null) return "text-muted-foreground";
-  const ratio = trip.confirmedCount / trip.maxParticipants;
-  if (ratio >= 1) return "text-destructive";
-  if (ratio >= 0.7) return "text-accent";
-  return "text-primary";
-}
-
-function spotsLabel(trip: TripWithClub): string {
-  if (trip.maxParticipants === null) return "Vende të pakufizuara";
-  const left = Math.max(0, trip.maxParticipants - trip.confirmedCount);
-  return left === 0 ? "Plot — listë pritjeje" : `${left} vende të lira`;
-}
-
-const WEATHER_BADGE: Record<string, { className: string; label: string }> = {
-  warning: { className: "bg-yellow-100 text-yellow-900", label: "⚠️" },
-  alert: { className: "bg-orange-100 text-orange-900", label: "🟠" },
-  danger: {
-    className: "bg-red-100 text-red-900",
-    label: "🔴 Kushte të rrezikshme",
-  },
+const DIFFICULTY: Record<
+  NonNullable<Trip["difficulty"]>,
+  { label: string; bar: string; badge: string }
+> = {
+  easy: { label: "Lehtë", bar: "bg-moss", badge: "bg-moss text-abyss" },
+  moderate: { label: "Moderat", bar: "bg-alert", badge: "bg-alert text-abyss" },
+  hard: { label: "Vështirë", bar: "bg-sunset", badge: "bg-sunset text-summit" },
+  expert: { label: "Ekstreme", bar: "bg-danger", badge: "bg-danger text-summit" },
 };
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("sq-AL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })
+    .format(date)
+    .toUpperCase();
+}
+
+function spots(trip: TripWithClub) {
+  if (trip.maxParticipants === null) {
+    return { label: "VENDE TË LIRA", pct: 0, color: "bg-moss", full: false };
+  }
+  const ratio =
+    trip.maxParticipants > 0 ? trip.confirmedCount / trip.maxParticipants : 0;
+  if (ratio >= 1) {
+    return { label: "PLOTË", pct: 100, color: "bg-danger", full: true };
+  }
+  return {
+    label: `${trip.confirmedCount}/${trip.maxParticipants} VENDE`,
+    pct: Math.round(ratio * 100),
+    color: ratio < 0.5 ? "bg-moss" : ratio < 0.8 ? "bg-alert" : "bg-danger",
+    full: false,
+  };
+}
 
 export function TripCard({ trip }: { trip: TripWithClub }) {
   const free = Number(trip.priceEur) === 0;
-  const weather = WEATHER_BADGE[trip.weatherAlertLevel];
+  const diff = trip.difficulty ? DIFFICULTY[trip.difficulty] : null;
+  const barColor = free || !diff ? "bg-moss" : diff.bar;
+  const s = spots(trip);
+  const location = [trip.club.city, "Kosovë"]
+    .filter(Boolean)
+    .join(", ")
+    .toUpperCase();
 
   return (
-    <Card className="flex flex-col overflow-hidden pt-0">
-      <div className="relative h-36">
+    <div className="flex flex-col overflow-hidden border border-summit/[0.08] bg-summit/[0.03]">
+      {/* Top difficulty accent */}
+      <div className={cn("h-[3px] w-full", barColor)} />
+
+      {/* Club row */}
+      <div className="flex items-center gap-1.5 border-b border-summit/[0.06] bg-summit/[0.03] px-3 py-2">
+        <span className="flex size-4 items-center justify-center rounded-full bg-moss/20 text-[8px] font-bold text-moss">
+          {trip.club.name?.charAt(0).toUpperCase() ?? "?"}
+        </span>
+        <span className="truncate text-[10px] font-semibold tracking-[0.06em] text-summit/50 uppercase">
+          {trip.club.name}
+        </span>
+      </div>
+
+      {/* Image */}
+      <div className="relative h-[140px] overflow-hidden">
         <CloudImage
           publicId={trip.coverImageUrl}
           size="cover"
@@ -45,62 +77,73 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
           fallback="trip"
           className="h-full w-full"
         />
-      </div>
-      <CardContent className="flex-1 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-muted-foreground">
-            {trip.club.name}
-          </span>
-          {trip.difficulty ? (
-            <DifficultyBadge difficulty={trip.difficulty} />
-          ) : null}
-        </div>
-
-        {weather ? (
+        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(13,31,20,0.8)] to-transparent" />
+        {diff ? (
           <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${weather.className}`}
+            className={cn(
+              "absolute top-2 right-2 px-2 py-[3px] text-[9px] font-extrabold tracking-[0.08em] uppercase",
+              diff.badge,
+            )}
           >
-            {weather.label}
+            {diff.label}
           </span>
         ) : null}
+      </div>
 
-        <h3 className="font-semibold leading-tight">{trip.title}</h3>
+      {/* Body */}
+      <div className="flex flex-1 flex-col px-3 pt-3">
+        <h3 className="font-heading mb-2.5 line-clamp-2 text-[14px] leading-[1.2] font-extrabold tracking-[-0.01em] text-summit uppercase">
+          {trip.title}
+        </h3>
 
-        <div className="space-y-1 text-sm text-muted-foreground">
-          <p className="flex items-center gap-1.5">
-            <CalendarDays className="size-3.5" />
-            {formatTripDate(trip.startDatetime)}
+        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] text-summit/45 uppercase">
+          <Calendar className="size-[11px] text-summit/35" />
+          {formatDate(trip.startDatetime)}
+        </p>
+        {location ? (
+          <p className="mb-3 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] text-summit/45 uppercase">
+            <MapPin className="size-[11px] text-summit/35" />
+            {location}
           </p>
-          {trip.club.city ? (
-            <p className="flex items-center gap-1.5">
-              <MapPin className="size-3.5" />
-              {trip.club.city}
-            </p>
-          ) : null}
-          <p className={`flex items-center gap-1.5 ${spotsTone(trip)}`}>
-            <Users className="size-3.5" />
-            {spotsLabel(trip)}
-          </p>
+        ) : null}
+
+        <div className="mb-2.5 h-px w-full bg-summit/[0.06]" />
+
+        {/* Spots */}
+        <div className="mb-2">
+          <span
+            className={cn(
+              "mb-1 block text-[9px] font-semibold tracking-[0.06em] uppercase",
+              s.full ? "text-danger" : "text-summit/40",
+            )}
+          >
+            {s.label}
+          </span>
+          <div className="h-[3px] w-full bg-summit/[0.08]">
+            <div className={cn("h-full", s.color)} style={{ width: `${s.pct}%` }} />
+          </div>
         </div>
 
-        <div className="text-lg font-bold">
+        {/* Price */}
+        <div className="mb-3">
           {free ? (
-            <span className="text-primary">Falas</span>
+            <span className="font-heading text-[20px] font-extrabold tracking-[-0.01em] text-moss uppercase">
+              Falas
+            </span>
           ) : (
-            <span>€{trip.priceEur}</span>
+            <span className="font-heading text-[20px] font-extrabold tracking-[-0.02em] text-summit">
+              €{Number(trip.priceEur)}
+            </span>
           )}
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          variant="outline"
-          className="w-full"
-          render={<Link href={`/trips/${trip.slug}`} />}
+
+        <Link
+          href={`/trips/${trip.slug}`}
+          className="mt-auto block border border-moss/25 bg-moss/10 py-2.5 text-center text-[10px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/45 hover:bg-moss/20"
         >
-          Shiko Udhëtimin
-          <ArrowRight />
-        </Button>
-      </CardFooter>
-    </Card>
+          Shiko Udhëtimin →
+        </Link>
+      </div>
+    </div>
   );
 }

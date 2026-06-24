@@ -1,4 +1,4 @@
-import type { NewOrganization } from "../schema";
+import type { NewOrganization, Trip } from "../schema";
 
 export const clubSeeds: NewOrganization[] = [
   {
@@ -99,6 +99,7 @@ export interface TripSeed {
   priceEur: string;
   maxParticipants: number | null;
   meetingPoint: string;
+  difficulty: Trip["difficulty"];
 }
 
 export const tripSeeds: TripSeed[] = [
@@ -113,6 +114,7 @@ export const tripSeeds: TripSeed[] = [
     priceEur: "25",
     maxParticipants: 15,
     meetingPoint: "Parkimi i Rugovës, ora 06:00",
+    difficulty: "expert",
   },
   {
     slug: "shetitje-germia-fundjave",
@@ -124,6 +126,7 @@ export const tripSeeds: TripSeed[] = [
     priceEur: "0",
     maxParticipants: 30,
     meetingPoint: "Hyrja kryesore e Gërmisë, ora 09:00",
+    difficulty: "easy",
   },
   {
     slug: "kanioni-rugoves-eksplorim",
@@ -135,6 +138,7 @@ export const tripSeeds: TripSeed[] = [
     priceEur: "15",
     maxParticipants: 20,
     meetingPoint: "Qendra e Pejës, ora 07:30",
+    difficulty: "moderate",
   },
   {
     slug: "laku-i-zi-aventure",
@@ -146,6 +150,7 @@ export const tripSeeds: TripSeed[] = [
     priceEur: "35",
     maxParticipants: 12,
     meetingPoint: "Parkimi i Bogës, ora 06:30",
+    difficulty: "hard",
   },
   {
     slug: "sharri-brezovica-fundjave",
@@ -157,5 +162,19 @@ export const tripSeeds: TripSeed[] = [
     priceEur: "10",
     maxParticipants: 25,
     meetingPoint: "Qendra e Prizrenit, ora 08:00",
+    difficulty: "easy",
+  },
+  {
+    slug: "via-ferrata-ari-rugove",
+    clubSlug: "alpinistet-e-pejes",
+    trailSlug: "kanioni-i-rugovës",
+    title: "Via Ferrata — Ari",
+    description:
+      "Aventurë vertikale në kanionin e Rugovës me kabllo dhe shkallë çeliku.",
+    daysFromNow: 6,
+    priceEur: "30",
+    maxParticipants: 8,
+    meetingPoint: "Hyrja e Via Ferratës, ora 08:00",
+    difficulty: "expert",
   },
 ];
