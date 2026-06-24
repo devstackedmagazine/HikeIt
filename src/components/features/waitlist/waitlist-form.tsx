@@ -1,10 +1,8 @@
 "use client";
 
-import { CheckCircle, Loader2, Mail } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { joinWaitlist } from "@/server/actions/waitlist";
 
 export function WaitlistForm({ source = "landing" }: { source?: string }) {
@@ -28,51 +26,48 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
 
   if (status === "success") {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-lg bg-primary-foreground/10 px-4 py-3 text-primary-foreground">
-        <CheckCircle className="size-5 shrink-0" />
-        <span className="font-medium">
-          Faleminderit! Do të njoftohesh kur hapim.
+      <div className="flex items-center justify-center gap-2.5 border border-moss/40 bg-moss/[0.12] px-5 py-4 text-moss">
+        <CheckCircle2 className="size-5 shrink-0" />
+        <span className="text-sm font-semibold">
+          Faleminderit! Do të njoftoheni kur hapim.
         </span>
       </div>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto flex w-full max-w-md flex-col gap-3 sm:flex-row"
-    >
-      <div className="relative flex-1">
-        <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
+    <div className="text-left">
+      {/* Input and button are flush — no gap between them. */}
+      <form onSubmit={handleSubmit} className="flex">
+        <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="email@shembull.com"
+          placeholder="Email adresa juaj..."
           aria-label="Email"
-          className="h-11 bg-background pl-9 text-foreground"
+          className="h-[54px] flex-1 border border-summit/20 bg-abyss px-5 text-sm text-summit placeholder:text-summit/35 focus:border-moss/50 focus:outline-none"
         />
-      </div>
-      <Button
-        type="submit"
-        size="lg"
-        variant="secondary"
-        className="h-11 shrink-0"
-        disabled={status === "loading"}
-      >
-        {status === "loading" ? (
-          <>
-            <Loader2 className="animate-spin" />
-            Duke dërguar…
-          </>
-        ) : (
-          "Merr akses të hershëm"
-        )}
-      </Button>
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="flex h-[54px] shrink-0 items-center gap-2 border border-moss/40 bg-moss/20 px-7 text-xs font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:bg-moss/35 disabled:opacity-50"
+        >
+          {status === "loading" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Duke dërguar…
+            </>
+          ) : (
+            "Merr Akses →"
+          )}
+        </button>
+      </form>
       {error ? (
-        <p className="text-sm text-primary-foreground/90 sm:hidden">{error}</p>
+        <p className="mt-3 text-sm text-danger" role="alert">
+          {error}
+        </p>
       ) : null}
-    </form>
+    </div>
   );
 }

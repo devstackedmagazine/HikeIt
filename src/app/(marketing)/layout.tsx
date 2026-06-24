@@ -1,17 +1,17 @@
-import { Mountain } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { SearchCommand } from "@/components/features/search/search-command";
-import { Brand } from "@/components/shared/brand";
+import {
+  MarketingNav,
+  type MarketingNavItem,
+} from "@/components/shared/marketing-nav";
 import { MobileNav, type NavLink } from "@/components/shared/mobile-nav";
-import { Button } from "@/components/ui/button";
 import { getOptionalSession } from "@/lib/auth/helpers";
 
-const NAV_LINKS: NavLink[] = [
-  { href: "/trails", label: "Shtigje" },
-  { href: "/clubs", label: "Klube" },
-  { href: "/trips", label: "Udhëtime" },
+const NAV_LINKS: MarketingNavItem[] = [
+  { href: "/trails", label: "Shtigjet" },
+  { href: "/clubs", label: "Klubet" },
+  { href: "/trips", label: "Udhëtimet" },
   { href: "/pricing", label: "Çmimet" },
 ];
 
@@ -19,27 +19,36 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
   {
     heading: "Produkti",
     links: [
-      { href: "/trails", label: "Shtigje" },
-      { href: "/clubs", label: "Klube" },
-      { href: "/trips", label: "Udhëtime" },
+      { href: "/trails", label: "Shtigjet" },
+      { href: "/clubs", label: "Klubet" },
+      { href: "/trips", label: "Udhëtimet" },
       { href: "/pricing", label: "Çmimet" },
     ],
   },
   {
     heading: "Kompania",
     links: [
-      { href: "/about", label: "Rreth nesh" },
-      { href: "mailto:hello@hikeit.app", label: "Kontakt" },
-      { href: "#", label: "Blog" },
+      { href: "/about", label: "Rreth Nesh" },
+      { href: "#", label: "Karriera" },
+      { href: "#", label: "Impact" },
+      { href: "#", label: "Partnerët" },
     ],
   },
   {
     heading: "Ligjore",
     links: [
-      { href: "/privacy", label: "Privatësia" },
       { href: "/terms", label: "Kushtet" },
+      { href: "/privacy", label: "Privatësia" },
+      { href: "#", label: "Siguria" },
+      { href: "#", label: "Cookies" },
     ],
   },
+];
+
+const SOCIAL_LINKS: { href: string; label: string; icon: string }[] = [
+  { href: "#", label: "Instagram", icon: "IG" },
+  { href: "#", label: "Facebook", icon: "FB" },
+  { href: "#", label: "X", icon: "X" },
 ];
 
 export default async function MarketingLayout({
@@ -51,33 +60,42 @@ export default async function MarketingLayout({
   const isLoggedIn = !!session;
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="sticky top-0 z-50 border-b-2 border-forest bg-summit">
-        <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Brand />
+    <div className="flex min-h-svh flex-col bg-abyss">
+      {/* Navbar — opaque Abyss, sticky (not fixed) so it never overlaps the
+          content of inner marketing pages. */}
+      <header className="sticky top-0 z-50 h-14 border-b border-summit/10 bg-abyss">
+        <div className="flex h-full items-center justify-between px-6 sm:px-8">
+          <Link
+            href="/"
+            className="font-heading text-xl font-extrabold tracking-[-0.01em] text-moss"
+          >
+            HIKEIT
+          </Link>
 
-          <nav className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-xs font-bold uppercase tracking-[0.08em] text-forest opacity-40 transition-opacity hover:opacity-100"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <MarketingNav items={NAV_LINKS} />
 
-          <div className="hidden items-center gap-2 md:flex">
-            <SearchCommand className="mr-1" />
+          <div className="hidden items-center gap-5 md:flex">
             {isLoggedIn ? (
-              <Button render={<Link href="/dashboard" />}>Shko te paneli →</Button>
+              <Link
+                href="/dashboard"
+                className="border border-summit/50 px-5 py-2 text-xs font-bold tracking-[0.08em] text-summit uppercase transition-colors hover:border-moss hover:text-moss"
+              >
+                Paneli →
+              </Link>
             ) : (
               <>
-                <Button variant="ghost" render={<Link href="/login" />}>
-                  Hyr
-                </Button>
-                <Button render={<Link href="/register" />}>Fillo →</Button>
+                <Link
+                  href="/login"
+                  className="text-[13px] font-medium tracking-[0.05em] text-summit/60 uppercase transition-colors hover:text-summit"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="border border-summit/50 px-5 py-2 text-xs font-bold tracking-[0.08em] text-summit uppercase transition-colors hover:border-moss hover:text-moss"
+                >
+                  Signup
+                </Link>
               </>
             )}
           </div>
@@ -88,40 +106,61 @@ export default async function MarketingLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t-2 border-moss bg-abyss">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-3">
-              <Brand asLink={false} className="text-moss" />
-              <p className="text-sm text-summit/50">
-                ZBULO. NGJIT. GJEJ PAQEN.
-              </p>
+      {/* Footer */}
+      <footer className="bg-abyss px-6 pt-[60px] sm:px-20">
+        <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
+          <div>
+            <p className="font-heading text-[22px] font-extrabold tracking-[-0.01em] text-moss">
+              HIKEIT
+            </p>
+            <p className="mt-3.5 max-w-[260px] text-[13px] leading-[1.65] text-summit/45">
+              Eksploroni egërsinë. Mbroni malet. Zhvilloni komunitetin.
+            </p>
+            <div className="mt-6 flex gap-2.5">
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  aria-label={social.label}
+                  className="flex size-9 items-center justify-center border border-summit/12 bg-summit/[0.06] text-[11px] font-bold text-summit/50 transition-colors hover:border-moss/40 hover:text-moss"
+                >
+                  {social.icon}
+                </a>
+              ))}
             </div>
-            {FOOTER_COLUMNS.map((column) => (
-              <div key={column.heading}>
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-moss">
-                  {column.heading}
-                </h3>
-                <ul className="space-y-2">
-                  {column.links.map((link) => (
-                    <li key={`${column.heading}-${link.label}`}>
-                      <Link
-                        href={link.href}
-                        className="text-sm text-summit/70 transition-colors hover:text-summit"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
 
-          <div className="mt-10 flex items-center gap-2 border-t-2 border-summit/10 pt-6 text-xs font-bold uppercase tracking-[0.1em] text-summit/50">
-            <Mountain className="size-4 text-moss" />
-            <span>© 2025 HIKEIT. BUILT FOR KOSOVO 🇽🇰</span>
-          </div>
+          {FOOTER_COLUMNS.map((column) => (
+            <div key={column.heading}>
+              <h3 className="mb-5 text-[11px] font-bold tracking-[0.12em] text-summit/35 uppercase">
+                {column.heading}
+              </h3>
+              <ul className="space-y-3">
+                {column.links.map((link) => (
+                  <li key={`${column.heading}-${link.label}`}>
+                    <Link
+                      href={link.href}
+                      className="text-[13px] text-summit/55 transition-colors hover:text-moss"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 flex items-center justify-between border-t border-summit/[0.08] py-5">
+          <span className="text-[11px] font-medium tracking-[0.1em] text-summit/30 uppercase">
+            © 2024 HIKEIT. EXPLORE THE WILD.
+          </span>
+          <Link
+            href="/register"
+            className="text-[11px] font-bold tracking-[0.1em] text-summit/30 uppercase transition-colors hover:text-moss"
+          >
+            DREJT MAJAVE →
+          </Link>
         </div>
       </footer>
     </div>
