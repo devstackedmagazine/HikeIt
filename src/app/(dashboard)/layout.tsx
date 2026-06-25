@@ -6,13 +6,12 @@ import {
   DashboardSidebar,
 } from "@/components/features/dashboard/dashboard-nav";
 import { NotificationsBell } from "@/components/features/notifications/notifications-bell";
-import { SearchCommand } from "@/components/features/search/search-command";
-import { Brand } from "@/components/shared/brand";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 
 /**
- * Authenticated dashboard shell: role-aware sidebar + mobile tabs. Also the
- * onboarding gate — edge middleware can't read the DB, so we enforce it here.
+ * Authenticated dashboard shell: narrow dark sidebar + light (Mist) content
+ * area. Also the onboarding gate — edge middleware can't read the DB, so we
+ * enforce it here.
  */
 export default async function DashboardLayout({
   children,
@@ -25,25 +24,32 @@ export default async function DashboardLayout({
   const adminClub =
     user.role === "club_admin" ? await getUserAdminClub(user.id) : null;
 
+  const displayName = user.name ?? user.email;
+
   return (
-    <div className="flex min-h-svh">
+    <div className="min-h-svh bg-mist">
       <DashboardSidebar
-        userName={user.name ?? user.email}
+        userName={displayName}
         userEmail={user.email}
         adminClubSlug={adminClub?.slug ?? null}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b px-4 py-2 sm:px-8">
-          <Brand className="inline-flex md:hidden" />
-          <div className="ml-auto flex items-center gap-2">
-            <SearchCommand />
+
+      <div className="flex min-h-svh min-w-0 flex-col md:ml-28">
+        <header className="sticky top-0 z-40 flex h-12 items-center justify-between border-b border-forest/10 bg-mist px-6">
+          <span className="font-heading text-base font-extrabold tracking-[-0.01em] text-forest uppercase md:hidden">
+            HikeIt
+          </span>
+          <div className="ml-auto flex items-center gap-2.5">
             <NotificationsBell />
+            <span className="flex size-8 items-center justify-center bg-forest text-xs font-bold text-moss">
+              {displayName.charAt(0).toUpperCase()}
+            </span>
           </div>
         </header>
-        <main className="flex-1 px-4 pt-6 pb-20 sm:px-8 md:pb-8">
-          {children}
-        </main>
+
+        <main className="flex-1 px-6 py-5 pb-24 md:pb-5">{children}</main>
       </div>
+
       <DashboardMobileTabs adminClubSlug={adminClub?.slug ?? null} />
     </div>
   );

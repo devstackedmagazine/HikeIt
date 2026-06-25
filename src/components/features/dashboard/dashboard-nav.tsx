@@ -11,10 +11,10 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { Brand } from "@/components/shared/brand";
-import { LogoutButton } from "@/components/shared/logout-button";
+import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
@@ -33,8 +33,8 @@ function buildItems(adminClubSlug: string | null): NavItem[] {
   const base: NavItem[] = [
     { href: "/dashboard", label: "Paneli", icon: LayoutDashboard },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
-    { href: "/clubs", label: "Klube", icon: Users },
-    { href: "/trails", label: "Shtigje", icon: Map },
+    { href: "/clubs", label: "Klubet", icon: Users },
+    { href: "/trails", label: "Shtigjet", icon: Map },
     { href: "/dashboard/profile", label: "Profili", icon: User },
   ];
   if (adminClubSlug) {
@@ -63,43 +63,72 @@ export function DashboardSidebar({
   adminClubSlug,
 }: DashboardNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
   const items = buildItems(adminClubSlug);
 
+  async function logout() {
+    setLoggingOut(true);
+    await authClient.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r bg-muted/20 md:flex">
-      <div className="px-5 py-4">
-        <Brand />
+    <aside className="fixed top-0 left-0 z-50 hidden h-screen w-28 flex-col border-r border-summit/[0.06] bg-abyss md:flex">
+      {/* Logo */}
+      <div className="border-b border-summit/[0.06] px-3 py-4">
+        <Link
+          href="/dashboard"
+          className="font-heading text-sm font-extrabold tracking-[-0.01em] text-moss uppercase"
+        >
+          HikeIt
+        </Link>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              isActive(pathname, item.href)
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Link>
-        ))}
+
+      {/* Nav */}
+      <nav className="flex flex-1 flex-col gap-0.5 py-4">
+        {items.map((item) => {
+          const active = isActive(pathname, item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1.5 px-3 py-2.5 text-center transition-colors",
+                active
+                  ? "bg-moss text-abyss"
+                  : "text-summit/35 hover:bg-summit/[0.04] hover:text-summit/70",
+              )}
+            >
+              <item.icon className="size-[18px]" />
+              <span className="text-[9px] leading-tight font-semibold tracking-[0.04em] uppercase">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
-      <div className="border-t p-3">
-        <div className="mb-2 flex items-center gap-2 px-2">
-          <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-            {(userName || userEmail).charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{userName}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {userEmail}
-            </p>
-          </div>
-        </div>
-        <LogoutButton variant="ghost" />
+
+      {/* User */}
+      <div className="flex flex-col items-center gap-1.5 border-t border-summit/[0.06] p-3">
+        <span className="flex size-8 items-center justify-center border border-moss/30 bg-forest text-xs font-bold text-moss">
+          {userName.charAt(0).toUpperCase()}
+        </span>
+        <p className="text-center text-[9px] font-semibold tracking-[0.04em] text-summit/60 uppercase">
+          {userName}
+        </p>
+        <p className="w-full truncate text-center text-[8px] text-summit/30">
+          {userEmail}
+        </p>
+        <button
+          type="button"
+          onClick={logout}
+          disabled={loggingOut}
+          className="text-[9px] font-semibold tracking-[0.06em] text-danger uppercase transition-opacity hover:opacity-80 disabled:opacity-50"
+        >
+          + Dil
+        </button>
       </div>
     </aside>
   );
@@ -115,22 +144,23 @@ export function DashboardMobileTabs({
   const items = buildItems(adminClubSlug).slice(0, 5);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t bg-background md:hidden">
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs",
-            isActive(pathname, item.href)
-              ? "text-primary"
-              : "text-muted-foreground",
-          )}
-        >
-          <item.icon className="size-5" />
-          {item.label}
-        </Link>
-      ))}
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-summit/[0.06] bg-abyss md:hidden">
+      {items.map((item) => {
+        const active = isActive(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-semibold uppercase",
+              active ? "text-moss" : "text-summit/35",
+            )}
+          >
+            <item.icon className="size-5" />
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
