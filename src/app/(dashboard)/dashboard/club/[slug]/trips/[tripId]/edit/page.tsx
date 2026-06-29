@@ -36,26 +36,25 @@ export default async function EditTripPage({
   const trailOptions = await getTrailOptions();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <nav className="flex items-center gap-1 text-sm text-muted-foreground">
-        <Link
-          href={`/dashboard/club/${slug}`}
-          className="hover:text-foreground"
-        >
+    <div className="-mx-6 -my-5 min-h-svh max-w-[688px] space-y-6 bg-abyss px-6 py-5 pb-24 md:pb-12">
+      <nav className="flex items-center gap-1 text-xs text-summit/40">
+        <Link href={`/dashboard/club/${slug}`} className="hover:text-summit">
           {access.organization.name}
         </Link>
-        <ChevronRight className="size-4" />
+        <ChevronRight className="size-3.5" />
         <Link
           href={`/dashboard/club/${slug}/trips/${trip.slug}`}
-          className="hover:text-foreground"
+          className="hover:text-summit"
         >
           {trip.title}
         </Link>
-        <ChevronRight className="size-4" />
-        <span className="text-foreground">Ndrysho</span>
+        <ChevronRight className="size-3.5" />
+        <span className="text-summit/70">Ndrysho</span>
       </nav>
 
-      <h1 className="text-2xl font-bold tracking-tight">Ndrysho Udhëtimin</h1>
+      <h1 className="font-heading text-2xl font-extrabold tracking-tight text-summit uppercase">
+        Ndrysho Udhëtimin
+      </h1>
 
       <TripForm
         mode="edit"

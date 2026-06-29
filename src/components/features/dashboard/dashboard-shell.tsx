@@ -23,8 +23,13 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  // Club-management pages are light, except the create/edit trip forms, which
+  // the design renders dark.
+  const isForm =
+    pathname.endsWith("/create") || pathname.endsWith("/edit");
   const isLight =
-    variant === "hiker" || pathname.startsWith("/dashboard/club/");
+    variant === "hiker" ||
+    (pathname.startsWith("/dashboard/club/") && !isForm);
 
   return (
     <div
