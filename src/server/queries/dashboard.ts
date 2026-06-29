@@ -160,3 +160,66 @@ export async function getClubDashboard(
     recentRegistrations: recent,
   };
 }
+
+export interface ClubTripAdminRow {
+  trip: Trip;
+  trailName: string | null;
+  trailSlug: string | null;
+  confirmedCount: number;
+}
+
+export interface ClubTripsAdminResult {
+  rows: ClubTripAdminRow[];
+  total: number;
+}
+
+/**
+ * Paginated, optionally status-filtered trips for the club-admin management
+ * table — each joined to its trail and with a confirmed-registration count.
+ */
+export async function getClubTripsAdmin(
+  organizationId: string,
+  params: { status?: Trip["status"]; page?: number; limit?: number } = {},
+): Promise<ClubTripsAdminResult> {
+  const page = Math.max(1, params.page ?? 1);
+  const limit = Math.max(1, params.limit ?? 10);
+  const offset = (page - 1) * limit;
+
+  const confirmedSql = sql<number>`(
+    select count(*) from trip_registrations tr
+    where tr.trip_id = ${trips.id} and tr.status = 'confirmed'
+  )`;
+
+  const where = and(
+    eq(trips.organizationId, organizationId),
+    isNull(trips.deletedAt),
+    params.status ? eq(trips.status, params.status) : undefined,
+  );
+
+  const [rows, totalResult] = await Promise.all([
+    db
+      .select({
+        trip: trips,
+        trailName: trails.name,
+        trailSlug: trails.slug,
+        confirmedCount: confirmedSql,
+      })
+      .from(trips)
+      .leftJoin(trails, eq(trails.id, trips.trailId))
+      .where(where)
+      .orderBy(desc(trips.startDatetime))
+      .limit(limit)
+      .offset(offset),
+    db.select({ value: count() }).from(trips).where(where),
+  ]);
+
+  return {
+    rows: rows.map((r) => ({
+      trip: r.trip,
+      trailName: r.trailName,
+      trailSlug: r.trailSlug,
+      confirmedCount: Number(r.confirmedCount),
+    })),
+    total: totalResult[0]?.value ?? 0,
+  };
+}

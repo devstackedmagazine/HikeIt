@@ -1,11 +1,12 @@
 "use client";
 
 import {
-  Building2,
   Calendar,
   LayoutDashboard,
   type LucideIcon,
   Map,
+  Mountain,
+  Settings,
   User,
   Users,
 } from "lucide-react";
@@ -20,6 +21,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  exact?: boolean;
 }
 
 export type DashboardVariant = "hiker" | "admin";
@@ -39,14 +41,14 @@ function buildItems(
   if (variant === "admin" && adminClubSlug) {
     const club = `/dashboard/club/${adminClubSlug}`;
     return [
-      { href: "/dashboard", label: "Paneli", icon: LayoutDashboard },
-      { href: club, label: "Klubi im", icon: Building2 },
-      { href: `${club}?tab=trips`, label: "Udhëtimet", icon: Calendar },
+      { href: club, label: "Përmbledhje", icon: LayoutDashboard, exact: true },
+      { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
+      { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
     ];
   }
   return [
-    { href: "/dashboard", label: "Paneli", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Paneli", icon: LayoutDashboard, exact: true },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
     { href: "/clubs", label: "Klubet", icon: Users },
     { href: "/trails", label: "Shtigjet", icon: Map },
@@ -54,9 +56,9 @@ function buildItems(
   ];
 }
 
-function isActive(pathname: string, href: string): boolean {
-  const path = href.split("?")[0] ?? href;
-  if (path === "/dashboard") return pathname === "/dashboard";
+function isActive(pathname: string, item: NavItem): boolean {
+  const path = item.href.split("?")[0] ?? item.href;
+  if (item.exact) return pathname === path;
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
@@ -82,19 +84,33 @@ export function DashboardSidebar({
   return (
     <aside className="fixed top-0 left-0 z-50 hidden h-screen w-28 flex-col border-r border-summit/[0.06] bg-abyss md:flex">
       {/* Logo */}
-      <div className="border-b border-summit/[0.06] px-3 py-3.5">
-        <p className="font-heading text-xs font-extrabold tracking-[0.02em] text-moss uppercase">
-          {isAdmin ? "Hike Admin" : "HikeIt"}
-        </p>
+      <div className="flex flex-col items-center border-b border-summit/[0.06] px-2.5 py-3.5 text-center">
         {isAdmin ? (
-          <p className="mt-0.5 text-[9px] text-summit/30">Vëzhgues i Majave</p>
-        ) : null}
+          <>
+            <span className="mb-1.5 flex size-7 items-center justify-center bg-moss text-abyss">
+              <Mountain className="size-4" />
+            </span>
+            <p className="font-heading text-[11px] font-extrabold tracking-[0.02em] text-summit uppercase">
+              Balkan Clubs
+            </p>
+            <p className="mt-0.5 text-[8px] tracking-[0.04em] text-summit/30">
+              Peak Control v1.2
+            </p>
+          </>
+        ) : (
+          <Link
+            href="/dashboard"
+            className="font-heading text-sm font-extrabold tracking-[-0.01em] text-moss uppercase"
+          >
+            HikeIt
+          </Link>
+        )}
       </div>
 
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 py-3">
         {items.map((item) => {
-          const active = isActive(pathname, item.href);
+          const active = isActive(pathname, item);
           return (
             <Link
               key={item.label}
@@ -158,7 +174,7 @@ export function DashboardMobileTabs({
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-summit/[0.06] bg-abyss md:hidden">
       {items.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isActive(pathname, item);
         return (
           <Link
             key={item.label}
