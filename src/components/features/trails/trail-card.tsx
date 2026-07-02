@@ -1,29 +1,75 @@
-import { ArrowRight, Clock, MapPin, TrendingUp } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { CloudImage } from "@/components/features/images/cloud-image";
-import { DifficultyBadge } from "@/components/shared/difficulty-badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { Trail } from "@/lib/db/schema";
 import { featureLabels } from "@/lib/i18n/labels";
+import { cn } from "@/lib/utils/cn";
 
-function formatDuration(minutes: number | null): string | null {
-  if (!minutes) return null;
-  const hours = minutes / 60;
-  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)} orë`;
+/** Single-letter difficulty badge shown top-left on the cover. */
+const DIFFICULTY_BADGE: Record<
+  Trail["difficulty"],
+  { letter: string; className: string }
+> = {
+  easy: { letter: "L", className: "bg-moss text-abyss" },
+  moderate: { letter: "M", className: "bg-alert text-abyss" },
+  hard: { letter: "V", className: "bg-sunset text-summit" },
+  expert: { letter: "E", className: "bg-danger text-summit" },
+};
+
+function formatStats(trail: Trail) {
+  const distanceKm = trail.distanceKm ? Number(trail.distanceKm) : null;
+  const durationH =
+    trail.estimatedDurationMin != null
+      ? trail.estimatedDurationMin / 60
+      : distanceKm != null
+        ? Math.round((distanceKm / 3) * 10) / 10
+        : null;
+
+  return {
+    distance: distanceKm != null ? distanceKm.toFixed(1) : null,
+    elevation: trail.elevationGainM,
+    duration: durationH != null ? durationH.toFixed(1) : null,
+  };
+}
+
+function Stat({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+}) {
+  return (
+    <div>
+      <p className="mb-0.5 text-[8px] font-semibold tracking-[0.1em] text-summit/30 uppercase">
+        {label}
+      </p>
+      <p className="font-heading text-[14px] font-extrabold tracking-[-0.01em] text-summit">
+        {value}
+        <span className="ml-0.5 align-baseline text-[9px] font-semibold text-summit/45">
+          {unit}
+        </span>
+      </p>
+    </div>
+  );
 }
 
 export function TrailCard({ trail }: { trail: Trail }) {
-  const features = trail.features ?? [];
-  const visibleFeatures = features.slice(0, 3);
-  const extraFeatures = features.length - visibleFeatures.length;
-  const duration = formatDuration(trail.estimatedDurationMin);
+  const stats = formatStats(trail);
+  const badge = DIFFICULTY_BADGE[trail.difficulty];
+  const location = [trail.city, trail.region]
+    .filter(Boolean)
+    .join(", ")
+    .toUpperCase();
+  const features = (trail.features ?? []).slice(0, 3);
 
   return (
-    <Card className="flex flex-col overflow-hidden pt-0">
+    <div className="flex flex-col overflow-hidden border border-summit/10 bg-summit/[0.03]">
       {/* Cover */}
-      <div className="relative h-40">
+      <div className="relative h-[160px] overflow-hidden">
         <CloudImage
           publicId={trail.coverImageUrl}
           size="thumbnail"
@@ -31,77 +77,66 @@ export function TrailCard({ trail }: { trail: Trail }) {
           fallback="trail"
           className="h-full w-full"
         />
-        <div className="absolute top-3 left-3">
-          <DifficultyBadge difficulty={trail.difficulty} />
-        </div>
+        <span
+          className={cn(
+            "absolute top-2 left-2 px-2 py-1 text-[10px] font-extrabold tracking-[0.06em] uppercase",
+            badge.className,
+          )}
+        >
+          {badge.letter}
+        </span>
         {trail.verified ? (
-          <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2 py-0.5 text-xs font-medium text-primary">
+          <span className="absolute top-2 right-2 border border-moss bg-[rgba(13,31,20,0.85)] px-2 py-[3px] text-[9px] font-bold tracking-[0.08em] text-moss uppercase">
             ✓ Verifikuar
           </span>
         ) : null}
       </div>
 
-      <CardContent className="flex-1 space-y-3">
-        <div>
-          <h3 className="font-semibold leading-tight">{trail.name}</h3>
-          {(trail.region || trail.city) && (
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="size-3.5 shrink-0" />
-              {[trail.region, trail.city].filter(Boolean).join(" · ")}
-            </p>
-          )}
-        </div>
+      {/* Body */}
+      <div className="flex flex-1 flex-col px-3.5 py-3">
+        <h3 className="font-heading mb-1.5 text-[13px] leading-[1.2] font-extrabold tracking-[-0.01em] text-summit uppercase">
+          {trail.name}
+        </h3>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {trail.distanceKm ? (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="size-3.5" />
-              {trail.distanceKm} km
-            </span>
+        {location ? (
+          <p className="mb-3 flex items-center gap-1 text-[10px] font-medium tracking-[0.06em] text-moss uppercase">
+            <MapPin className="size-[11px] shrink-0" />
+            {location}
+          </p>
+        ) : null}
+
+        <div className="mb-2.5 flex gap-3">
+          {stats.distance ? (
+            <Stat label="Distancë" value={stats.distance} unit="KM" />
           ) : null}
-          {trail.elevationGainM ? (
-            <span className="inline-flex items-center gap-1">
-              <TrendingUp className="size-3.5" />
-              {trail.elevationGainM} m
-            </span>
+          {stats.elevation != null ? (
+            <Stat label="Lartësia" value={stats.elevation} unit="M" />
           ) : null}
-          {duration ? (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="size-3.5" />
-              {duration}
-            </span>
+          {stats.duration ? (
+            <Stat label="Koha" value={stats.duration} unit="H" />
           ) : null}
         </div>
 
-        {visibleFeatures.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {visibleFeatures.map((feature) => (
+        {features.length > 0 ? (
+          <div className="mt-auto mb-3 flex flex-wrap gap-[5px]">
+            {features.map((feature) => (
               <span
                 key={feature}
-                className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                className="border border-summit/12 bg-summit/[0.06] px-2 py-[3px] text-[9px] font-semibold tracking-[0.06em] text-summit/55 uppercase"
               >
                 {featureLabels[feature] ?? feature}
               </span>
             ))}
-            {extraFeatures > 0 ? (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                +{extraFeatures}
-              </span>
-            ) : null}
           </div>
         ) : null}
-      </CardContent>
 
-      <CardFooter>
-        <Button
-          variant="outline"
-          className="w-full"
-          render={<Link href={`/trails/${trail.slug}`} />}
+        <Link
+          href={`/trails/${trail.slug}`}
+          className="mt-auto block border border-moss/30 bg-moss/[0.12] py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/50 hover:bg-moss/20"
         >
-          Shiko shtigun
-          <ArrowRight />
-        </Button>
-      </CardFooter>
-    </Card>
+          Shiko Shtegun →
+        </Link>
+      </div>
+    </div>
   );
 }

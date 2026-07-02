@@ -150,3 +150,34 @@ export async function deleteAccount(confirmation: string): Promise<void> {
   await auth.api.signOut({ headers: await headers() });
   redirect("/");
 }
+
+const preferencesSchema = z.object({
+  language: z.enum(["sq", "en"]).optional(),
+  alertSensitivity: z.enum(["low", "medium", "high"]).optional(),
+});
+
+/** Merge a partial preferences patch into the user's stored preferences. */
+export async function updatePreferences(
+  patch: z.infer<typeof preferencesSchema>,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  const parsed = preferencesSchema.safeParse(patch);
+  if (!parsed.success) {
+    return { success: false, error: "Të dhëna të pavlefshme." };
+  }
+
+  const current = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { preferences: true },
+  });
+  const merged = { ...(current?.preferences ?? {}), ...parsed.data };
+
+  await db
+    .update(users)
+    .set({ preferences: merged })
+    .where(eq(users.id, session.user.id));
+
+  return { success: true };
+}

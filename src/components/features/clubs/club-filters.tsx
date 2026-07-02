@@ -3,54 +3,57 @@
 import { Search } from "lucide-react";
 import { useQueryStates } from "nuqs";
 
-import { Input } from "@/components/ui/input";
 import { clubsParsers } from "@/lib/search-params/clubs";
 import { cn } from "@/lib/utils/cn";
 
-const CITIES = [
-  "Prishtinë",
-  "Pejë",
-  "Prizren",
-  "Gjakovë",
-  "Gjilan",
-  "Mitrovicë",
-];
+const CITIES = ["Prishtinë", "Pejë", "Prizren", "Gjakovë", "Gjilan", "Mitrovicë"];
 
-export function ClubFilters() {
+/** Prominent white search box for the light header. */
+export function ClubSearch() {
   const [filters, setFilters] = useQueryStates(clubsParsers, {
     shallow: false,
     clearOnDefault: true,
   });
 
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="h-10 pl-9"
-          placeholder="Kërko klube…"
-          value={filters.search}
-          onChange={(e) =>
-            setFilters({ search: e.target.value, page: 1 }, { throttleMs: 400 })
-          }
-        />
-      </div>
+    <div className="flex h-11 w-full max-w-[380px] items-center gap-2.5 border border-forest/20 bg-summit px-3.5 focus-within:border-forest/50">
+      <input
+        type="search"
+        aria-label="Kërko klubet"
+        placeholder="Kërko klubet sipas emrit ose qytetit..."
+        value={filters.search}
+        onChange={(e) =>
+          setFilters({ search: e.target.value, page: 1 }, { throttleMs: 300 })
+        }
+        className="min-w-0 flex-1 bg-transparent text-[13px] text-forest placeholder:text-forest/35 focus:outline-none"
+      />
+      <Search className="size-[18px] shrink-0 text-forest/40" />
+    </div>
+  );
+}
 
-      <div className="flex flex-wrap gap-2">
+/** Dark band of city filter tabs. */
+export function ClubCityTabs() {
+  const [filters, setFilters] = useQueryStates(clubsParsers, {
+    shallow: false,
+    clearOnDefault: true,
+  });
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      <CityTab
+        label="Të gjitha"
+        active={filters.city === ""}
+        onClick={() => setFilters({ city: "", page: 1 })}
+      />
+      {CITIES.map((city) => (
         <CityTab
-          label="Të gjitha"
-          active={filters.city === ""}
-          onClick={() => setFilters({ city: "", page: 1 })}
+          key={city}
+          label={city}
+          active={filters.city === city}
+          onClick={() => setFilters({ city, page: 1 })}
         />
-        {CITIES.map((city) => (
-          <CityTab
-            key={city}
-            label={city}
-            active={filters.city === city}
-            onClick={() => setFilters({ city, page: 1 })}
-          />
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
@@ -69,10 +72,10 @@ function CityTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-sm transition-colors",
+        "flex h-8 items-center px-4 text-[11px] uppercase transition-colors",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border text-muted-foreground hover:bg-muted",
+          ? "border border-moss/50 bg-moss/25 font-bold tracking-[0.08em] text-moss"
+          : "font-semibold tracking-[0.06em] text-summit/45 hover:text-summit/80",
       )}
     >
       {label}

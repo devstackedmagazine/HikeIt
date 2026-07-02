@@ -55,9 +55,16 @@ export interface DailyForecast {
   conditionDescription: string;
 }
 
+export interface HourlyForecast {
+  time: Date;
+  temp: number;
+  condition: string;
+}
+
 export interface ForecastResult {
   current: WeatherData;
   daily: DailyForecast[];
+  hourly: HourlyForecast[];
   fetchedAt: Date;
 }
 
@@ -148,5 +155,11 @@ export async function getWeatherForLocation(
     ),
   }));
 
-  return { current, daily, fetchedAt: now };
+  const hourly: HourlyForecast[] = data.hourly.time.map((time, i) => ({
+    time: new Date(time),
+    temp: Math.round(data.hourly.temperature_2m[i] ?? 0),
+    condition: wmoToCondition(data.hourly.weathercode[i] ?? 0),
+  }));
+
+  return { current, daily, hourly, fetchedAt: now };
 }

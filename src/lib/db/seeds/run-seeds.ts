@@ -74,6 +74,7 @@ async function main() {
           meetingLng: trail?.startLng ?? null,
           maxParticipants: t.maxParticipants,
           priceEur: t.priceEur,
+          difficulty: t.difficulty,
           status: "open" as const,
         };
       })
@@ -89,6 +90,9 @@ async function main() {
           meetingLat: sql`excluded.meeting_lat`,
           meetingLng: sql`excluded.meeting_lng`,
           startDatetime: sql`excluded.start_datetime`,
+          difficulty: sql`excluded.difficulty`,
+          priceEur: sql`excluded.price_eur`,
+          maxParticipants: sql`excluded.max_participants`,
         },
       })
       .returning({ slug: trips.slug });

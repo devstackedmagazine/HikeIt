@@ -4,121 +4,128 @@
 @custom-variant dark (&:is(.dark *));
 
 /**
- * HikeIt design system.
+ * HikeIt — Alpine Brutalism design system.
+ * Sharp (zero radius), bold (heavy borders, weight 900 headings), raw.
  *
- * Brand colors:
- *   - Primary  = forest green  #2D5F3F
- *   - Accent   = sunset orange #E87A30
- *
- * Token names follow the shadcn/base-nova convention so the generated UI
- * components (Button, Input, Card, …) resolve their colors here. Values are
- * authored in oklch for perceptually even opacity mixing.
+ * Brand palette is exposed both as raw `--color-*` (→ bg-forest, text-moss, …)
+ * and mapped onto the shadcn semantic tokens so every existing component keeps
+ * working while adopting the new look.
  */
 :root {
-  --radius: 0.625rem;
+  --radius: 0px;
 
-  --background: oklch(0.99 0.005 120);
-  --foreground: oklch(0.21 0.02 150);
+  /* Brand */
+  --abyss: #0d1f14;
+  --forest: #1a3d2b;
+  --pine: #2d5f3f;
+  --moss: #4caf7d;
+  --mist: #e8f5ed;
+  --summit: #fafff9;
+  --sunset: #e87a30;
+  --danger: #c0392b;
+  --alert: #f5a623;
+  --bg-secondary: #f0f7f2;
+  --text-secondary: #3d5a47;
+  --text-muted: #6b8a76;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 150);
-
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 150);
-
-  /* Forest green */
-  --primary: oklch(0.43 0.07 153);
-  --primary-foreground: oklch(0.98 0.01 120);
-
-  --secondary: oklch(0.96 0.01 150);
-  --secondary-foreground: oklch(0.3 0.03 153);
-
-  --muted: oklch(0.96 0.01 150);
-  --muted-foreground: oklch(0.53 0.02 150);
-
-  /* Sunset orange */
-  --accent: oklch(0.72 0.16 52);
-  --accent-foreground: oklch(0.99 0.01 80);
-
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.98 0.01 80);
-
-  --border: oklch(0.91 0.01 150);
-  --input: oklch(0.91 0.01 150);
-  --ring: oklch(0.43 0.07 153);
+  /* Semantic (mapped to brand) */
+  --background: var(--summit);
+  --foreground: var(--abyss);
+  --card: var(--summit);
+  --card-foreground: var(--abyss);
+  --popover: var(--summit);
+  --popover-foreground: var(--abyss);
+  --primary: var(--forest);
+  --primary-foreground: var(--summit);
+  --secondary: var(--mist);
+  --secondary-foreground: var(--forest);
+  --muted: var(--bg-secondary);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--sunset);
+  --accent-foreground: var(--summit);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--summit);
+  --border: var(--forest);
+  --input: var(--forest);
+  --ring: var(--forest);
 }
 
 .dark {
-  --background: oklch(0.18 0.02 150);
-  --foreground: oklch(0.96 0.01 120);
-
-  --card: oklch(0.22 0.02 150);
-  --card-foreground: oklch(0.96 0.01 120);
-
-  --popover: oklch(0.22 0.02 150);
-  --popover-foreground: oklch(0.96 0.01 120);
-
-  --primary: oklch(0.6 0.09 153);
-  --primary-foreground: oklch(0.17 0.02 150);
-
-  --secondary: oklch(0.28 0.02 150);
-  --secondary-foreground: oklch(0.96 0.01 120);
-
-  --muted: oklch(0.28 0.02 150);
-  --muted-foreground: oklch(0.68 0.02 150);
-
-  --accent: oklch(0.72 0.16 52);
-  --accent-foreground: oklch(0.17 0.02 80);
-
-  --destructive: oklch(0.62 0.22 27);
-  --destructive-foreground: oklch(0.98 0.01 80);
-
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.09 153);
+  --background: var(--abyss);
+  --foreground: var(--summit);
+  --card: var(--forest);
+  --card-foreground: var(--summit);
+  --popover: var(--forest);
+  --popover-foreground: var(--summit);
+  --primary: var(--moss);
+  --primary-foreground: var(--abyss);
+  --secondary: var(--forest);
+  --secondary-foreground: var(--summit);
+  --muted: var(--forest);
+  --muted-foreground: #9db8a6;
+  --accent: var(--sunset);
+  --accent-foreground: var(--summit);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--summit);
+  --border: var(--moss);
+  --input: var(--moss);
+  --ring: var(--moss);
 }
 
 @theme inline {
+  /* Brand color utilities (bg-forest, text-moss, border-summit, …) */
+  --color-abyss: var(--abyss);
+  --color-forest: var(--forest);
+  --color-pine: var(--pine);
+  --color-moss: var(--moss);
+  --color-mist: var(--mist);
+  --color-summit: var(--summit);
+  --color-sunset: var(--sunset);
+  --color-danger: var(--danger);
+  --color-alert: var(--alert);
+
+  /* Semantic */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-body: var(--font-inter);
+  --font-heading: var(--font-sora);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Zero radius everywhere */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-full: 0px;
 }
 
-/* Keep Leaflet maps below sticky header / dropdowns. */
+/* Nuclear option — force square everywhere. */
+* {
+  border-radius: 0 !important;
+}
+
+/* Leaflet maps below sticky header / dropdowns. */
 .leaflet-container {
-  z-index: 0;
+  z-index: 0 !important;
 }
 
 @layer base {
@@ -130,6 +137,37 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    font-family: var(--font-inter), system-ui, sans-serif;
   }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sora), system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: var(--forest);
+  }
+
+  button,
+  [role="button"] {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--mist);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pine);
 }
