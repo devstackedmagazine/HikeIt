@@ -1,6 +1,7 @@
-import { ArrowRight, Clock, MapPin, Mountain, TrendingUp } from "lucide-react";
+import { ArrowRight, Clock, MapPin, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
+import { CloudImage } from "@/components/features/images/cloud-image";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -21,9 +22,15 @@ export function TrailCard({ trail }: { trail: Trail }) {
 
   return (
     <Card className="flex flex-col overflow-hidden pt-0">
-      {/* Cover placeholder */}
-      <div className="relative flex h-40 items-center justify-center bg-gradient-to-br from-primary to-emerald-950">
-        <Mountain className="size-12 text-primary-foreground/40" />
+      {/* Cover */}
+      <div className="relative h-40">
+        <CloudImage
+          publicId={trail.coverImageUrl}
+          size="thumbnail"
+          alt={trail.name}
+          fallback="trail"
+          className="h-full w-full"
+        />
         <div className="absolute top-3 left-3">
           <DifficultyBadge difficulty={trail.difficulty} />
         </div>

@@ -3,7 +3,13 @@
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+} from "react-leaflet";
 
 export interface TrailMapProps {
   startLat: number | string;
@@ -11,6 +17,8 @@ export interface TrailMapProps {
   endLat?: number | string | null;
   endLng?: number | string | null;
   trailName: string;
+  /** Optional full route as [lat, lng] pairs — draws a polyline if provided. */
+  route?: [number, number][];
 }
 
 /**
@@ -37,6 +45,7 @@ export function TrailMap({
   endLat,
   endLng,
   trailName,
+  route,
 }: TrailMapProps) {
   const start: [number, number] = [Number(startLat), Number(startLng)];
   const hasEnd =
@@ -46,11 +55,14 @@ export function TrailMap({
   const end: [number, number] | null = hasEnd
     ? [Number(endLat), Number(endLng)]
     : null;
+  const hasRoute = route != null && route.length > 1;
+  const bounds = hasRoute ? L.latLngBounds(route) : undefined;
 
   return (
     <MapContainer
       center={start}
       zoom={13}
+      bounds={bounds}
       scrollWheelZoom={false}
       style={{ height: "400px", width: "100%" }}
       className="z-0 rounded-xl border"
@@ -59,6 +71,9 @@ export function TrailMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {hasRoute ? (
+        <Polyline positions={route} pathOptions={{ color: "#2D5F3F", weight: 4 }} />
+      ) : null}
       <Marker position={start} icon={startIcon}>
         <Popup>Start: {trailName}</Popup>
       </Marker>

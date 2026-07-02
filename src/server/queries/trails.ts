@@ -124,6 +124,26 @@ export async function getTrailRegions(): Promise<string[]> {
     .filter((region): region is string => region !== null);
 }
 
+export interface TrailOption {
+  id: string;
+  name: string;
+  difficulty: Trail["difficulty"];
+  region: string | null;
+}
+
+/** Minimal trail list for the trip-creation trail picker. */
+export async function getTrailOptions(): Promise<TrailOption[]> {
+  return db
+    .select({
+      id: trails.id,
+      name: trails.name,
+      difficulty: trails.difficulty,
+      region: trails.region,
+    })
+    .from(trails)
+    .orderBy(asc(trails.name));
+}
+
 /** Verified trails for homepage/featured rails. */
 export async function getFeaturedTrails(limit = 6): Promise<Trail[]> {
   return db

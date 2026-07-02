@@ -1,12 +1,18 @@
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import {
+  DashboardMobileTabs,
+  DashboardSidebar,
+} from "@/components/features/dashboard/dashboard-nav";
+import { NotificationsBell } from "@/components/features/notifications/notifications-bell";
+import { SearchCommand } from "@/components/features/search/search-command";
 import { Brand } from "@/components/shared/brand";
-import { LogoutButton } from "@/components/shared/logout-button";
-import { getRequiredUser } from "@/lib/auth/helpers";
+import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 
 /**
- * Dashboard shell: top nav with brand, the signed-in user's identity, and a
- * logout action. Placeholder — a proper sidebar lands in a later session.
+ * Authenticated dashboard shell: role-aware sidebar + mobile tabs. Also the
+ * onboarding gate — edge middleware can't read the DB, so we enforce it here.
  */
 export default async function DashboardLayout({
   children,
@@ -14,25 +20,31 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const user = await getRequiredUser();
-  const initial = (user.name ?? user.email).charAt(0).toUpperCase();
+  if (!user.onboardingCompleted) redirect("/onboarding");
+
+  const adminClub =
+    user.role === "club_admin" ? await getUserAdminClub(user.id) : null;
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-3">
-        <Brand />
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-              {initial}
-            </span>
-            <span className="hidden text-sm font-medium sm:inline">
-              {user.name ?? user.email}
-            </span>
+    <div className="flex min-h-svh">
+      <DashboardSidebar
+        userName={user.name ?? user.email}
+        userEmail={user.email}
+        adminClubSlug={adminClub?.slug ?? null}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between gap-3 border-b px-4 py-2 sm:px-8">
+          <Brand className="inline-flex md:hidden" />
+          <div className="ml-auto flex items-center gap-2">
+            <SearchCommand />
+            <NotificationsBell />
           </div>
-          <LogoutButton />
-        </div>
-      </header>
-      <main className="flex-1 px-6 py-8">{children}</main>
+        </header>
+        <main className="flex-1 px-4 pt-6 pb-20 sm:px-8 md:pb-8">
+          {children}
+        </main>
+      </div>
+      <DashboardMobileTabs adminClubSlug={adminClub?.slug ?? null} />
     </div>
   );
 }

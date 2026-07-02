@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarDays, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
+import { CloudImage } from "@/components/features/images/cloud-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { ClubWithStats } from "@/server/queries/clubs";
@@ -9,9 +10,22 @@ export function ClubCard({ club }: { club: ClubWithStats }) {
   return (
     <Card className="flex flex-col overflow-hidden pt-0">
       {/* Cover + overlapping logo */}
-      <div className="relative h-28 bg-gradient-to-br from-primary to-emerald-950">
-        <div className="absolute -bottom-6 left-4 flex size-14 items-center justify-center rounded-full border-4 border-background bg-muted">
-          <Users className="size-6 text-primary" />
+      <div className="relative h-28">
+        <CloudImage
+          publicId={club.coverUrl}
+          size="cover"
+          alt={club.name}
+          fallback="club"
+          className="h-full w-full"
+        />
+        <div className="absolute -bottom-6 left-4 size-14 overflow-hidden rounded-full border-4 border-background bg-muted">
+          <CloudImage
+            publicId={club.logoUrl}
+            size="avatar"
+            alt={`${club.name} logo`}
+            fallback="club"
+            className="h-full w-full"
+          />
         </div>
       </div>
 
