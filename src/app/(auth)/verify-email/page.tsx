@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
+import { AuthCardShell } from "@/components/shared/auth-card-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -129,8 +130,10 @@ function VerifyEmail() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense>
-      <VerifyEmail />
-    </Suspense>
+    <AuthCardShell>
+      <Suspense>
+        <VerifyEmail />
+      </Suspense>
+    </AuthCardShell>
   );
 }

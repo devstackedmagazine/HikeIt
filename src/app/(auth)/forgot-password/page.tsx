@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { AuthCardShell } from "@/components/shared/auth-card-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +31,7 @@ import {
   forgotPasswordSchema,
 } from "@/lib/validations/auth";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
 
   const form = useForm<ForgotPasswordInput>({
@@ -127,5 +128,13 @@ export default function ForgotPasswordPage() {
         </Link>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <AuthCardShell>
+      <ForgotPasswordForm />
+    </AuthCardShell>
   );
 }

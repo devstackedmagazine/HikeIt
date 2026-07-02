@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { AuthCardShell } from "@/components/shared/auth-card-shell";
 import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -151,8 +152,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
+    <AuthCardShell>
+      <Suspense>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthCardShell>
   );
 }

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { AuthCardShell } from "@/components/shared/auth-card-shell";
 import { PasswordInput } from "@/components/shared/password-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -153,8 +154,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
+    <AuthCardShell>
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </AuthCardShell>
   );
 }

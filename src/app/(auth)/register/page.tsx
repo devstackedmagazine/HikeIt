@@ -1,52 +1,50 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Check, Eye, EyeOff, Globe, Loader2, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
-import { PasswordInput } from "@/components/shared/password-input";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { getPasswordStrength } from "@/lib/utils/password-strength";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
 
-const strengthMeta = {
-  weak: { label: "Weak · Dobët", bars: 1, color: "bg-destructive" },
-  medium: { label: "Medium · Mesatar", bars: 2, color: "bg-accent" },
-  strong: { label: "Strong · Fortë", bars: 3, color: "bg-primary" },
+const LEFT_FEATURES = [
+  "Zbulimi i shtigjeve",
+  "Anëtarësimi në klube",
+  "Statistikat e ngjitjeve",
+];
+
+const STRENGTH = {
+  weak: { filled: 1, color: "bg-danger" },
+  medium: { filled: 2, color: "bg-alert" },
+  strong: { filled: 4, color: "bg-moss" },
 } as const;
+
+const LABEL =
+  "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase";
+const INPUT =
+  "h-12 w-full border-[1.5px] border-forest/20 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/25 placeholder:italic focus:border-forest focus:outline-none";
 
 export default function RegisterPage() {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
+  const { register, handleSubmit, formState } = form;
+  const errors = formState.errors;
 
   const password = useWatch({ control: form.control, name: "password" });
   const strength = getPasswordStrength(password);
+  const strengthCfg = strength ? STRENGTH[strength] : null;
 
   async function onSubmit(values: RegisterInput) {
     setFormError(null);
@@ -55,175 +53,259 @@ export default function RegisterPage() {
       email: values.email,
       password: values.password,
     });
-
     if (error) {
-      setFormError(error.message ?? "Could not create your account.");
+      setFormError(error.message ?? "Nuk mundëm të krijojmë llogarinë.");
       return;
     }
     setSubmittedEmail(values.email);
   }
 
-  if (submittedEmail) {
-    return (
-      <Card>
-        <CardHeader className="items-center text-center">
-          <CheckCircle2 className="mb-2 size-10 text-primary" />
-          <CardTitle>Check your email</CardTitle>
-          <CardDescription>Kontrolloni email-in tuaj</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center text-sm text-muted-foreground">
-          We sent a verification link to{" "}
-          <span className="font-medium text-foreground">{submittedEmail}</span>.
-          Click it to activate your account.
-        </CardContent>
-        <CardFooter className="justify-center">
-          <Link
-            href="/login"
-            className="text-sm text-primary underline-offset-4 hover:underline"
-          >
-            Back to login
-          </Link>
-        </CardFooter>
-      </Card>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>
-          Join HikeIt · Bashkohu me HikeIt
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full name</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-9"
-                      placeholder="Arben Krasniqi"
-                      autoComplete="name"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-9"
-                      type="email"
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      className="h-9"
+    <div className="flex min-h-screen">
+      {/* LEFT PANEL */}
+      <div
+        className="relative hidden w-[45%] flex-col justify-between overflow-hidden p-10 md:flex"
+        style={{
+          background:
+            "linear-gradient(180deg, #0D1F14 0%, #1A3D2B 60%, #2D5F3F 100%)",
+        }}
+      >
+        {/* decorative mountains */}
+        <svg
+          aria-hidden
+          viewBox="0 0 400 400"
+          className="pointer-events-none absolute inset-x-0 bottom-1/4 m-auto w-[120%]"
+          fill="rgba(76,175,125,0.08)"
+        >
+          <polygon points="120,320 220,120 320,320" />
+          <polygon points="40,320 150,80 250,320" />
+        </svg>
+
+        <p className="font-heading relative z-10 text-[18px] font-extrabold text-summit uppercase">
+          HikeIt
+        </p>
+
+        <div className="relative z-10">
+          <h2 className="font-heading text-[clamp(40px,6vw,72px)] leading-[0.92] font-extrabold tracking-[-0.04em] text-summit uppercase">
+            Fillo
+            <br />
+            Udhëtimin
+            <br />
+            Tënd
+          </h2>
+          <ul className="mt-8 space-y-3">
+            {LEFT_FEATURES.map((f) => (
+              <li key={f} className="flex items-center gap-3">
+                <span className="flex size-4 shrink-0 items-center justify-center border-[1.5px] border-moss">
+                  <Check className="size-3 text-moss" strokeWidth={3} />
+                </span>
+                <span className="text-[12px] font-bold tracking-[0.08em] text-summit/75 uppercase">
+                  {f}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="flex w-full flex-col justify-center bg-summit px-6 py-10 md:w-[55%] md:px-16">
+        <p className="font-heading mb-8 text-[18px] font-extrabold text-forest uppercase md:hidden">
+          HikeIt
+        </p>
+
+        <div className="w-full max-w-[440px]">
+          {submittedEmail ? (
+            <div className="border-[1.5px] border-moss/40 bg-moss/[0.08] p-6">
+              <p className="font-heading mb-2 text-lg font-extrabold text-forest uppercase">
+                Llogaria u krijua!
+              </p>
+              <p className="text-sm leading-[1.6] text-forest/60">
+                Kemi dërguar email verifikimi në{" "}
+                <span className="font-semibold text-forest">
+                  {submittedEmail}
+                </span>
+                . Kliko lidhjen për të aktivizuar llogarinë.
+              </p>
+            </div>
+          ) : (
+            <>
+              <h1 className="font-heading text-[clamp(28px,4vw,40px)] leading-none font-extrabold tracking-[-0.03em] text-forest uppercase">
+                Regjistrohu
+              </h1>
+              <p className="mt-3 mb-8 text-[14px] leading-[1.5] text-forest/55">
+                Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
+                Ballkan.
+              </p>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className={LABEL}>Emri dhe mbiemri</label>
+                  <input
+                    className={INPUT}
+                    placeholder="Shkruaj emrin tënd..."
+                    autoComplete="name"
+                    {...register("name")}
+                  />
+                  {errors.name ? (
+                    <p className="mt-1 text-xs text-danger">
+                      {errors.name.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className={LABEL}>Email</label>
+                  <input
+                    className={INPUT}
+                    type="email"
+                    placeholder="adresa@email.com"
+                    autoComplete="email"
+                    {...register("email")}
+                  />
+                  {errors.email ? (
+                    <p className="mt-1 text-xs text-danger">
+                      {errors.email.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className={LABEL}>Fjalëkalimi</label>
+                  <div className="relative">
+                    <input
+                      className={cn(INPUT, "pr-12")}
+                      type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      {...field}
+                      {...register("password")}
                     />
-                  </FormControl>
-                  {strength ? (
-                    <div className="space-y-1">
-                      <div className="flex gap-1">
-                        {[1, 2, 3].map((bar) => (
-                          <div
-                            key={bar}
-                            className={cn(
-                              "h-1 flex-1 rounded-full",
-                              bar <= strengthMeta[strength].bars
-                                ? strengthMeta[strength].color
-                                : "bg-muted",
-                            )}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {strengthMeta[strength].label}
-                      </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label="Shfaq fjalëkalimin"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-forest/40 hover:text-forest"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  {strengthCfg ? (
+                    <div className="mt-2 flex gap-[3px]">
+                      {[0, 1, 2, 3].map((i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            "h-[3px] flex-1",
+                            i < strengthCfg.filled
+                              ? strengthCfg.color
+                              : "bg-forest/10",
+                          )}
+                        />
+                      ))}
                     </div>
                   ) : null}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm password</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      className="h-9"
+                  {errors.password ? (
+                    <p className="mt-1 text-xs text-danger">
+                      {errors.password.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label className={LABEL}>Konfirmo fjalëkalimin</label>
+                  <div className="relative">
+                    <input
+                      className={cn(INPUT, "pr-12")}
+                      type={showConfirm ? "text" : "password"}
                       autoComplete="new-password"
-                      {...field}
+                      {...register("confirmPassword")}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((v) => !v)}
+                      aria-label="Shfaq konfirmimin"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-forest/40 hover:text-forest"
+                    >
+                      {showConfirm ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.confirmPassword ? (
+                    <p className="mt-1 text-xs text-danger">
+                      {errors.confirmPassword.message}
+                    </p>
+                  ) : null}
+                </div>
 
-            {formError ? (
-              <p className="text-sm text-destructive">{formError}</p>
-            ) : null}
+                <label className="flex items-center gap-2.5 text-[13px] text-forest/70">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "flex size-4 shrink-0 items-center justify-center border-[1.5px]",
+                      acceptedTerms
+                        ? "border-forest bg-forest"
+                        : "border-forest/30",
+                    )}
+                  >
+                    {acceptedTerms ? (
+                      <Check className="size-3 text-summit" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span>
+                    Pranoj{" "}
+                    <Link href="/terms" className="text-forest underline">
+                      Kushtet e Përdorimit
+                    </Link>
+                  </span>
+                </label>
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" />
-                  Creating account…
-                </>
-              ) : (
-                "Create account"
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-primary underline-offset-4 hover:underline"
-          >
-            Log in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+                {formError ? (
+                  <p className="text-sm text-danger">{formError}</p>
+                ) : null}
+
+                <button
+                  type="submit"
+                  disabled={formState.isSubmitting || !acceptedTerms}
+                  className="font-heading flex h-13 w-full items-center justify-center gap-2 bg-forest text-[14px] font-extrabold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-abyss disabled:opacity-50"
+                >
+                  {formState.isSubmitting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
+                  Regjistrohu →
+                </button>
+              </form>
+
+              <div className="mt-6 border-t border-forest/10 pt-5">
+                <p className="text-center text-[13px] text-forest/55">
+                  Keni llogari?{" "}
+                  <Link href="/login" className="font-bold text-forest">
+                    KYÇU
+                  </Link>
+                </p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <span className="flex size-9 items-center justify-center border border-forest/20 text-forest/50">
+                    <Globe className="size-4" />
+                  </span>
+                  <span className="flex size-9 items-center justify-center border border-forest/20 text-forest/50">
+                    <Share2 className="size-4" />
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
