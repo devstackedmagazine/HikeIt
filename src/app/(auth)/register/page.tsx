@@ -8,7 +8,6 @@ import { useForm, useWatch } from "react-hook-form";
 
 import { signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
-import { getPasswordStrength } from "@/lib/utils/password-strength";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
@@ -17,11 +16,22 @@ const LEFT_FEATURES = [
   "Statistikat e ngjitjeve",
 ];
 
-const STRENGTH = {
-  weak: { filled: 1, color: "bg-danger" },
-  medium: { filled: 2, color: "bg-alert" },
-  strong: { filled: 4, color: "bg-moss" },
-} as const;
+/** 0–4 password strength score for the 4-segment meter. */
+function scorePassword(pw: string): number {
+  if (!pw) return 0;
+  let s = 0;
+  if (pw.length >= 6) s++;
+  if (pw.length >= 10) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
+}
+
+function strengthColor(score: number): string {
+  if (score <= 2) return "bg-danger";
+  if (score === 3) return "bg-alert";
+  return "bg-moss";
+}
 
 const LABEL =
   "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase";
@@ -43,11 +53,14 @@ export default function RegisterPage() {
   const errors = formState.errors;
 
   const password = useWatch({ control: form.control, name: "password" });
-  const strength = getPasswordStrength(password);
-  const strengthCfg = strength ? STRENGTH[strength] : null;
+  const strengthScore = scorePassword(password);
 
   async function onSubmit(values: RegisterInput) {
     setFormError(null);
+    if (!acceptedTerms) {
+      setFormError("Ju lutem pranoni Kushtet e Përdorimit.");
+      return;
+    }
     const { error } = await signUp.email({
       name: values.name,
       email: values.email,
@@ -70,16 +83,17 @@ export default function RegisterPage() {
             "linear-gradient(180deg, #0D1F14 0%, #1A3D2B 60%, #2D5F3F 100%)",
         }}
       >
-        {/* decorative mountains */}
-        <svg
-          aria-hidden
-          viewBox="0 0 400 400"
-          className="pointer-events-none absolute inset-x-0 bottom-1/4 m-auto w-[120%]"
-          fill="rgba(76,175,125,0.08)"
-        >
-          <polygon points="120,320 220,120 320,320" />
-          <polygon points="40,320 150,80 250,320" />
-        </svg>
+        {/* Geometric mountains from /public/auth/registerGeos.svg */}
+        <div className="pointer-events-none absolute inset-0 select-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/auth/registerGeos.svg"
+            alt=""
+            aria-hidden
+            className="h-full w-full object-cover"
+            style={{ opacity: 0.18 }}
+          />
+        </div>
 
         <p className="font-heading relative z-10 text-[18px] font-extrabold text-summit uppercase">
           HikeIt
@@ -192,15 +206,15 @@ export default function RegisterPage() {
                       )}
                     </button>
                   </div>
-                  {strengthCfg ? (
+                  {password ? (
                     <div className="mt-2 flex gap-[3px]">
-                      {[0, 1, 2, 3].map((i) => (
+                      {[1, 2, 3, 4].map((seg) => (
                         <span
-                          key={i}
+                          key={seg}
                           className={cn(
-                            "h-[3px] flex-1",
-                            i < strengthCfg.filled
-                              ? strengthCfg.color
+                            "h-[3px] flex-1 transition-colors",
+                            seg <= strengthScore
+                              ? strengthColor(strengthScore)
                               : "bg-forest/10",
                           )}
                         />
@@ -276,7 +290,7 @@ export default function RegisterPage() {
 
                 <button
                   type="submit"
-                  disabled={formState.isSubmitting || !acceptedTerms}
+                  disabled={formState.isSubmitting}
                   className="font-heading flex h-13 w-full items-center justify-center gap-2 bg-forest text-[14px] font-extrabold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-abyss disabled:opacity-50"
                 >
                   {formState.isSubmitting ? (
