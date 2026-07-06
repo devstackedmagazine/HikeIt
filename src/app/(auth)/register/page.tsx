@@ -36,7 +36,7 @@ function strengthColor(score: number): string {
 const LABEL =
   "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase";
 const INPUT =
-  "h-12 w-full border-[1.5px] border-forest/20 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/25 placeholder:italic focus:border-forest focus:outline-none";
+  "h-12 md:h-10 w-full border-[1.5px] border-forest/20 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/25 placeholder:italic focus:border-forest focus:outline-none";
 
 export default function RegisterPage() {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export default function RegisterPage() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex w-full flex-col justify-center bg-summit px-6 py-10 md:w-[55%] md:px-16">
+      <div className="flex w-full flex-col justify-center bg-summit px-6 py-10 md:w-[55%] md:px-16 md:py-7">
         <p className="font-heading mb-8 text-[18px] font-extrabold text-forest uppercase md:hidden">
           HikeIt
         </p>
@@ -147,12 +147,15 @@ export default function RegisterPage() {
               <h1 className="font-heading text-[clamp(28px,4vw,40px)] leading-none font-extrabold tracking-[-0.03em] text-forest uppercase">
                 Regjistrohu
               </h1>
-              <p className="mt-3 mb-8 text-[14px] leading-[1.5] text-forest/55">
+              <p className="mt-3 mb-8 text-[14px] leading-[1.5] text-forest/55 md:mt-2 md:mb-4">
                 Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
                 Ballkan.
               </p>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4 md:space-y-2.5"
+              >
                 <div>
                   <label className={LABEL}>Emri dhe mbiemri</label>
                   <input
@@ -291,7 +294,7 @@ export default function RegisterPage() {
                 <button
                   type="submit"
                   disabled={formState.isSubmitting}
-                  className="font-heading flex h-13 w-full items-center justify-center gap-2 bg-forest text-[14px] font-extrabold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-abyss disabled:opacity-50"
+                  className="font-heading flex h-13 w-full items-center justify-center gap-2 bg-forest text-[14px] font-extrabold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-abyss disabled:opacity-50 md:h-11"
                 >
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -300,7 +303,7 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <div className="mt-6 border-t border-forest/10 pt-5">
+              <div className="mt-6 border-t border-forest/10 pt-5 md:mt-3 md:pt-4">
                 <p className="text-center text-[13px] text-forest/55">
                   Keni llogari?{" "}
                   <Link href="/login" className="font-bold text-forest">
