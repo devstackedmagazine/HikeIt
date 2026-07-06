@@ -19,6 +19,7 @@
   --forest: #1a3d2b;
   --pine: #2d5f3f;
   --moss: #4caf7d;
+  --sage:#A9D0B6;
   --mist: #e8f5ed;
   --summit: #fafff9;
   --sunset: #e87a30;
@@ -78,6 +79,7 @@
   --color-forest: var(--forest);
   --color-pine: var(--pine);
   --color-moss: var(--moss);
+  --color-sage: var(--sage);
   --color-mist: var(--mist);
   --color-summit: var(--summit);
   --color-sunset: var(--sunset);

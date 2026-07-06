@@ -95,12 +95,15 @@ export default function RegisterPage() {
           />
         </div>
 
-        <p className="font-heading relative z-10 text-[18px] font-extrabold text-summit uppercase">
+        <Link
+          href="/"
+          className="font-heading text-summit relative z-10 text-[18px] font-extrabold uppercase"
+        >
           HikeIt
-        </p>
+        </Link>
 
         <div className="relative z-10">
-          <h2 className="font-heading text-[clamp(40px,6vw,72px)] leading-[0.92] font-extrabold tracking-[-0.04em] text-summit uppercase">
+          <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[0.92] font-extrabold tracking-[-0.04em] uppercase">
             Fillo
             <br />
             Udhëtimin
@@ -110,10 +113,10 @@ export default function RegisterPage() {
           <ul className="mt-8 space-y-3">
             {LEFT_FEATURES.map((f) => (
               <li key={f} className="flex items-center gap-3">
-                <span className="flex size-4 shrink-0 items-center justify-center border-[1.5px] border-moss">
-                  <Check className="size-3 text-moss" strokeWidth={3} />
+                <span className="border-moss flex size-4 shrink-0 items-center justify-center border-[1.5px]">
+                  <Check className="text-moss size-3" strokeWidth={3} />
                 </span>
-                <span className="text-[12px] font-bold tracking-[0.08em] text-summit/75 uppercase">
+                <span className="text-summit/75 text-[12px] font-bold tracking-[0.08em] uppercase">
                   {f}
                 </span>
               </li>
@@ -123,20 +126,20 @@ export default function RegisterPage() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex w-full flex-col justify-center bg-summit px-6 py-10 md:w-[55%] md:px-16 md:py-7">
-        <p className="font-heading mb-8 text-[18px] font-extrabold text-forest uppercase md:hidden">
+      <div className="bg-summit flex w-full flex-col justify-center px-6 py-10 md:w-[55%] md:px-16 md:py-7">
+        <p className="font-heading text-forest mb-8 text-[18px] font-extrabold uppercase md:hidden">
           HikeIt
         </p>
 
         <div className="w-full max-w-[440px]">
           {submittedEmail ? (
-            <div className="border-[1.5px] border-moss/40 bg-moss/[0.08] p-6">
-              <p className="font-heading mb-2 text-lg font-extrabold text-forest uppercase">
+            <div className="border-moss/40 bg-moss/[0.08] border-[1.5px] p-6">
+              <p className="font-heading text-forest mb-2 text-lg font-extrabold uppercase">
                 Llogaria u krijua!
               </p>
-              <p className="text-sm leading-[1.6] text-forest/60">
+              <p className="text-forest/60 text-sm leading-[1.6]">
                 Kemi dërguar email verifikimi në{" "}
-                <span className="font-semibold text-forest">
+                <span className="text-forest font-semibold">
                   {submittedEmail}
                 </span>
                 . Kliko lidhjen për të aktivizuar llogarinë.
@@ -144,10 +147,10 @@ export default function RegisterPage() {
             </div>
           ) : (
             <>
-              <h1 className="font-heading text-[clamp(28px,4vw,40px)] leading-none font-extrabold tracking-[-0.03em] text-forest uppercase">
+              <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
                 Regjistrohu
               </h1>
-              <p className="mt-3 mb-8 text-[14px] leading-[1.5] text-forest/55 md:mt-2 md:mb-4">
+              <p className="text-forest/55 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
                 Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
                 Ballkan.
               </p>
@@ -165,7 +168,7 @@ export default function RegisterPage() {
                     {...register("name")}
                   />
                   {errors.name ? (
-                    <p className="mt-1 text-xs text-danger">
+                    <p className="text-danger mt-1 text-xs">
                       {errors.name.message}
                     </p>
                   ) : null}
@@ -181,7 +184,7 @@ export default function RegisterPage() {
                     {...register("email")}
                   />
                   {errors.email ? (
-                    <p className="mt-1 text-xs text-danger">
+                    <p className="text-danger mt-1 text-xs">
                       {errors.email.message}
                     </p>
                   ) : null}
@@ -200,7 +203,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label="Shfaq fjalëkalimin"
-                      className="absolute top-1/2 right-3 -translate-y-1/2 text-forest/40 hover:text-forest"
+                      className="text-forest/40 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showPassword ? (
                         <EyeOff className="size-4" />
@@ -225,7 +228,7 @@ export default function RegisterPage() {
                     </div>
                   ) : null}
                   {errors.password ? (
-                    <p className="mt-1 text-xs text-danger">
+                    <p className="text-danger mt-1 text-xs">
                       {errors.password.message}
                     </p>
                   ) : null}
@@ -244,7 +247,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
                       aria-label="Shfaq konfirmimin"
-                      className="absolute top-1/2 right-3 -translate-y-1/2 text-forest/40 hover:text-forest"
+                      className="text-forest/40 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showConfirm ? (
                         <EyeOff className="size-4" />
@@ -254,13 +257,13 @@ export default function RegisterPage() {
                     </button>
                   </div>
                   {errors.confirmPassword ? (
-                    <p className="mt-1 text-xs text-danger">
+                    <p className="text-danger mt-1 text-xs">
                       {errors.confirmPassword.message}
                     </p>
                   ) : null}
                 </div>
 
-                <label className="flex items-center gap-2.5 text-[13px] text-forest/70">
+                <label className="text-forest/70 flex items-center gap-2.5 text-[13px]">
                   <input
                     type="checkbox"
                     checked={acceptedTerms}
@@ -276,7 +279,7 @@ export default function RegisterPage() {
                     )}
                   >
                     {acceptedTerms ? (
-                      <Check className="size-3 text-summit" strokeWidth={3} />
+                      <Check className="text-summit size-3" strokeWidth={3} />
                     ) : null}
                   </span>
                   <span>
@@ -288,13 +291,13 @@ export default function RegisterPage() {
                 </label>
 
                 {formError ? (
-                  <p className="text-sm text-danger">{formError}</p>
+                  <p className="text-danger text-sm">{formError}</p>
                 ) : null}
 
                 <button
                   type="submit"
                   disabled={formState.isSubmitting}
-                  className="font-heading flex h-13 w-full items-center justify-center gap-2 bg-forest text-[14px] font-extrabold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-abyss disabled:opacity-50 md:h-11"
+                  className="font-heading bg-forest text-summit hover:bg-abyss flex h-13 w-full items-center justify-center gap-2 text-[14px] font-extrabold tracking-[0.04em] uppercase transition-colors disabled:opacity-50 md:h-11"
                 >
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -303,18 +306,18 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <div className="mt-6 border-t border-forest/10 pt-5 md:mt-3 md:pt-4">
-                <p className="text-center text-[13px] text-forest/55">
+              <div className="border-forest/10 mt-6 border-t pt-5 md:mt-3 md:pt-4">
+                <p className="text-forest/55 text-center text-[13px]">
                   Keni llogari?{" "}
-                  <Link href="/login" className="font-bold text-forest">
+                  <Link href="/login" className="text-forest font-bold">
                     KYÇU
                   </Link>
                 </p>
                 <div className="mt-4 flex justify-center gap-2">
-                  <span className="flex size-9 items-center justify-center border border-forest/20 text-forest/50">
+                  <span className="border-forest/20 text-forest/50 flex size-9 items-center justify-center border">
                     <Globe className="size-4" />
                   </span>
-                  <span className="flex size-9 items-center justify-center border border-forest/20 text-forest/50">
+                  <span className="border-forest/20 text-forest/50 flex size-9 items-center justify-center border">
                     <Share2 className="size-4" />
                   </span>
                 </div>

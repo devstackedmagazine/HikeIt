@@ -59,7 +59,7 @@ const FEATURES = [
   },
   {
     icon: CloudLightning,
-    title: "Alerts Moti",
+    title: "Njoftime Moti",
     description:
       "Paralajmërime automatike përpara kushteve të rrezikshme në mal.",
   },
@@ -115,14 +115,14 @@ export default function LandingPage() {
           className="from-abyss/70 via-abyss/30 absolute inset-0 bg-gradient-to-r to-transparent"
         />
 
-        <div className="relative z-10 max-w-[650px] px-6 pt-20 pb-40 sm:px-10 sm:pt-20">
-          <p className="text-moss mb-5 text-[11px] font-bold tracking-[0.15em] uppercase">
+        <div className="relative z-10 max-w-[650px] sm:px-10 sm:pt-20 px-6 !pt-10 pb-20">
+          <p className="text-sage mb-5 text-[11px] font-bold tracking-[0.15em] uppercase">
             🇽🇰 Kosovo · Ballkan · Alpet
           </p>
           <h1 className="text-summit mb-6 text-[clamp(52px,7vw,88px)] leading-[0.92] font-extrabold tracking-[-0.04em] uppercase">
             Zbulo.
             <br />
-            <span className="text-moss">Ngjit.</span>
+            <span className="text-sage">Ngjit.</span>
             <br />
             Gjej Paqen.
           </h1>
@@ -131,16 +131,19 @@ export default function LandingPage() {
             verifikuara, bashkohuni me klubet më aktive dhe eksploroni natyrën e
             egër si kurrë më parë.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-4">
+            {/* Butoni i parë: Fillo Falas */}
             <Link
               href="/register"
-              className="border-summit text-summit hover:bg-summit/10 border px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] uppercase transition-colors"
+              className="flex items-center gap-2 bg-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-[var(--abyss)] uppercase transition-all hover:opacity-90"
             >
-              Fillo Falas →
+              Fillo Falas <span>→</span>
             </Link>
+
+            {/* Butoni i dytë: Shfleto Shtigjet */}
             <Link
               href="/trails"
-              className="border-summit/35 text-summit/70 hover:border-summit/60 border px-7 py-3.5 text-[13px] font-semibold tracking-[0.08em] uppercase transition-colors"
+              className="border border-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-sage uppercase transition-colors hover:bg-[var(--sage)]/10"
             >
               Shfleto Shtigjet
             </Link>
@@ -152,7 +155,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap gap-x-20 gap-y-6">
             {STATS.map((stat) => (
               <div key={stat.label}>
-                <p className="font-heading text-moss text-[42px] leading-none font-extrabold tracking-[-0.02em]">
+                <p className="font-heading text-sage text-[42px] leading-none font-extrabold tracking-[-0.02em]">
                   {stat.value}
                 </p>
                 <p className="text-summit/50 mt-1 text-[10px] font-semibold tracking-[0.12em] uppercase">
@@ -165,8 +168,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ────────────────────────────────────────────────── */}
-      <section className="border-moss/25 bg-forest border-b px-6 py-20 sm:px-20">
-        <p className="text-moss mb-4 text-[11px] font-bold tracking-[0.15em] uppercase">
+      <section className="border-sage/25 bg-forest border-b px-6 py-20 sm:px-20">
+        <p className="text-sage mb-4 text-[11px] font-bold tracking-[0.15em] uppercase">
           Si Funksionon
         </p>
         <h2 className="text-summit mb-14 text-[clamp(32px,4vw,48px)] font-extrabold tracking-[-0.03em] uppercase">
@@ -177,13 +180,13 @@ export default function LandingPage() {
           {STEPS.map((step) => (
             <div
               key={step.number}
-              className="border-summit/12 bg-summit/[0.04] relative overflow-hidden border p-8"
+              className="border-summit/12 bg-summit/[0.04] relative border p-8"
             >
-              <span className="font-heading text-moss/[0.12] pointer-events-none absolute top-4 left-6 z-0 text-[96px] leading-none font-extrabold">
+              <span className="font-heading text-sage/[0.12] pointer-events-none absolute -top-10 -left-4 z-0 text-[96px] leading-none font-extrabold">
                 {step.number}
               </span>
               <div className="relative z-10">
-                <span className="bg-moss/[0.12] text-moss mb-5 inline-flex p-2.5">
+                <span className="bg-sage/[0.12] text-sage mb-5 inline-flex p-2.5">
                   <step.icon className="size-7" />
                 </span>
                 <h3 className="text-summit mb-3 text-base font-extrabold tracking-[0.02em] uppercase">
@@ -199,14 +202,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ────────────────────────────────────────────────────── */}
-      <section className="border-moss/20 bg-abyss border-b px-6 py-20 sm:px-20">
+      <section className="border-sage/20 bg-abyss border-b px-6 py-20 sm:px-20">
         <div className="grid gap-6 md:grid-cols-3">
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
               className="border-summit/10 bg-summit/[0.03] flex min-h-[280px] flex-col border px-8 py-10"
             >
-              <span className="bg-moss/10 text-moss mb-6 inline-flex w-fit p-2.5">
+              <span className="bg-sage/10 text-sage mb-6 inline-flex w-fit p-2.5">
                 <feature.icon className="size-7" />
               </span>
               <h3 className="text-summit mb-3.5 text-[15px] font-extrabold tracking-[0.04em] uppercase">
@@ -215,7 +218,7 @@ export default function LandingPage() {
               <p className="text-summit/50 mb-6 text-[13px] leading-[1.7] font-normal">
                 {feature.description}
               </p>
-              <span aria-hidden className="bg-moss mt-auto block h-0.5 w-8" />
+              <span aria-hidden className="bg-sage mt-auto block h-0.5 w-8" />
             </div>
           ))}
         </div>
@@ -231,9 +234,9 @@ export default function LandingPage() {
             <div className="flex flex-col gap-6">
               {CLUB_BENEFITS.map((benefit) => (
                 <div key={benefit.title} className="flex items-start gap-3.5">
-                  <CheckCircle2 className="text-moss mt-0.5 size-[18px] shrink-0" />
+                  <CheckCircle2 className="text-sage mt-0.5 size-[18px] shrink-0" />
                   <div>
-                    <p className="text-moss mb-1 text-xs font-bold tracking-[0.1em] uppercase">
+                    <p className="text-sage mb-1 text-xs font-bold tracking-[0.1em] uppercase">
                       {benefit.title}
                     </p>
                     <p className="text-summit/60 text-[13px] leading-[1.6] font-normal">
@@ -246,7 +249,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-summit/15 bg-summit/[0.04] border p-10 text-center">
-            <span className="bg-moss/10 text-moss mx-auto mb-6 inline-flex p-3.5">
+            <span className="bg-sage/10 text-sage mx-auto mb-6 inline-flex p-3.5">
               <Building2 className="size-8" />
             </span>
             <h3 className="text-summit mb-3 text-xl font-extrabold tracking-[-0.01em] uppercase">
@@ -258,7 +261,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/register?type=club"
-              className="border-summit/40 text-summit hover:border-moss hover:text-moss block w-full border px-7 py-3.5 text-xs font-bold tracking-[0.1em] uppercase transition-colors"
+              className="border-summit/40 text-summit hover:border-sage hover:text-sage block w-full border px-7 py-3.5 text-xs font-bold tracking-[0.1em] uppercase transition-colors"
             >
               Regjistro Klubin →
             </Link>

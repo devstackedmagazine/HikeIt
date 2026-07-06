@@ -38,7 +38,7 @@ export default function AboutPage() {
         </p>
         <p>
           HikeIt e ndryshon këtë: një vend i vetëm ku zbulon shtigje, bashkohesh
-          me klube dhe rezervon udhëtime — me siguri, alerts moti dhe një
+          me klube dhe rezervon udhëtime — me siguri, njoftime moti dhe një
           komunitet që rritet bashkë.
         </p>
       </div>

@@ -60,14 +60,14 @@ export default async function MarketingLayout({
   const isLoggedIn = !!session;
 
   return (
-    <div className="flex min-h-svh flex-col bg-abyss">
+    <div className="bg-abyss flex min-h-svh flex-col">
       {/* Navbar — opaque Abyss, sticky (not fixed) so it never overlaps the
           content of inner marketing pages. */}
-      <header className="sticky top-0 z-50 h-14 border-b border-summit/10 bg-abyss">
+      <header className="border-summit/10 bg-abyss sticky top-0 z-50 h-16 border-b">
         <div className="flex h-full items-center justify-between px-6 sm:px-8">
           <Link
             href="/"
-            className="font-heading text-xl font-extrabold tracking-[-0.01em] text-moss"
+            className="font-heading text-sage text-xl font-extrabold tracking-[-0.01em]"
           >
             HIKEIT
           </Link>
@@ -78,7 +78,7 @@ export default async function MarketingLayout({
             {isLoggedIn ? (
               <Link
                 href="/dashboard"
-                className="border border-summit/50 px-5 py-2 text-xs font-bold tracking-[0.08em] text-summit uppercase transition-colors hover:border-moss hover:text-moss"
+                className="border-summit/50 text-summit hover:border-sage hover:text-sage border px-5 py-2 text-xs font-bold tracking-[0.08em] uppercase transition-colors"
               >
                 Paneli →
               </Link>
@@ -86,13 +86,13 @@ export default async function MarketingLayout({
               <>
                 <Link
                   href="/login"
-                  className="text-[13px] font-medium tracking-[0.05em] text-summit/60 uppercase transition-colors hover:text-summit"
+                  className="text-sage hover:text-summit flex items-center text-[13px] font-bold tracking-[0.08em] uppercase transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="border border-summit/50 px-5 py-2 text-xs font-bold tracking-[0.08em] text-summit uppercase transition-colors hover:border-moss hover:text-moss"
+                  className="bg-sage text-abyss flex items-center px-6 py-2.5 text-[13px] font-bold tracking-[0.08em] uppercase transition-all hover:opacity-90"
                 >
                   Signup
                 </Link>
@@ -110,10 +110,10 @@ export default async function MarketingLayout({
       <footer className="bg-abyss px-6 pt-[60px] sm:px-20">
         <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-heading text-[22px] font-extrabold tracking-[-0.01em] text-moss">
+            <p className="font-heading text-sage text-[22px] font-extrabold tracking-[-0.01em]">
               HIKEIT
             </p>
-            <p className="mt-3.5 max-w-[260px] text-[13px] leading-[1.65] text-summit/45">
+            <p className="text-summit/45 mt-3.5 max-w-[260px] text-[13px] leading-[1.65]">
               Eksploroni egërsinë. Mbroni malet. Zhvilloni komunitetin.
             </p>
             <div className="mt-6 flex gap-2.5">
@@ -122,7 +122,7 @@ export default async function MarketingLayout({
                   key={social.label}
                   href={social.href}
                   aria-label={social.label}
-                  className="flex size-9 items-center justify-center border border-summit/12 bg-summit/[0.06] text-[11px] font-bold text-summit/50 transition-colors hover:border-moss/40 hover:text-moss"
+                  className="border-summit/12 bg-summit/[0.06] text-summit/50 hover:border-sage/40 hover:text-sage flex size-9 items-center justify-center border text-[11px] font-bold transition-colors"
                 >
                   {social.icon}
                 </a>
@@ -132,7 +132,7 @@ export default async function MarketingLayout({
 
           {FOOTER_COLUMNS.map((column) => (
             <div key={column.heading}>
-              <h3 className="mb-5 text-[11px] font-bold tracking-[0.12em] text-summit/35 uppercase">
+              <h3 className="text-summit/35 mb-5 text-[11px] font-bold tracking-[0.12em] uppercase">
                 {column.heading}
               </h3>
               <ul className="space-y-3">
@@ -140,7 +140,7 @@ export default async function MarketingLayout({
                   <li key={`${column.heading}-${link.label}`}>
                     <Link
                       href={link.href}
-                      className="text-[13px] text-summit/55 transition-colors hover:text-moss"
+                      className="text-summit/55 hover:text-sage text-[13px] transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -151,13 +151,13 @@ export default async function MarketingLayout({
           ))}
         </div>
 
-        <div className="mt-12 flex items-center justify-between border-t border-summit/[0.08] py-5">
-          <span className="text-[11px] font-medium tracking-[0.1em] text-summit/30 uppercase">
+        <div className="border-summit/[0.08] mt-12 flex items-center justify-between border-t py-5">
+          <span className="text-summit/30 text-[11px] font-medium tracking-[0.1em] uppercase">
             © 2024 HIKEIT. EXPLORE THE WILD.
           </span>
           <Link
             href="/register"
-            className="text-[11px] font-bold tracking-[0.1em] text-summit/30 uppercase transition-colors hover:text-moss"
+            className="text-summit/30 hover:text-sage text-[11px] font-bold tracking-[0.1em] uppercase transition-colors"
           >
             DREJT MAJAVE →
           </Link>

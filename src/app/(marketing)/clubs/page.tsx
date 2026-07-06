@@ -36,11 +36,11 @@ export default async function ClubsPage({
   return (
     <>
       {/* Header (light mint) */}
-      <section className="bg-mist px-6 pt-10 pb-9 sm:px-10">
-        <p className="mb-2.5 text-[10px] font-bold tracking-[0.15em] text-pine uppercase">
+      <section className="bg-mist h-96 px-6 pt-10 pb-9 sm:px-10">
+        <p className="text-pine mb-2.5 text-[10px] font-bold tracking-[0.15em] uppercase">
           Komuniteti
         </p>
-        <h1 className="font-heading mb-3.5 text-[clamp(28px,4vw,44px)] leading-none font-extrabold tracking-[-0.03em] text-abyss uppercase">
+        <h1 className="font-heading text-abyss mb-3.5 text-[clamp(28px,4vw,44px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
           Klubet e Alpinizmit
         </h1>
         <p className="mb-7 max-w-[440px] text-[13px] leading-[1.65] text-[#3D5A47]">
@@ -51,15 +51,15 @@ export default async function ClubsPage({
       </section>
 
       {/* City filter band (dark forest) */}
-      <div className="flex h-12 items-center bg-forest px-6 sm:px-10">
+      <div className="bg-forest flex h-20 items-center px-6 sm:px-10">
         <ClubCityTabs />
       </div>
 
       {/* Cards grid (light mint) */}
       <section className="bg-mist px-6 pt-8 pb-10 sm:px-10">
         {clubs.length === 0 ? (
-          <div className="border border-forest/15 bg-summit px-6 py-12 text-center">
-            <p className="font-heading text-base font-extrabold text-abyss uppercase">
+          <div className="border-forest/15 bg-summit border px-6 py-12 text-center">
+            <p className="font-heading text-abyss text-base font-extrabold uppercase">
               Asnjë klub nuk u gjet
             </p>
             <p className="mt-2 text-xs text-[#3D5A47]">
@@ -77,16 +77,17 @@ export default async function ClubsPage({
 
       {/* CTA (dark forest) */}
       <section className="bg-forest px-6 py-[60px] text-center sm:px-10">
-        <h2 className="font-heading mb-4 text-[clamp(28px,4vw,44px)] font-extrabold tracking-[-0.03em] text-summit uppercase">
+        <h2 className="font-heading text-summit mb-4 text-[clamp(28px,4vw,44px)] font-extrabold tracking-[-0.03em] uppercase">
           A keni një klub?
         </h2>
-        <p className="mx-auto mb-7 max-w-[420px] text-sm leading-[1.65] text-summit/60">
-          Regjistroni klubin tuaj në platformën <span className="text-moss">HikeIt</span> dhe
-          rritni komunitetin tuaj të alpinizmit sot.
+        <p className="text-summit/60 mx-auto mb-7 max-w-[420px] text-sm leading-[1.65]">
+          Regjistroni klubin tuaj në platformën{" "}
+          <span className="text-moss">HikeIt</span> dhe rritni komunitetin tuaj
+          të alpinizmit sot.
         </p>
         <Link
           href="/dashboard/club/create"
-          className="inline-block border border-moss px-7 py-3 text-xs font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:bg-moss/15"
+          className="border-moss text-moss hover:bg-moss/15 inline-block border px-7 py-3 text-xs font-bold tracking-[0.1em] uppercase transition-colors"
         >
           Shto Klubin Tënd
         </Link>

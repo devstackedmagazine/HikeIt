@@ -16,7 +16,7 @@ export function ClubSearch() {
   });
 
   return (
-    <div className="flex h-11 w-full max-w-[380px] items-center gap-2.5 border border-forest/20 bg-summit px-3.5 focus-within:border-forest/50">
+    <div className="flex h-16 w-full max-w-[500px] items-center gap-2.5 border border-forest/20 bg-summit px-3.5 focus-within:border-forest/50">
       <input
         type="search"
         aria-label="Kërko klubet"
@@ -40,7 +40,7 @@ export function ClubCityTabs() {
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1 h-20">
       <CityTab
         label="Të gjitha"
         active={filters.city === ""}
