@@ -78,6 +78,13 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
   },
 
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
+
   user: {
     fields: {
       // Better Auth's `image` field lives in our `avatar_url` column.

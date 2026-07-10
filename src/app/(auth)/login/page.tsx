@@ -66,6 +66,10 @@ function LoginForm() {
     router.refresh();
   }
 
+  async function handleGoogleSignIn() {
+    await signIn.social({ provider: "google", callbackURL: redirectTo });
+  }
+
   return (
     <div className="flex min-h-screen">
       {/* LEFT PANEL */}
@@ -221,7 +225,7 @@ function LoginForm() {
           <div className="mb-5 flex gap-2.5">
             <button
               type="button"
-              onClick={() => setSocialNote("Së shpejti disponueshëm.")}
+              onClick={handleGoogleSignIn}
               className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Google

@@ -1,12 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Eye, EyeOff, Globe, Loader2, Share2 } from "lucide-react";
+import { Check, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
-import { signUp } from "@/lib/auth/client";
+import { signIn, signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
 
@@ -44,6 +44,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [socialNote, setSocialNote] = useState<string | null>(null);
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -71,6 +72,12 @@ export default function RegisterPage() {
       return;
     }
     setSubmittedEmail(values.email);
+  }
+
+  async function handleGoogleSignIn() {
+    // New Google users go through onboarding to pick hiker vs club, same as
+    // the email registration flow.
+    await signIn.social({ provider: "google", callbackURL: "/onboarding" });
   }
 
   return (
@@ -313,14 +320,27 @@ export default function RegisterPage() {
                     KYÇU
                   </Link>
                 </p>
-                <div className="mt-4 flex justify-center gap-2">
-                  <span className="border-forest/20 text-forest/50 flex size-9 items-center justify-center border">
-                    <Globe className="size-4" />
-                  </span>
-                  <span className="border-forest/20 text-forest/50 flex size-9 items-center justify-center border">
-                    <Share2 className="size-4" />
-                  </span>
+                <div className="mt-4 flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+                  >
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSocialNote("Së shpejti disponueshëm.")}
+                    className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+                  >
+                    Apple
+                  </button>
                 </div>
+                {socialNote ? (
+                  <p className="text-forest/40 mt-2 text-center text-[11px]">
+                    {socialNote}
+                  </p>
+                ) : null}
               </div>
             </>
           )}

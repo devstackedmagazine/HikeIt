@@ -177,7 +177,7 @@ export default async function ClubProfilePage({
         </div>
 
         {/* Stats bar */}
-        <div className="mt-8 grid grid-cols-2 gap-4 rounded-2xl border bg-muted/30 p-6 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-4 rounded-2xl border bg-moss/30 p-6 sm:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-2xl font-bold text-primary">{stat.value}</p>
