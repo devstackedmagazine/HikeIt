@@ -4,12 +4,15 @@ import {
   Head,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
 import type { ReactNode } from "react";
+
+import { env } from "@/config/env";
 
 /**
  * Shared shell for all HikeIt transactional emails: brand header, white card on
@@ -30,7 +33,14 @@ export function EmailLayout({
       <Body style={body}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={brand}>⛰️ HikeIt</Text>
+            <Img
+              src={`${env.NEXT_PUBLIC_APP_URL}/logos/Hikeit-pfp.png`}
+              width="32"
+              height="32"
+              alt="HikeIt"
+              style={logo}
+            />
+            <Text style={brand}>HikeIt</Text>
           </Section>
           <Section style={card}>{children}</Section>
           <Hr style={hr} />
@@ -70,6 +80,12 @@ const container: React.CSSProperties = {
 const header: React.CSSProperties = {
   textAlign: "center",
   paddingBottom: "16px",
+};
+
+const logo: React.CSSProperties = {
+  display: "inline-block",
+  marginBottom: "4px",
+  borderRadius: "6px",
 };
 
 const brand: React.CSSProperties = {

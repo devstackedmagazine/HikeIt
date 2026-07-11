@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -67,8 +68,15 @@ export default async function MarketingLayout({
         <div className="flex h-full items-center justify-between px-6 sm:px-8">
           <Link
             href="/"
-            className="font-heading text-sage text-xl font-extrabold tracking-[-0.01em]"
+            className="font-heading text-sage flex items-center gap-2 text-xl font-extrabold tracking-[-0.01em]"
           >
+            <Image
+              src="/logos/Hikeit-pfp.png"
+              alt=""
+              width={28}
+              height={28}
+              className="size-7"
+            />
             HIKEIT
           </Link>
 
@@ -110,7 +118,14 @@ export default async function MarketingLayout({
       <footer className="bg-abyss px-6 pt-[60px] sm:px-20">
         <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-heading text-sage text-[22px] font-extrabold tracking-[-0.01em]">
+            <p className="font-heading text-sage flex items-center gap-2 text-[22px] font-extrabold tracking-[-0.01em]">
+              <Image
+                src="/logos/Hikeit-pfp.png"
+                alt=""
+                width={26}
+                height={26}
+                className="size-6.5"
+              />
               HIKEIT
             </p>
             <p className="text-summit/45 mt-3.5 max-w-[260px] text-[13px] leading-[1.65]">

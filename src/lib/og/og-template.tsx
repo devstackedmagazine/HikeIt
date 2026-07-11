@@ -1,5 +1,7 @@
 import type { ReactElement } from "react";
 
+import { LOGO_DATA_URI } from "@/lib/pwa/logo";
+
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = "image/png";
 
@@ -28,18 +30,14 @@ export function ogTemplate({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <svg
-          width="56"
-          height="56"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
-        </svg>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={LOGO_DATA_URI}
+          width={56}
+          height={56}
+          alt=""
+          style={{ width: 56, height: 56 }}
+        />
         <span style={{ fontSize: 32, fontWeight: 700 }}>{eyebrow}</span>
       </div>
       <div

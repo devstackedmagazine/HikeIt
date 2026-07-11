@@ -5,11 +5,11 @@ import {
   LayoutDashboard,
   type LucideIcon,
   Map,
-  Mountain,
   Settings,
   User,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -87,9 +87,13 @@ export function DashboardSidebar({
       <div className="flex flex-col items-center border-b border-summit/[0.06] px-2.5 py-3.5 text-center">
         {isAdmin ? (
           <>
-            <span className="mb-1.5 flex size-7 items-center justify-center bg-moss text-abyss">
-              <Mountain className="size-4" />
-            </span>
+            <Image
+              src="/logos/Hikeit-pfp.png"
+              alt=""
+              width={28}
+              height={28}
+              className="mb-1.5 size-7"
+            />
             <p className="font-heading text-[11px] font-extrabold tracking-[0.02em] text-summit uppercase">
               Balkan Clubs
             </p>
@@ -100,9 +104,18 @@ export function DashboardSidebar({
         ) : (
           <Link
             href="/dashboard"
-            className="font-heading text-sm font-extrabold tracking-[-0.01em] text-moss uppercase"
+            className="flex flex-col items-center gap-1"
           >
-            HikeIt
+            <Image
+              src="/logos/Hikeit-pfp.png"
+              alt=""
+              width={28}
+              height={28}
+              className="size-7"
+            />
+            <span className="font-heading text-sm font-extrabold tracking-[-0.01em] text-moss uppercase">
+              HikeIt
+            </span>
           </Link>
         )}
       </div>

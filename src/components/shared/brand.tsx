@@ -1,9 +1,9 @@
-import { Mountain } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils/cn";
 
-/** HikeIt wordmark with the mountain glyph. Links home unless `asLink={false}`. */
+/** HikeIt wordmark with the logo mark. Links home unless `asLink={false}`. */
 export function Brand({
   className,
   asLink = true,
@@ -18,9 +18,13 @@ export function Brand({
         className,
       )}
     >
-      <span className="flex size-7 items-center justify-center bg-forest text-summit">
-        <Mountain className="size-4" />
-      </span>
+      <Image
+        src="/logos/Hikeit-pfp.png"
+        alt=""
+        width={28}
+        height={28}
+        className="size-7 shrink-0"
+      />
       <span>HIKEIT</span>
     </span>
   );
