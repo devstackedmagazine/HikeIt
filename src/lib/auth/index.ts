@@ -4,12 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 
 import { env } from "@/config/env";
 import { db } from "@/lib/db";
-import {
-  accounts,
-  sessions,
-  users,
-  verifications,
-} from "@/lib/db/schema";
+import { accounts, sessions, users, verifications } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { ResetPassword } from "@/lib/email/templates/reset-password";
 import { VerifyEmail } from "@/lib/email/templates/verify-email";
@@ -104,6 +99,13 @@ export const auth = betterAuth({
       },
     },
   },
+
+  trustedOrigins: [
+    "https://hikeit.app",
+    "https://www.hikeit.app",
+    "https://hikeitapp.vercel.app",
+    "http://localhost:3000",
+  ],
 
   // `nextCookies` must be last: it lets server actions set auth cookies.
   plugins: [nextCookies()],

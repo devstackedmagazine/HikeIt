@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Eye, EyeOff, Loader2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -94,8 +95,15 @@ function LoginForm() {
 
         <Link
           href="/"
-          className="font-heading text-summit relative z-10 text-[18px] font-extrabold uppercase"
+          className="font-heading text-summit relative z-10 flex items-center gap-2 text-[18px] font-extrabold uppercase"
         >
+          <Image
+            src="/logos/Hikeit-pfp.png"
+            alt=""
+            width={24}
+            height={24}
+            className="size-6"
+          />
           HikeIt
         </Link>
 
@@ -120,7 +128,14 @@ function LoginForm() {
 
       {/* RIGHT PANEL */}
       <div className="bg-summit flex w-full flex-col justify-center px-6 py-10 md:w-[55%] md:px-16">
-        <p className="font-heading text-forest mb-8 text-[18px] font-extrabold uppercase md:hidden">
+        <p className="font-heading text-forest mb-8 flex items-center gap-2 text-[18px] font-extrabold uppercase md:hidden">
+          <Image
+            src="/logos/Hikeit-pfp.png"
+            alt=""
+            width={24}
+            height={24}
+            className="size-6"
+          />
           HikeIt
         </p>
 

@@ -8,6 +8,7 @@ import {
   PersonStanding,
   Share2,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -145,7 +146,14 @@ function DashboardFooter() {
   return (
     <footer className="mt-8 bg-abyss px-6 py-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <span className="font-heading text-sm font-extrabold text-summit/30 uppercase">
+        <span className="flex items-center gap-2 font-heading text-sm font-extrabold text-summit/30 uppercase">
+          <Image
+            src="/logos/Hikeit-pfp.png"
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 opacity-60"
+          />
           HikeIt
         </span>
         <div className="flex flex-wrap gap-5">
@@ -333,7 +341,7 @@ async function ClubAdminHome({
       <div className="flex items-start justify-between gap-4 border border-summit/10 bg-summit/[0.04] p-5">
         <div>
           <p className="mb-1.5 text-[10px] font-semibold tracking-[0.1em] text-summit/40 uppercase">
-            Mirë se vini
+            Mirë se vjen
           </p>
           <h1 className="font-heading mb-2.5 text-[clamp(20px,3vw,32px)] leading-none font-extrabold tracking-[-0.02em] text-summit uppercase">
             {club.name}

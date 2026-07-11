@@ -3,7 +3,7 @@ export function WelcomeCard({ firstName }: { firstName: string }) {
     <div className="mb-4 flex items-center justify-between gap-4 border border-forest/12 bg-summit px-5 py-4">
       <div>
         <p className="mb-1.5 text-[13px] font-bold tracking-[0.04em] text-forest uppercase">
-          Mirë se vini, {firstName}! 👋
+          Mirë se vjen, {firstName}! 👋
         </p>
         <p className="max-w-[400px] text-xs leading-[1.6] text-[#3D5A47]">
           Gati për sfidën e radhës në{" "}
