@@ -173,3 +173,13 @@
 ::-webkit-scrollbar-thumb {
   background: var(--pine);
 }
+
+/* Hides the scrollbar on horizontally-scrollable rows (city tabs, trip tabs)
+   while keeping the element scrollable by touch/drag/wheel. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

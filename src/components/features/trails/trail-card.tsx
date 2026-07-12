@@ -47,7 +47,7 @@ function Stat({
       <p className="mb-0.5 text-[8px] font-semibold tracking-[0.1em] text-summit/30 uppercase">
         {label}
       </p>
-      <p className="font-heading text-[14px] font-extrabold tracking-[-0.01em] text-summit">
+      <p className="font-heading text-[14px] font-extrabold whitespace-nowrap tracking-[-0.01em] text-summit">
         {value}
         <span className="ml-0.5 align-baseline text-[9px] font-semibold text-summit/45">
           {unit}
@@ -69,7 +69,7 @@ export function TrailCard({ trail }: { trail: Trail }) {
   return (
     <div className="flex flex-col overflow-hidden border border-summit/10 bg-summit/[0.03]">
       {/* Cover */}
-      <div className="relative h-[160px] overflow-hidden">
+      <div className="relative h-45 overflow-hidden">
         <CloudImage
           publicId={trail.coverImageUrl}
           size="thumbnail"
@@ -93,7 +93,7 @@ export function TrailCard({ trail }: { trail: Trail }) {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col px-3.5 py-3">
+      <div className="flex flex-1 flex-col px-3 py-2.5">
         <h3 className="font-heading mb-1.5 text-[13px] leading-[1.2] font-extrabold tracking-[-0.01em] text-summit uppercase">
           {trail.name}
         </h3>
@@ -105,7 +105,7 @@ export function TrailCard({ trail }: { trail: Trail }) {
           </p>
         ) : null}
 
-        <div className="mb-2.5 flex gap-3">
+        <div className="mb-2.5 flex gap-2">
           {stats.distance ? (
             <Stat label="Distancë" value={stats.distance} unit="KM" />
           ) : null}

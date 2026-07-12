@@ -36,14 +36,14 @@ export default async function ClubsPage({
   return (
     <>
       {/* Header (light mint) */}
-      <section className="bg-mist h-96 px-6 pt-10 pb-9 sm:px-10">
+      <section className="bg-mist px-6 pt-8 pb-6 sm:h-96 sm:px-10 sm:pt-10 sm:pb-9">
         <p className="text-pine mb-2.5 text-[10px] font-bold tracking-[0.15em] uppercase">
           Komuniteti
         </p>
         <h1 className="font-heading text-abyss mb-3.5 text-[clamp(28px,4vw,44px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
           Klubet e Alpinizmit
         </h1>
-        <p className="mb-7 max-w-[440px] text-[13px] leading-[1.65] text-[#3D5A47]">
+        <p className="mb-5 max-w-[440px] text-[13px] leading-[1.65] text-[#3D5A47] sm:mb-7">
           Gjej komunitetin tënd të alpinizmit dhe bashkohu me aventurierët që
           ndajnë të njëjtin pasion për majat e larta.
         </p>
@@ -51,7 +51,7 @@ export default async function ClubsPage({
       </section>
 
       {/* City filter band (dark forest) */}
-      <div className="bg-forest flex h-20 items-center px-6 sm:px-10">
+      <div className="bg-forest flex h-14 items-center px-6 sm:h-20 sm:px-10">
         <ClubCityTabs />
       </div>
 

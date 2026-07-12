@@ -96,7 +96,7 @@ export default async function ProfilePage() {
       </p>
 
       {/* Header card */}
-      <div className="flex flex-wrap items-start gap-4 border border-summit/10 bg-summit/[0.04] px-5 py-4">
+      <div className="flex flex-col items-center gap-4 border border-summit/10 bg-summit/[0.04] px-5 py-4 text-center sm:flex-row sm:flex-wrap sm:items-start sm:text-left">
         <span className="flex size-20 shrink-0 items-center justify-center overflow-hidden bg-abyss">
           {profile.avatarUrl ? (
             <span
@@ -118,14 +118,14 @@ export default async function ProfilePage() {
             {displayName}
           </h1>
           <p className="mt-1 text-xs text-summit/45">{profile.email}</p>
-          <p className="mt-2 text-[10px] font-medium tracking-[0.06em] text-summit/30 uppercase">
+          <p className="mt-2 text-[9px] font-medium tracking-[0.02em] text-summit/30 uppercase sm:text-[10px] sm:tracking-[0.06em]">
             {memberSince(profile.memberSince)}
           </p>
         </div>
 
         <Link
           href="#edit-profile"
-          className="border border-summit/25 px-4 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:border-summit/40 hover:text-summit/80"
+          className="flex w-full items-center justify-center border border-summit/25 px-4 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:border-summit/40 hover:text-summit/80 sm:w-auto"
         >
           Ndrysho profilin →
         </Link>

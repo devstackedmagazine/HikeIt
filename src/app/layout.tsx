@@ -43,7 +43,7 @@ export default function RootLayout({
       lang="en"
       className={`${sora.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col overflow-x-hidden">
         <NuqsAdapter>{children}</NuqsAdapter>
         <CookieConsent />
         <PwaInstallPrompt />
