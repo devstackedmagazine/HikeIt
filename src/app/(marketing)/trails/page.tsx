@@ -56,7 +56,7 @@ export default async function TrailsPage({
           <p className="mb-1.5 text-[10px] font-bold tracking-[0.15em] text-moss uppercase">
             Eksploro
           </p>
-          <h1 className="font-heading mb-2 text-[22px] font-extrabold tracking-[-0.02em] text-summit uppercase">
+          <h1 className="font-heading mb-2 text-[32px] font-extrabold tracking-[-0.02em] text-summit uppercase">
             Shtigjet e Kosovës
           </h1>
           <p className="text-xs font-normal text-summit/45">
@@ -69,11 +69,11 @@ export default async function TrailsPage({
 
       {/* Main content */}
       <div className="flex flex-col gap-6 px-6 py-6 lg:flex-row">
-        <aside className="w-full shrink-0 lg:w-40">
+        <aside className="w-full shrink-0 lg:w-60">
           <TrailFilters regions={regions} />
         </aside>
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {trails.length === 0 ? (
             <div className="flex min-h-[240px] flex-col items-center justify-center border border-summit/10 bg-summit/[0.03] p-10 text-center">
               <p className="font-heading text-base font-extrabold text-summit uppercase">
