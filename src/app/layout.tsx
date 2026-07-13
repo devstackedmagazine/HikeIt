@@ -38,6 +38,10 @@ const ORG_JSON_LD = {
     email: "hello@hikeit.app",
     contactType: "customer service",
   },
+  sameAs: [
+    "https://www.instagram.com/hikeit.app",
+    "https://www.facebook.com/hikeit.app",
+  ],
 };
 
 export const metadata: Metadata = {

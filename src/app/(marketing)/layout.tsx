@@ -47,8 +47,8 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
 ];
 
 const SOCIAL_LINKS: { href: string; label: string; icon: string }[] = [
-  { href: "#", label: "Instagram", icon: "IG" },
-  { href: "#", label: "Facebook", icon: "FB" },
+  { href: "https://www.instagram.com/hikeit.app", label: "Instagram", icon: "IG" },
+  { href: "https://www.facebook.com/hikeit.app", label: "Facebook", icon: "FB" },
   { href: "#", label: "X", icon: "X" },
 ];
 
@@ -136,6 +136,8 @@ export default async function MarketingLayout({
                 <a
                   key={social.label}
                   href={social.href}
+                  target={social.href === "#" ? undefined : "_blank"}
+                  rel={social.href === "#" ? undefined : "noopener noreferrer"}
                   aria-label={social.label}
                   className="border-summit/12 bg-summit/[0.06] text-summit/50 hover:border-sage/40 hover:text-sage flex size-9 items-center justify-center border text-[11px] font-bold transition-colors"
                 >
