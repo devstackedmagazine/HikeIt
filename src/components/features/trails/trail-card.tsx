@@ -87,7 +87,7 @@ export function TrailCard({ trail }: { trail: Trail }) {
         <CloudImage
           publicId={trail.coverImageUrl}
           size="thumbnail"
-          alt={trail.name}
+          alt={`${trail.name} — shteg alpin${trail.region ? ` në ${trail.region}` : ""}, Kosovë`}
           fallback="trail"
           className="h-full w-full object-cover"
         />

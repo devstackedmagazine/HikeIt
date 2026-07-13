@@ -14,17 +14,30 @@ import Link from "next/link";
 import { WaitlistForm } from "@/components/features/waitlist/waitlist-form";
 
 export const metadata: Metadata = {
-  title: { absolute: "HIKEIT — Komuniteti i Alpinizmit në Kosovë" },
+  title: { absolute: "HikeIt — Shtigjet dhe Klubet e Alpinizmit në Kosovë" },
   description:
-    "Platforma e alpinizmit për Kosovën dhe Ballkanin. Gjeni shtigje të verifikuara, bashkohuni me klubet më aktive dhe eksploroni natyrën e egër.",
+    "Zbulo shtigje të verifikuara, bashkohu me klube alpinizmi dhe rezervo udhëtime malore në Kosovë dhe Ballkan. Falas për hikerët.",
   alternates: { canonical: "https://hikeit.app" },
   openGraph: {
     type: "website",
-    title: "HIKEIT — Komuniteti i Alpinizmit në Kosovë",
+    title: "HikeIt — Shtigjet dhe Klubet e Alpinizmit në Kosovë",
     description:
       "Platforma e alpinizmit për Kosovën dhe Ballkanin. Gjeni shtigje të verifikuara dhe bashkohuni me klubet më aktive.",
     url: "https://hikeit.app",
     siteName: "HikeIt",
+  },
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HikeIt",
+  url: "https://hikeit.app",
+  description: "Platforma e alpinizmit në Kosovë dhe Ballkan.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://hikeit.app/search?q={search_term_string}",
+    "query-input": "required name=search_term_string",
   },
 };
 
@@ -97,6 +110,10 @@ const STATS = [
 export default function LandingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+      />
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="bg-abyss relative flex min-h-[calc(100svh-3.5rem)] flex-col overflow-hidden lg:px-10">
         {/* Mountain image from /public/hero/mountain.svg. */}

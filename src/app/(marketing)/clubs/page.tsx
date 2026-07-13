@@ -11,9 +11,9 @@ import { clubsParsers } from "@/lib/search-params/clubs";
 import { getClubs } from "@/server/queries/clubs";
 
 export const metadata: Metadata = {
-  title: "Klube",
+  title: "Klubet e Alpinizmit në Kosovë — Gjej Komunitetin Tënd",
   description:
-    "Gjej dhe bashkohu me klubet e alpinizmit në Kosovë — kërko sipas qytetit.",
+    "Bashkohu me klube alpinizmi në Kosovë — Prishtinë, Pejë, Prizren, Gjakovë dhe më shumë. Gjej hikerë si ti dhe eksploro malet së bashku.",
   alternates: { canonical: "https://hikeit.app/clubs" },
 };
 

@@ -15,9 +15,16 @@ import { cn } from "@/lib/utils/cn";
 import { getTrailRegions, getTrails } from "@/server/queries/trails";
 
 export const metadata: Metadata = {
-  title: "Shtigje",
+  title: "Shtigjet e Kosovës — Shtigje Malore të Verifikuara",
   description:
-    "Shfleto shtigjet malore të verifikuara në Kosovë — filtro sipas vështirësisë, rajonit dhe stinës.",
+    "Eksploro shtigjet e Kosovës: Rugova, Bjeshkët e Namuna, Sharri dhe më shumë. Harta GPS, nivelet e vështirësisë dhe udhëzues të detajuar.",
+  keywords: [
+    "shtigje malore Kosovë",
+    "hiking trails Kosovo",
+    "Rugova hiking",
+    "Bjeshkët e Namuna",
+    "Sharr mountains trails",
+  ],
   alternates: { canonical: "https://hikeit.app/trails" },
 };
 

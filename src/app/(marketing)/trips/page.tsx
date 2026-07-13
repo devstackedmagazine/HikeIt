@@ -15,8 +15,9 @@ import { getTrailRegions } from "@/server/queries/trails";
 import { getPublicTrips } from "@/server/queries/trips";
 
 export const metadata: Metadata = {
-  title: "Udhëtime",
-  description: "Gjej dhe rezervo udhëtime malore të organizuara nga klubet.",
+  title: "Udhëtimet e Ardhshme Alpine — Rezervo Aventurën Tënde",
+  description:
+    "Shiko udhëtimet e planifikuara të alpinizmit në Kosovë. Bashkohu me grupe, eksploro shtigje të reja dhe rezervo udhëtimin tënd të radhës.",
   alternates: { canonical: "https://hikeit.app/trips" },
 };
 
