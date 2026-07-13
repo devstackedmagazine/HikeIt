@@ -1,10 +1,19 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import { useQueryStates } from "nuqs";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { tripsParsers } from "@/lib/search-params/trips";
 import { cn } from "@/lib/utils/cn";
+
+const ALL_VALUE = "all";
 
 const DATE_TABS: { value: string; label: string }[] = [
   { value: "week", label: "Këtë javë" },
@@ -33,27 +42,49 @@ function SelectChip({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="relative flex h-9 items-center border border-summit/20 pr-7 pl-3.5">
-      <span className="text-[11px] font-semibold tracking-[0.06em] text-summit/70 uppercase">
-        {label}:
-      </span>
-      <select
+    <Select
+      value={value || ALL_VALUE}
+      onValueChange={(v) => onChange(!v || v === ALL_VALUE ? "" : v)}
+    >
+      <SelectTrigger
         aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="ml-1.5 appearance-none bg-transparent text-[11px] font-semibold tracking-[0.06em] text-summit/70 uppercase focus:outline-none"
+        className="h-9 justify-between gap-1.5 border-summit/20 bg-transparent px-3.5 text-[11px] font-semibold tracking-[0.06em] text-summit/70 uppercase hover:bg-transparent focus-visible:border-moss/50 focus-visible:ring-0 data-[size=default]:h-9"
       >
-        <option value="" className="text-abyss">
+        <span className="flex items-center gap-1.5">
+          <span className="text-summit/70">{label}:</span>
+          <SelectValue>
+            {(v: string) =>
+              v === ALL_VALUE
+                ? allLabel
+                : (options.find(([optValue]) => optValue === v)?.[1] ?? v)
+            }
+          </SelectValue>
+        </span>
+      </SelectTrigger>
+      <SelectContent className="z-50 border border-forest bg-forest text-summit/70">
+        <SelectItem
+          value={ALL_VALUE}
+          className={cn(
+            "text-[11px] tracking-[0.06em] uppercase focus:bg-moss/15 focus:text-moss",
+            value === "" && "text-moss",
+          )}
+        >
           {allLabel}
-        </option>
+        </SelectItem>
         {options.map(([v, l]) => (
-          <option key={v} value={v} className="text-abyss">
+          <SelectItem
+            key={v}
+            value={v}
+            className={cn(
+              "text-[11px] tracking-[0.06em] uppercase focus:bg-moss/15 focus:text-moss",
+              value === v && "text-moss",
+            )}
+          >
             {l}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2 size-3.5 text-summit/50" />
-    </div>
+      </SelectContent>
+    </Select>
   );
 }
 

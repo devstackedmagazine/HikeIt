@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { BillingInterval, PlanTier } from "@/lib/stripe/client";
+import { cn } from "@/lib/utils/cn";
 import { createCheckoutSession } from "@/server/actions/billing";
 
 export function UpgradeButton({
@@ -15,13 +16,15 @@ export function UpgradeButton({
   organizationId,
   variant = "default",
   className,
+  buttonClassName,
 }: {
   tier: PlanTier;
   interval: BillingInterval;
   label: string;
   organizationId?: string;
-  variant?: "default" | "outline";
+  variant?: "default" | "outline" | "moss";
   className?: string;
+  buttonClassName?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -58,7 +61,7 @@ export function UpgradeButton({
       <Button
         variant={variant}
         size="lg"
-        className="w-full"
+        className={cn("w-full", buttonClassName)}
         onClick={handleClick}
         disabled={loading}
       >

@@ -11,15 +11,20 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Çmime të thjeshta
+    <div className="bg-abyss">
+      {/* Header — light section */}
+      <div className="bg-mist px-6 py-16 text-center sm:px-10">
+        <p className="mb-3 text-[11px] font-bold tracking-[0.15em] text-moss uppercase">
+          Çmimet
+        </p>
+        <h1 className="font-heading mb-3 text-[28px] font-black tracking-[-0.01em] text-forest uppercase">
+          Zgjidh Planin Tënd
         </h1>
-        <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
-          Falas për hikerët, gjithmonë. Plane fleksibile për klubet.
+        <p className="mx-auto max-w-md text-[14px] text-forest/55">
+          Zgjidhni paketën që i përshtatet stilit tuaj të eksplorimit.
         </p>
       </div>
+
       <PricingToggle />
     </div>
   );
