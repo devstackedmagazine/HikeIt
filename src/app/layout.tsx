@@ -97,6 +97,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://hikeit.app",
   },
+  verification: {
+    google: "PQIIX3BsVYvYS4VfY4ubJaCTmnJ7j_gdqcxnAIajbB8",
+  },
 };
 
 export const viewport: Viewport = {
