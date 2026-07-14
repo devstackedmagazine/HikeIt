@@ -55,6 +55,7 @@ export const env = createEnv({
     EMAIL_FROM: z.string().min(1).optional(),
 
     // Sentry — optional.
+    SENTRY_DSN: z.url().optional(),
     SENTRY_ORG: z.string().min(1).optional(),
     SENTRY_PROJECT: z.string().min(1).optional(),
     SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
@@ -74,7 +75,7 @@ export const env = createEnv({
     // Maps use Leaflet + OpenStreetMap — no token required.
 
     // Sentry / PostHog — optional.
-    NEXT_PUBLIC_SENTRY_DSN: z.string().min(1).optional(),
+    NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.url().optional(),
   },
@@ -106,6 +107,7 @@ export const env = createEnv({
     CRON_SECRET: process.env.CRON_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_ORG: process.env.SENTRY_ORG,
     SENTRY_PROJECT: process.env.SENTRY_PROJECT,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,

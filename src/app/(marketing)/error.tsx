@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -13,7 +14,9 @@ export default function MarketingError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    Sentry.captureException(error, {
+      tags: { section: "marketing", digest: error.digest },
+    });
   }, [error]);
 
   return (
