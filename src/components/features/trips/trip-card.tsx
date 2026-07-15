@@ -73,7 +73,7 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
         <CloudImage
           publicId={trip.coverImageUrl}
           size="cover"
-          alt={trip.title}
+          alt={`${trip.title} — udhëtim alpin i organizuar nga ${trip.club.name}, Kosovë`}
           fallback="trip"
           className="h-full w-full"
         />

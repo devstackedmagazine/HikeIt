@@ -47,7 +47,7 @@ export function DashboardShell({
             : "border-summit/[0.08] bg-forest",
         )}
       >
-        <NotificationsBell />
+        <NotificationsBell light={isLight} />
         <span
           className={cn(
             "flex size-8 items-center justify-center text-xs font-bold text-moss",

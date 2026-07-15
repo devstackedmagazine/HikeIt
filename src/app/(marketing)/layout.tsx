@@ -47,8 +47,8 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
 ];
 
 const SOCIAL_LINKS: { href: string; label: string; icon: string }[] = [
-  { href: "#", label: "Instagram", icon: "IG" },
-  { href: "#", label: "Facebook", icon: "FB" },
+  { href: "https://www.instagram.com/hikeit.app", label: "Instagram", icon: "IG" },
+  { href: "https://www.facebook.com/hikeit.app", label: "Facebook", icon: "FB" },
   { href: "#", label: "X", icon: "X" },
 ];
 
@@ -64,8 +64,8 @@ export default async function MarketingLayout({
     <div className="bg-abyss flex min-h-svh flex-col">
       {/* Navbar — opaque Abyss, sticky (not fixed) so it never overlaps the
           content of inner marketing pages. */}
-      <header className="border-summit/10 bg-abyss sticky top-0 z-50 h-16 border-b">
-        <div className="flex h-full items-center justify-between px-6 sm:px-8">
+      <header className="border-summit/10 bg-abyss sticky top-0 z-50 h-16 border-b px-3 lg:px-10">
+        <div className="flex h-full items-center justify-between sm:px-8">
           <Link
             href="/"
             className="font-heading text-sage flex items-center gap-2 text-xl font-extrabold tracking-[-0.01em]"
@@ -115,7 +115,7 @@ export default async function MarketingLayout({
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="bg-abyss px-6 pt-[60px] sm:px-20">
+      <footer className="bg-abyss px-10 pt-[60px] sm:px-20">
         <div className="grid gap-12 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
             <p className="font-heading text-sage flex items-center gap-2 text-[22px] font-extrabold tracking-[-0.01em]">
@@ -136,6 +136,8 @@ export default async function MarketingLayout({
                 <a
                   key={social.label}
                   href={social.href}
+                  target={social.href === "#" ? undefined : "_blank"}
+                  rel={social.href === "#" ? undefined : "noopener noreferrer"}
                   aria-label={social.label}
                   className="border-summit/12 bg-summit/[0.06] text-summit/50 hover:border-sage/40 hover:text-sage flex size-9 items-center justify-center border text-[11px] font-bold transition-colors"
                 >
@@ -166,13 +168,13 @@ export default async function MarketingLayout({
           ))}
         </div>
 
-        <div className="border-summit/[0.08] mt-12 flex items-center justify-between border-t py-5">
-          <span className="text-summit/30 text-[11px] font-medium tracking-[0.1em] uppercase">
+        <div className="border-summit/[0.08] mt-12 flex flex-col items-center justify-between gap-2 border-t py-5 sm:flex-row">
+          <span className="text-summit/30 text-[11px] font-medium tracking-[0.1em] whitespace-nowrap uppercase">
             © 2024 HIKEIT. EXPLORE THE WILD.
           </span>
           <Link
             href="/register"
-            className="text-summit/30 hover:text-sage text-[11px] font-bold tracking-[0.1em] uppercase transition-colors"
+            className="text-summit/30 hover:text-sage text-[11px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-colors"
           >
             DREJT MAJAVE →
           </Link>

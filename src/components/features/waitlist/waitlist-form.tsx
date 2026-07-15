@@ -26,7 +26,7 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
 
   if (status === "success") {
     return (
-      <div className="flex items-center justify-center gap-2.5 border border-moss/40 bg-moss/[0.12] px-5 py-4 text-moss">
+      <div className="border-moss/40 bg-moss/[0.12] text-moss flex items-center justify-center gap-2.5 border px-5 py-4">
         <CheckCircle2 className="size-5 shrink-0" />
         <span className="text-sm font-semibold">
           Faleminderit! Do të njoftoheni kur hapim.
@@ -38,7 +38,7 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
   return (
     <div className="text-left">
       {/* Input and button are flush — no gap between them. */}
-      <form onSubmit={handleSubmit} className="flex">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row">
         <input
           type="email"
           required
@@ -46,12 +46,12 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email adresa juaj..."
           aria-label="Email"
-          className="h-[54px] flex-1 border border-summit/20 bg-abyss px-5 text-sm text-summit placeholder:text-summit/35 focus:border-moss/50 focus:outline-none"
+          className="border-summit/20 bg-abyss text-summit placeholder:text-summit/35 focus:border-moss/50 !h-[54px] min-w-0 border px-5 text-sm focus:outline-none sm:flex-1"
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          className="flex h-[54px] shrink-0 items-center gap-2 border border-moss/40 bg-moss/20 px-7 text-xs font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:bg-moss/35 disabled:opacity-50"
+          className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/35 flex h-[54px] w-full shrink-0 items-center justify-center gap-2 border px-7 text-xs font-bold tracking-[0.1em] uppercase transition-colors disabled:opacity-50 sm:w-auto"
         >
           {status === "loading" ? (
             <>
@@ -64,7 +64,7 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
         </button>
       </form>
       {error ? (
-        <p className="mt-3 text-sm text-danger" role="alert">
+        <p className="text-danger mt-3 text-sm" role="alert">
           {error}
         </p>
       ) : null}

@@ -32,7 +32,7 @@ const ICONS: Record<string, LucideIcon> = {
   club: Users,
 };
 
-export function NotificationsBell() {
+export function NotificationsBell({ light = true }: { light?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -97,6 +97,7 @@ export function NotificationsBell() {
         size="icon"
         aria-label="Njoftimet"
         onClick={() => setOpen((v) => !v)}
+        className={cn(!light && "text-summit/70 hover:bg-summit/10")}
       >
         <Bell />
         {unread > 0 ? (

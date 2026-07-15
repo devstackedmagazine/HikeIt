@@ -6,6 +6,7 @@ import {
   DashboardSidebar,
 } from "@/components/features/dashboard/dashboard-nav";
 import { DashboardShell } from "@/components/features/dashboard/dashboard-shell";
+import { SentryUserContext } from "@/components/shared/sentry-user-context";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 
 /**
@@ -30,6 +31,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-svh bg-abyss">
+      <SentryUserContext id={user.id} email={user.email} name={user.name} />
+
       <DashboardSidebar
         variant={variant}
         userName={displayName}

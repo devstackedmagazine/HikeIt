@@ -1,213 +1,249 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { UpgradeButton } from "@/components/features/billing/upgrade-button";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import type { PlanTier } from "@/lib/stripe/client";
 import { cn } from "@/lib/utils/cn";
 
-interface Feature {
-  label: string;
-  included: boolean;
-}
+const FREE_FEATURES = {
+  included: [
+    "Shfleto shtigjet",
+    "Bashkohu udhëtime falas",
+    "Profil personal",
+    "Alerts moti",
+  ],
+  excluded: ["Krijo udhëtime", "Menaxho klub"],
+};
 
-interface Tier {
-  name: string;
-  audience: string;
-  monthly: number;
-  annual: number | null;
-  freeForever?: boolean;
-  features: Feature[];
-  cta: { label: string; href: string };
-  checkout?: PlanTier;
-  highlighted?: boolean;
-  badge?: string;
-}
-
-const TIERS: Tier[] = [
-  {
-    name: "Free (Hiker)",
-    audience: "Për hikerë individualë",
-    monthly: 0,
-    annual: 0,
-    freeForever: true,
-    features: [
-      { label: "Shfleto të gjitha shtigjet", included: true },
-      { label: "Bashkohu me udhëtime falas", included: true },
-      { label: "Profil personal", included: true },
-      { label: "Njoftime moti", included: true },
-      { label: "Krijo udhëtime", included: false },
-      { label: "Menaxho klub", included: false },
-    ],
-    cta: { label: "Fillo falas", href: "/register" },
-  },
-  {
-    name: "Pro Club",
-    audience: "Për klube alpinizmi",
-    monthly: 19,
-    annual: 190,
-    features: [
-      { label: "Gjithçka në Free", included: true },
-      { label: "Anëtarë të pakufizuar", included: true },
-      { label: "Udhëtime të pakufizuara", included: true },
-      { label: "Mbledh pagesa online", included: true },
-      { label: "Dashboard analitike", included: true },
-      { label: "Suport me email", included: true },
-    ],
-    cta: {
-      label: "Fillo provën 14-ditore",
-      href: "/register?type=club&plan=pro",
-    },
-    checkout: "pro",
-    highlighted: true,
-    badge: "Më popullor",
-  },
-  {
-    name: "Team Club",
-    audience: "Për klube të mëdha dhe federata",
-    monthly: 49,
-    annual: 490,
-    features: [
-      { label: "Gjithçka në Pro", included: true },
-      { label: "Admin të shumëfishtë", included: true },
-      { label: "Analitikë të avancuara", included: true },
-      { label: "Akses API", included: true },
-      { label: "Suport prioritar", included: true },
-      { label: "Listing i sponsorizuar", included: true },
-    ],
-    cta: { label: "Kontakto ne", href: "mailto:hello@hikeit.app" },
-  },
+const PRO_FEATURES = [
+  "Anëtarë të pakufizuar",
+  "Udhëtime të pakufizuara",
+  "Mblidh pagesa",
+  "Dashboard analitike",
+  "Suport email",
 ];
 
-function formatPrice(tier: Tier, annual: boolean) {
-  if (tier.freeForever) {
-    return { amount: "€0", period: "/ përgjithmonë" };
-  }
-  if (annual && tier.annual !== null) {
-    return { amount: `€${tier.annual}`, period: "/ vit" };
-  }
-  return { amount: `€${tier.monthly}`, period: "/ muaj" };
+const TEAM_FEATURES = [
+  "Admin të shumëfishtë",
+  "Analitikë e avancuar",
+  "Akses API",
+  "Suport prioritar",
+];
+
+/** Filled square icon (this design system forces border-radius: 0 everywhere,
+ * so "circle" icons render as squares — matching the rest of the site). */
+function FeatureIcon({ variant }: { variant: "check" | "x" | "plus" }) {
+  const Icon = variant === "check" ? Check : variant === "x" ? X : Plus;
+  return (
+    <span
+      className={cn(
+        "flex size-4 shrink-0 items-center justify-center",
+        variant === "check" && "bg-moss text-summit",
+        variant === "x" && "bg-summit/15 text-summit/40",
+        variant === "plus" && "bg-sunset text-summit",
+      )}
+    >
+      <Icon className="size-2.5" strokeWidth={3} />
+    </span>
+  );
+}
+
+function FeatureItem({
+  icon,
+  label,
+  className,
+}: {
+  icon: "check" | "x" | "plus";
+  label: string;
+  className?: string;
+}) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <FeatureIcon variant={icon} />
+      <span className={cn("text-[13px] font-medium", className)}>{label}</span>
+    </li>
+  );
 }
 
 export function PricingToggle() {
   const [annual, setAnnual] = useState(false);
 
-  return (
-    <div className="space-y-10">
-      <div className="flex items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={() => setAnnual(false)}
-          className={cn(
-            "text-sm font-medium transition-colors",
-            annual ? "text-muted-foreground" : "text-foreground",
-          )}
-        >
-          Mujore
-        </button>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={annual}
-          aria-label="Ndërro mes pagesës mujore dhe vjetore"
-          onClick={() => setAnnual((v) => !v)}
-          className="relative inline-flex h-6 w-11 items-center rounded-full bg-primary/20 transition-colors"
-        >
-          <span
-            className={cn(
-              "inline-block size-5 rounded-full bg-primary transition-transform",
-              annual ? "translate-x-5" : "translate-x-0.5",
-            )}
-          />
-        </button>
-        <span className="flex items-center gap-2 text-sm font-medium">
-          Vjetore
-          <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">
-            2 muaj falas
-          </span>
-        </span>
-      </div>
+  const proPrice = annual ? "€190" : "€19";
+  const proPeriod = annual ? "/VIT" : "/MUAJ";
+  const teamPrice = annual ? "€490" : "€49";
+  const teamPeriod = annual ? "/VIT" : "/MUAJ";
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {TIERS.map((tier) => {
-          const price = formatPrice(tier, annual);
-          return (
-            <Card
-              key={tier.name}
+  return (
+    <div className="bg-abyss px-6 py-16 sm:px-10">
+      {/* Toggle — one unit, two halves sharing a border */}
+      <div className="mb-12 flex items-center justify-center">
+        <div className="inline-flex border border-forest/30 bg-summit">
+          <button
+            type="button"
+            onClick={() => setAnnual(false)}
+            className={cn(
+              "px-7 py-2.75 text-[13px] tracking-[0.06em] uppercase transition-colors",
+              !annual
+                ? "bg-forest font-bold text-summit"
+                : "font-semibold text-forest/45",
+            )}
+          >
+            Mujore
+          </button>
+          <div className="relative border-l border-forest/20">
+            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-sunset px-1.75 py-0.5 text-[8px] font-extrabold tracking-[0.08em] whitespace-nowrap text-summit uppercase">
+              Kurse 2 muaj
+            </span>
+            <button
+              type="button"
+              onClick={() => setAnnual(true)}
               className={cn(
-                "relative flex flex-col",
-                tier.highlighted && "border-primary shadow-lg",
+                "px-7 py-2.75 text-[13px] tracking-[0.06em] uppercase transition-colors",
+                annual
+                  ? "bg-forest font-bold text-summit"
+                  : "font-semibold text-forest/45",
               )}
             >
-              {tier.badge ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                  {tier.badge}
-                </span>
-              ) : null}
-              <CardHeader>
-                <CardTitle>{tier.name}</CardTitle>
-                <CardDescription>{tier.audience}</CardDescription>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">{price.amount}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {price.period}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <ul className="space-y-3">
-                  {tier.features.map((feature) => (
-                    <li
-                      key={feature.label}
-                      className={cn(
-                        "flex items-center gap-2 text-sm",
-                        !feature.included && "text-muted-foreground",
-                      )}
-                    >
-                      {feature.included ? (
-                        <Check className="size-4 shrink-0 text-primary" />
-                      ) : (
-                        <X className="size-4 shrink-0 text-muted-foreground" />
-                      )}
-                      {feature.label}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                {tier.checkout ? (
-                  <UpgradeButton
-                    tier={tier.checkout}
-                    interval={annual ? "yearly" : "monthly"}
-                    label={tier.cta.label}
-                    variant={tier.highlighted ? "default" : "outline"}
-                    className="w-full"
-                  />
-                ) : (
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    variant={tier.highlighted ? "default" : "outline"}
-                    render={<Link href={tier.cta.href} />}
-                  >
-                    {tier.cta.label}
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          );
-        })}
+              Vjetore
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1fr_1.2fr_1fr] lg:items-start">
+        {/* FREE */}
+        <div className="flex flex-col border border-summit/10 bg-summit/[0.04] p-7">
+          <p className="text-[11px] font-bold tracking-[0.08em] text-summit/50 uppercase">
+            Free
+          </p>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="font-heading text-[28px] font-black text-summit">
+              €0
+            </span>
+            <span className="text-[12px] font-medium text-summit/40 uppercase">
+              /Përgjithmonë
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-summit/50">
+            Për hiker individualë
+          </p>
+
+          <div className="my-4 border-t border-summit/8" />
+
+          <ul className="flex-1 space-y-3">
+            {FREE_FEATURES.included.map((label) => (
+              <FeatureItem
+                key={label}
+                icon="check"
+                label={label}
+                className="text-summit"
+              />
+            ))}
+            {FREE_FEATURES.excluded.map((label) => (
+              <FeatureItem
+                key={label}
+                icon="x"
+                label={label}
+                className="text-summit/30"
+              />
+            ))}
+          </ul>
+
+          <Link
+            href="/register"
+            className="mt-6 block border border-summit/25 py-[13px] text-center text-[12px] font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:border-summit/40 hover:text-summit/80"
+          >
+            Fillo Falas
+          </Link>
+        </div>
+
+        {/* PRO — featured, light card on dark page */}
+        <div className="relative z-10 -my-4 flex flex-col border-2 border-moss bg-summit px-7 py-9">
+          <span className="absolute -top-[14px] left-1/2 -translate-x-1/2 bg-moss px-3 py-2 text-[10px] font-extrabold tracking-[0.1em] whitespace-nowrap text-white uppercase">
+            Më Popullor
+          </span>
+
+          <p className="text-[11px] font-bold tracking-[0.08em] text-forest uppercase">
+            Pro
+          </p>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="font-heading text-[28px] font-black text-forest">
+              {proPrice}
+            </span>
+            <span className="text-[12px] font-medium text-forest/50 uppercase">
+              {proPeriod}
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-forest/55">
+            {annual ? "2 muaj falas përfshirë" : "Për klube alpinizmi"}
+          </p>
+
+          <div className="my-4 border-t border-forest/10" />
+
+          <ul className="flex-1 space-y-3">
+            {PRO_FEATURES.map((label) => (
+              <FeatureItem
+                key={label}
+                icon="check"
+                label={label}
+                className="text-forest"
+              />
+            ))}
+          </ul>
+
+          <UpgradeButton
+            tier="pro"
+            interval={annual ? "yearly" : "monthly"}
+            label="Fillo Provën 14-Ditore →"
+            variant="moss"
+            className="mt-6"
+            buttonClassName="h-auto py-3.5 text-[12px] font-extrabold tracking-[0.06em]"
+          />
+        </div>
+
+        {/* TEAM */}
+        <div className="flex flex-col border-2 border-sunset bg-summit/[0.04] p-7">
+          <p className="text-[11px] font-bold tracking-[0.08em] text-summit/50 uppercase">
+            Team
+          </p>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="font-heading text-[28px] font-black text-summit">
+              {teamPrice}
+            </span>
+            <span className="text-[12px] font-medium text-summit/40 uppercase">
+              {teamPeriod}
+            </span>
+          </div>
+          <p className="mt-2 text-[13px] text-summit/50">
+            Për klube të mëdha dhe federata
+          </p>
+
+          <div className="my-4 border-t border-summit/8" />
+
+          <p className="mb-2.5 text-[10px] font-bold tracking-[0.1em] text-sunset uppercase">
+            Përfshin çdo gjë në Pro plus:
+          </p>
+          <ul className="flex-1 space-y-3">
+            {TEAM_FEATURES.map((label) => (
+              <FeatureItem
+                key={label}
+                icon="plus"
+                label={label}
+                className="text-summit"
+              />
+            ))}
+          </ul>
+
+          <Link
+            href="mailto:hello@hikeit.app"
+            className="mt-6 block border-2 border-sunset py-[13px] text-center text-[12px] font-bold tracking-[0.08em] text-sunset uppercase transition-colors hover:bg-sunset/10"
+          >
+            Kontakto Ne
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -40,7 +40,7 @@ export function ClubCityTabs() {
   });
 
   return (
-    <div className="flex flex-wrap items-center gap-1 h-20">
+    <div className="scrollbar-hide flex h-full items-center gap-1 overflow-x-auto">
       <CityTab
         label="Të gjitha"
         active={filters.city === ""}
@@ -72,7 +72,7 @@ function CityTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-8 items-center px-4 text-[11px] uppercase transition-colors",
+        "flex h-8 shrink-0 items-center px-4 text-[11px] whitespace-nowrap uppercase transition-colors",
         active
           ? "border border-moss/50 bg-moss/25 font-bold tracking-[0.08em] text-moss"
           : "font-semibold tracking-[0.06em] text-summit/45 hover:text-summit/80",

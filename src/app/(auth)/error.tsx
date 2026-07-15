@@ -1,5 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +19,12 @@ export default function AuthError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error, {
+      tags: { section: "auth", digest: error.digest },
+    });
+  }, [error]);
+
   return (
     <Card>
       <CardHeader>

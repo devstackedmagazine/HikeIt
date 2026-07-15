@@ -27,10 +27,10 @@ export function MarketingNav({ items }: { items: MarketingNavItem[] }) {
             key={item.href}
             href={item.href}
             className={cn(
-              "text-[13px] font-medium tracking-[0.05em] uppercase transition-colors",
+              "border-b-2 pb-1 text-[13px] font-medium tracking-[0.05em] uppercase transition-colors",
               isActive
-                ? "text-moss"
-                : "text-summit/60 hover:text-summit",
+                ? "border-moss text-moss"
+                : "border-transparent text-summit/60 hover:text-summit",
             )}
           >
             {item.label}

@@ -1,8 +1,15 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import { useQueryStates } from "nuqs";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   difficultyLabels,
   featureLabels,
@@ -10,6 +17,8 @@ import {
 } from "@/lib/i18n/labels";
 import { trailsParsers } from "@/lib/search-params/trails";
 import { cn } from "@/lib/utils/cn";
+
+const ALL_REGIONS = "all";
 
 const DIFFICULTIES = ["easy", "moderate", "hard", "expert"] as const;
 const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
@@ -143,22 +152,47 @@ export function TrailFilters({ regions }: { regions: string[] }) {
       {/* Region */}
       <div className="mb-5">
         <SectionLabel>Rajoni</SectionLabel>
-        <div className="relative">
-          <select
+        <Select
+          value={filters.region || ALL_REGIONS}
+          onValueChange={(value) =>
+            setFilters({
+              region: value === ALL_REGIONS ? "" : value,
+              page: 1,
+            })
+          }
+        >
+          <SelectTrigger
             aria-label="Rajoni"
-            value={filters.region}
-            onChange={(e) => setFilters({ region: e.target.value, page: 1 })}
-            className="h-9 w-full appearance-none border border-summit/20 bg-summit/[0.05] px-3 pr-8 text-[12px] font-medium text-summit outline-none focus:border-moss/50"
+            className="h-9 w-full justify-between border-summit/15 bg-abyss px-3 text-[12px] font-medium text-summit/70 hover:bg-abyss focus-visible:border-moss/50 focus-visible:ring-0 data-[size=default]:h-9"
           >
-            <option value="">TË GJITHA</option>
+            <SelectValue>
+              {(value: string) => (value === ALL_REGIONS ? "TË GJITHA" : value)}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="z-50 border border-summit/15 bg-abyss text-summit/70">
+            <SelectItem
+              value={ALL_REGIONS}
+              className={cn(
+                "text-[12px] focus:bg-moss/15 focus:text-moss",
+                filters.region === "" && "text-moss",
+              )}
+            >
+              TË GJITHA
+            </SelectItem>
             {regions.map((region) => (
-              <option key={region} value={region}>
+              <SelectItem
+                key={region}
+                value={region}
+                className={cn(
+                  "text-[12px] focus:bg-moss/15 focus:text-moss",
+                  filters.region === region && "text-moss",
+                )}
+              >
                 {region}
-              </option>
+              </SelectItem>
             ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-summit/40" />
-        </div>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Season */}

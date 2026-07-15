@@ -14,17 +14,30 @@ import Link from "next/link";
 import { WaitlistForm } from "@/components/features/waitlist/waitlist-form";
 
 export const metadata: Metadata = {
-  title: { absolute: "HIKEIT — Komuniteti i Alpinizmit në Kosovë" },
+  title: { absolute: "HikeIt — Shtigjet dhe Klubet e Alpinizmit në Kosovë" },
   description:
-    "Platforma e alpinizmit për Kosovën dhe Ballkanin. Gjeni shtigje të verifikuara, bashkohuni me klubet më aktive dhe eksploroni natyrën e egër.",
+    "Zbulo shtigje të verifikuara, bashkohu me klube alpinizmi dhe rezervo udhëtime malore në Kosovë dhe Ballkan. Falas për hikerët.",
   alternates: { canonical: "https://hikeit.app" },
   openGraph: {
     type: "website",
-    title: "HIKEIT — Komuniteti i Alpinizmit në Kosovë",
+    title: "HikeIt — Shtigjet dhe Klubet e Alpinizmit në Kosovë",
     description:
       "Platforma e alpinizmit për Kosovën dhe Ballkanin. Gjeni shtigje të verifikuara dhe bashkohuni me klubet më aktive.",
     url: "https://hikeit.app",
     siteName: "HikeIt",
+  },
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HikeIt",
+  url: "https://hikeit.app",
+  description: "Platforma e alpinizmit në Kosovë dhe Ballkan.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://hikeit.app/search?q={search_term_string}",
+    "query-input": "required name=search_term_string",
   },
 };
 
@@ -97,8 +110,12 @@ const STATS = [
 export default function LandingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+      />
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="bg-abyss relative flex min-h-[calc(100svh-3.5rem)] flex-col overflow-hidden">
+      <section className="bg-abyss relative flex min-h-[calc(100svh-3.5rem)] flex-col overflow-hidden lg:px-10">
         {/* Mountain image from /public/hero/mountain.svg. */}
         <div
           aria-hidden
@@ -115,7 +132,7 @@ export default function LandingPage() {
           className="from-abyss/70 via-abyss/30 absolute inset-0 bg-gradient-to-r to-transparent"
         />
 
-        <div className="relative z-10 max-w-[650px] sm:px-10 sm:pt-20 px-6 !pt-10 pb-20">
+        <div className="relative z-10 max-w-[650px] sm:px-10 sm:pt-20 px-6 !pt-10 pb-10 sm:pb-20">
           <p className="text-sage mb-5 text-[11px] font-bold tracking-[0.15em] uppercase">
             🇽🇰 Kosovo · Ballkan · Alpet
           </p>
@@ -131,11 +148,11 @@ export default function LandingPage() {
             verifikuara, bashkohuni me klubet më aktive dhe eksploroni natyrën e
             egër si kurrë më parë.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
             {/* Butoni i parë: Fillo Falas */}
             <Link
               href="/register"
-              className="flex items-center gap-2 bg-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-[var(--abyss)] uppercase transition-all hover:opacity-90"
+              className="flex w-full items-center justify-center border-2 border-transparent gap-2 bg-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-abyss uppercase transition-all hover:bg-transparent hover:border-sage hover:text-sage sm:w-auto"
             >
               Fillo Falas <span>→</span>
             </Link>
@@ -143,16 +160,17 @@ export default function LandingPage() {
             {/* Butoni i dytë: Shfleto Shtigjet */}
             <Link
               href="/trails"
-              className="border border-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-sage uppercase transition-colors hover:bg-[var(--sage)]/10"
+              className="flex w-full items-center justify-center border-2 border-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-sage uppercase transition-colors hover:bg-sage hover:text-abyss sm:w-auto"
             >
               Shfleto Shtigjet
             </Link>
           </div>
         </div>
 
-        {/* Stats bar pinned to the bottom of the hero. */}
-        <div className="border-summit/10 absolute right-0 bottom-0 left-0 z-10 border-t bg-[rgba(13,31,20,0.4)] px-6 py-7 sm:px-20">
-          <div className="flex flex-wrap gap-x-20 gap-y-6">
+        {/* Stats bar: flows after content on mobile (avoids overlapping the
+            buttons above), pinned to the bottom of the hero from sm up. */}
+        <div className="border-summit/10 relative z-10 border-t bg-[rgba(13,31,20,0.4)] px-6 py-7 sm:absolute sm:right-0 sm:bottom-0 sm:left-0 sm:px-20">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-16 sm:gap-y-6">
             {STATS.map((stat) => (
               <div key={stat.label}>
                 <p className="font-heading text-sage text-[42px] leading-none font-extrabold tracking-[-0.02em]">
@@ -272,7 +290,7 @@ export default function LandingPage() {
       {/* ── Waitlist / Beta ─────────────────────────────────────────────── */}
       <section className="bg-forest px-6 py-[100px] text-center sm:px-20">
         <h2 className="text-summit mb-5 text-[clamp(48px,7vw,88px)] font-extrabold tracking-[-0.04em] uppercase">
-          Ji i Pari.
+          Bëhu i Pari.
         </h2>
         <p className="text-summit/60 mx-auto mb-10 max-w-[560px] text-[15px] leading-[1.65] font-normal">
           HikeIt është aktualisht në fazën BETA. Lini email-in tuaj për të marrë

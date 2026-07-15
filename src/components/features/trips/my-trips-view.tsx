@@ -29,10 +29,16 @@ export function MyTripsView({
 }) {
   return (
     <Tabs defaultValue="upcoming" className="flex flex-col">
-      <TabsList className="w-full justify-start border-b">
-        <TabsTrigger value="upcoming">Të ardhshme</TabsTrigger>
-        <TabsTrigger value="past">Të kaluara</TabsTrigger>
-        <TabsTrigger value="waitlisted">Lista e pritjes</TabsTrigger>
+      <TabsList className="scrollbar-hide w-full justify-start overflow-x-auto border-b">
+        <TabsTrigger value="upcoming" className="flex-none shrink-0 whitespace-nowrap">
+          Të ardhshme
+        </TabsTrigger>
+        <TabsTrigger value="past" className="flex-none shrink-0 whitespace-nowrap">
+          Të kaluara
+        </TabsTrigger>
+        <TabsTrigger value="waitlisted" className="flex-none shrink-0 whitespace-nowrap">
+          Lista e pritjes
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="upcoming" className="space-y-3 pt-6">

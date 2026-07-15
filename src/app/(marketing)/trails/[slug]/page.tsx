@@ -61,10 +61,45 @@ export async function generateMetadata({
     trail.description ??
     `Shteg ${trail.difficulty} në ${trail.region ?? "Kosovë"}.`;
   return {
-    title: trail.name,
+    title: `${trail.name}${trail.region ? ` — ${trail.region}` : ""}`,
     description,
+    keywords: [
+      trail.name,
+      trail.region ?? "",
+      trail.city ?? "",
+      "hiking Kosovo",
+      `${trail.name} trail`,
+    ].filter(Boolean),
     alternates: { canonical: `https://hikeit.app/trails/${trail.slug}` },
-    openGraph: { title: trail.name, description, type: "article" },
+    openGraph: {
+      title: trail.name,
+      description,
+      type: "article",
+      images: trail.coverImageUrl ? [{ url: trail.coverImageUrl }] : undefined,
+    },
+  };
+}
+
+function trailJsonLd(trail: Trail) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: trail.name,
+    description: trail.description ?? undefined,
+    geo: trail.startLat && trail.startLng
+      ? {
+          "@type": "GeoCoordinates",
+          latitude: Number(trail.startLat),
+          longitude: Number(trail.startLng),
+        }
+      : undefined,
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "XK",
+      addressRegion: trail.region ?? undefined,
+      addressLocality: trail.city ?? undefined,
+    },
+    url: `https://hikeit.app/trails/${trail.slug}`,
   };
 }
 
@@ -186,6 +221,10 @@ export default async function TrailDetailPage({
 
   return (
     <div className="bg-abyss">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(trailJsonLd(trail)) }}
+      />
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-1.5 px-6 py-3 text-[11px] font-medium tracking-[0.06em] uppercase">
         <Link href="/trails" className="text-summit/40 hover:text-summit/70">
@@ -212,7 +251,7 @@ export default async function TrailDetailPage({
           <CloudImage
             publicId={trail.coverImageUrl}
             size="cover"
-            alt={trail.name}
+            alt={`${trail.name} — shteg alpin${trail.region ? ` në ${trail.region}` : ""}, Kosovë`}
             fallback="trail"
             className="absolute inset-0 h-full w-full"
           />
@@ -542,7 +581,7 @@ export default async function TrailDetailPage({
                     <CloudImage
                       publicId={t.coverImageUrl}
                       size="thumbnail"
-                      alt={t.name}
+                      alt={`${t.name} — shteg alpin${t.region ? ` në ${t.region}` : ""}, Kosovë`}
                       fallback="trail"
                       className="h-full w-full"
                     />
