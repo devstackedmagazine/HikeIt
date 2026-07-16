@@ -35,10 +35,6 @@ function shortDate(date: Date): string {
 }
 
 export default async function DashboardPage() {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("HikeIt Sentry Test — delete me after verifying");
-  }
-
   const user = await getRequiredUser();
   const displayName = user.name ?? "hiker";
 
