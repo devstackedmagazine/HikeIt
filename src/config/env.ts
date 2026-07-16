@@ -72,7 +72,8 @@ export const env = createEnv({
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
     NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: z.string().min(1).optional(),
 
-    // Maps use Leaflet + OpenStreetMap — no token required.
+    // Maps use Leaflet + Thunderforest Outdoors tiles.
+    NEXT_PUBLIC_THUNDERFOREST_API_KEY: z.string().min(1).optional(),
 
     // Sentry / PostHog — optional.
     NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
@@ -118,6 +119,8 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET:
       process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+    NEXT_PUBLIC_THUNDERFOREST_API_KEY:
+      process.env.NEXT_PUBLIC_THUNDERFOREST_API_KEY,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
