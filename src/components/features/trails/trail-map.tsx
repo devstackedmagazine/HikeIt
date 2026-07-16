@@ -11,6 +11,8 @@ import {
   TileLayer,
 } from "react-leaflet";
 
+import { env } from "@/config/env";
+
 export interface TrailMapProps {
   startLat: number | string;
   startLng: number | string;
@@ -68,8 +70,8 @@ export function TrailMap({
       className="z-0 rounded-xl border"
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='Maps &copy; <a href="https://www.thunderforest.com">Thunderforest</a>, Data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${env.NEXT_PUBLIC_THUNDERFOREST_API_KEY}`}
       />
       {hasRoute ? (
         <Polyline positions={route} pathOptions={{ color: "#2D5F3F", weight: 4 }} />
