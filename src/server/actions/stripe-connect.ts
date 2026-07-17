@@ -111,12 +111,12 @@ export async function createOnboardingLink(
   }
   if (!accountId) return { error: "Nuk u krijua llogaria Stripe." };
 
-  const settingsUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/club/${org.slug}/settings`;
+  const settingsUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/club/${org.slug}?tab=settings`;
   try {
     const link = await getStripe().accountLinks.create({
       account: accountId,
-      refresh_url: `${settingsUrl}?stripe=refresh`,
-      return_url: `${settingsUrl}?stripe=success`,
+      refresh_url: `${settingsUrl}&stripe=refresh`,
+      return_url: `${settingsUrl}&stripe=success`,
       type: "account_onboarding",
     });
     return { url: link.url };
@@ -168,7 +168,7 @@ export async function getConnectAccountStatus(
       })
       .where(eq(organizations.id, org.id));
 
-    revalidatePath(`/dashboard/club/${org.slug}/settings`);
+    revalidatePath(`/dashboard/club/${org.slug}`);
     return { status };
   } catch (error) {
     captureError(error, {

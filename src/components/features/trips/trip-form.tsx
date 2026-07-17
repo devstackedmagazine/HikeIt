@@ -328,7 +328,7 @@ export function TripForm({
               </span>{" "}
               — mund ta ruani udhëtimin me çmim, por{" "}
               <Link
-                href={`/dashboard/club/${clubSlug}/settings`}
+                href={`/dashboard/club/${clubSlug}?tab=settings`}
                 className="font-bold underline underline-offset-2"
               >
                 lidhni Stripe në cilësimet e klubit
