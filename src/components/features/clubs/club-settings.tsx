@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { ConnectButton } from "@/components/features/billing/connect-button";
+import { ClubPaymentsSection } from "@/components/features/billing/club-payments-section";
 import { ImageUploader } from "@/components/features/images/image-uploader";
 import { Button } from "@/components/ui/button";
 import {
@@ -180,20 +180,10 @@ export function ClubSettings({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Pagesat</CardTitle>
-          <CardDescription>
-            Aktivizo Stripe Connect për të marrë pagesa për udhëtimet.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConnectButton
-            organizationId={club.id}
-            connected={Boolean(club.stripeConnectAccountId)}
-          />
-        </CardContent>
-      </Card>
+      <ClubPaymentsSection
+        organizationId={club.id}
+        status={club.stripeAccountStatus}
+      />
 
       {canDelete ? <DangerZone club={club} /> : null}
     </div>

@@ -11,6 +11,12 @@ import {
   registerForTrip,
 } from "@/server/actions/trip-registrations";
 
+import { TripPaymentForm } from "./trip-payment-form";
+
+const PLATFORM_FEE_RATE = 0.025;
+const STRIPE_PCT = 0.014;
+const STRIPE_FIXED = 0.25;
+
 export interface TripRegistrationCardProps {
   tripId: string;
   slug: string;
@@ -35,28 +41,43 @@ export function TripRegistrationCard({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  const free = Number(priceEur) === 0;
+  const price = Number(priceEur);
+  const free = price === 0;
   const isRegistered =
     registration !== null && registration.status !== "canceled";
-  const isFull =
-    maxParticipants !== null && confirmedCount >= maxParticipants;
+  const isFull = maxParticipants !== null && confirmedCount >= maxParticipants;
   const remaining =
-    maxParticipants !== null ? Math.max(0, maxParticipants - confirmedCount) : null;
+    maxParticipants !== null
+      ? Math.max(0, maxParticipants - confirmedCount)
+      : null;
   const pct =
     maxParticipants && maxParticipants > 0
       ? Math.min(100, Math.round((confirmedCount / maxParticipants) * 100))
       : 0;
 
+  // Rough hiker-facing breakdown of who takes what from the price.
+  const platformFee = price * PLATFORM_FEE_RATE;
+  const stripeFee = price * STRIPE_PCT + STRIPE_FIXED;
+
   async function register() {
     setLoading(true);
     setError(null);
     const result = await registerForTrip(tripId);
-    setLoading(false);
     if (!result.success) {
+      setLoading(false);
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
+    // Paid trips return a clientSecret → collect payment inline.
+    if (result.type === "paid" && result.clientSecret) {
+      setClientSecret(result.clientSecret);
+      setLoading(false);
+      return;
+    }
+    // Free trips are confirmed immediately.
+    setLoading(false);
     router.refresh();
   }
 
@@ -82,7 +103,7 @@ export function TripRegistrationCard({
         {free ? (
           <span className="text-moss uppercase">Falas</span>
         ) : (
-          `€${Number(priceEur)}`
+          `€${price}`
         )}
       </p>
 
@@ -100,8 +121,26 @@ export function TripRegistrationCard({
         </>
       ) : null}
 
+      {/* Fee breakdown for paid trips (not while paying). */}
+      {!free && !clientSecret && !isRegistered && !isPast ? (
+        <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] text-summit/25 uppercase">
+          Stripe merr ~€{stripeFee.toFixed(2)} · HikeIt €
+          {platformFee.toFixed(2)} (2.5%)
+        </p>
+      ) : null}
+
       <div className="mt-4">
-        {isPast ? (
+        {clientSecret ? (
+          <TripPaymentForm
+            clientSecret={clientSecret}
+            priceLabel={`€${price}`}
+            tripSlug={slug}
+            onCancel={() => {
+              setClientSecret(null);
+              router.refresh();
+            }}
+          />
+        ) : isPast ? (
           <span className={cn(buttonClass, "border-summit/15 text-summit/35")}>
             Përfundoi
           </span>
@@ -110,7 +149,7 @@ export function TripRegistrationCard({
             href={`/login?redirect=/trips/${slug}`}
             className={cn(buttonClass, primaryClass)}
           >
-            Regjistrohu →
+            {free ? "Regjistrohu falas →" : `Regjistrohu — €${price}`}
           </Link>
         ) : isRegistered ? (
           <div className="space-y-2">
@@ -138,7 +177,11 @@ export function TripRegistrationCard({
             className={cn(buttonClass, primaryClass, "disabled:opacity-50")}
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-            {isFull ? "Lista e pritjes →" : "Regjistrohu →"}
+            {isFull
+              ? "Lista e pritjes →"
+              : free
+                ? "Regjistrohu falas →"
+                : `Regjistrohu — €${price}`}
           </button>
         )}
       </div>
@@ -147,11 +190,11 @@ export function TripRegistrationCard({
         <p className="mt-2 text-[11px] text-danger" role="alert">
           {error}
         </p>
-      ) : (
+      ) : !clientSecret ? (
         <p className="mt-2.5 text-center text-[10px] tracking-[0.04em] text-summit/25 uppercase">
           Anulimi falas deri 24 ore para nisjes.
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

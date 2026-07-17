@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import type Stripe from "stripe";
 
 import { env } from "@/config/env";
@@ -7,12 +7,17 @@ import {
   auditLogs,
   notifications,
   organizations,
+  tripRegistrations,
+  trips,
   users,
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { PaymentFailed } from "@/lib/email/templates/payment-failed";
 import { SubscriptionActivated } from "@/lib/email/templates/subscription-activated";
 import { SubscriptionCanceled } from "@/lib/email/templates/subscription-canceled";
+import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
+import { mapAccountStatus } from "@/lib/stripe/connect-status";
+import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
 
 const BILLING_URL = `${env.NEXT_PUBLIC_APP_URL}/dashboard/billing`;
 const DASHBOARD_URL = `${env.NEXT_PUBLIC_APP_URL}/dashboard`;
@@ -201,4 +206,175 @@ export async function handlePaymentFailed(
       // best-effort
     }
   }
+}
+
+// ── Trip payments (Stripe Connect) ──────────────────────────────────────────
+
+/**
+ * A hiker's trip payment succeeded: confirm the registration, record the
+ * charge + amounts, notify + email the hiker, flip the trip to "full" if the
+ * last seat just went, and audit-log it.
+ */
+export async function handleTripPaymentSucceeded(
+  intent: Stripe.PaymentIntent,
+): Promise<void> {
+  const registration = await db.query.tripRegistrations.findFirst({
+    where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
+  });
+  if (!registration) return;
+  // Idempotency: Stripe can deliver the same event more than once.
+  if (registration.paymentStatus === "paid") return;
+
+  const amountEur = (intent.amount_received || intent.amount) / 100;
+  const feeEur = (intent.application_fee_amount ?? 0) / 100;
+  const chargeId =
+    typeof intent.latest_charge === "string"
+      ? intent.latest_charge
+      : (intent.latest_charge?.id ?? null);
+
+  await db
+    .update(tripRegistrations)
+    .set({
+      status: "confirmed",
+      paymentStatus: "paid",
+      stripeChargeId: chargeId,
+      amountPaidEur: amountEur.toFixed(2),
+      platformFeeEur: feeEur.toFixed(2),
+    })
+    .where(eq(tripRegistrations.id, registration.id));
+
+  const trip = await db.query.trips.findFirst({
+    where: eq(trips.id, registration.tripId),
+  });
+
+  await db.insert(auditLogs).values({
+    userId: registration.userId,
+    action: "trip.payment.succeeded",
+    entityType: "trip",
+    entityId: registration.tripId,
+    metadata: {
+      registrationId: registration.id,
+      amountEur,
+      feeEur,
+      paymentIntentId: intent.id,
+    },
+  });
+
+  await db.insert(notifications).values({
+    userId: registration.userId,
+    type: "trip",
+    title: "Pagesa u konfirmua",
+    body: trip
+      ? `Regjistrimi juaj për "${trip.title}" u konfirmua.`
+      : "Regjistrimi juaj u konfirmua.",
+    link: trip ? `/trips/${trip.slug}` : "/dashboard/my-trips",
+  });
+
+  if (trip) {
+    // Flip to "full" if confirmed registrations now fill it.
+    if (trip.maxParticipants !== null) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(tripRegistrations)
+        .where(
+          and(
+            eq(tripRegistrations.tripId, trip.id),
+            eq(tripRegistrations.status, "confirmed"),
+          ),
+        );
+      if ((row?.value ?? 0) >= trip.maxParticipants && trip.status === "open") {
+        await db
+          .update(trips)
+          .set({ status: "full" })
+          .where(eq(trips.id, trip.id));
+      }
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, registration.userId),
+      columns: { email: true },
+    });
+    if (user?.email) {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: `Regjistrimi u konfirmua: ${trip.title}`,
+          template: TripConfirmation({
+            tripTitle: trip.title,
+            dateLabel: formatTripDateTime(trip.startDatetime),
+            meetingPoint: trip.meetingPoint,
+            tripUrl: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.slug}`,
+            calendarUrl: googleCalendarUrl({
+              title: trip.title,
+              start: trip.startDatetime,
+              end: trip.endDatetime,
+              location: trip.meetingPoint ?? undefined,
+            }),
+          }),
+        });
+      } catch {
+        // best-effort
+      }
+    }
+  }
+}
+
+/** A hiker's trip payment failed: cancel the pending registration. */
+export async function handleTripPaymentFailed(
+  intent: Stripe.PaymentIntent,
+): Promise<void> {
+  const registration = await db.query.tripRegistrations.findFirst({
+    where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
+  });
+  if (!registration || registration.paymentStatus === "paid") return;
+
+  await db
+    .update(tripRegistrations)
+    .set({
+      status: "canceled",
+      paymentStatus: "failed",
+      canceledAt: new Date(),
+    })
+    .where(eq(tripRegistrations.id, registration.id));
+
+  await db.insert(auditLogs).values({
+    userId: registration.userId,
+    action: "trip.payment.failed",
+    entityType: "trip",
+    entityId: registration.tripId,
+    metadata: { registrationId: registration.id, paymentIntentId: intent.id },
+  });
+}
+
+/**
+ * A club's Connect account changed: sync our status enum from
+ * charges_enabled / details_submitted.
+ */
+export async function handleConnectAccountUpdated(
+  account: Stripe.Account,
+): Promise<void> {
+  const org = await db.query.organizations.findFirst({
+    where: eq(organizations.stripeConnectAccountId, account.id),
+    columns: { id: true, stripeOnboardingCompletedAt: true },
+  });
+  if (!org) return;
+
+  const status = mapAccountStatus(account);
+  await db
+    .update(organizations)
+    .set({
+      stripeAccountStatus: status,
+      stripeOnboardingCompletedAt:
+        status === "active" && !org.stripeOnboardingCompletedAt
+          ? new Date()
+          : org.stripeOnboardingCompletedAt,
+    })
+    .where(eq(organizations.id, org.id));
+
+  await db.insert(auditLogs).values({
+    action: "stripe.account.updated",
+    entityType: "organization",
+    entityId: org.id,
+    metadata: { status, accountId: account.id },
+  });
 }

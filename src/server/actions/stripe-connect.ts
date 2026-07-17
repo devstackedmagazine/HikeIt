@@ -1,18 +1,31 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
-import { organizationMembers, organizations, trips } from "@/lib/db/schema";
+import { organizationMembers, organizations } from "@/lib/db/schema";
+import { captureError } from "@/lib/sentry";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
+import {
+  mapAccountStatus,
+  type StripeAccountStatus,
+} from "@/lib/stripe/connect-status";
 
-export interface UrlResult {
+interface UrlResult {
   url?: string;
   error?: string;
 }
 
+interface StatusResult {
+  status?: StripeAccountStatus;
+  error?: string;
+}
+
+/** Active admin of `organizationId`, or null. Connect payout config is
+ * admin-only — organizers can manage trips but not the club's bank details. */
 async function requireOrgAdmin(userId: string, organizationId: string) {
   const rows = await db
     .select({ org: organizations })
@@ -31,8 +44,54 @@ async function requireOrgAdmin(userId: string, organizationId: string) {
   return rows[0]?.org ?? null;
 }
 
-/** Begin Stripe Connect Express onboarding so a club can receive payouts. */
-export async function startConnectOnboarding(
+/**
+ * Create a Stripe Connect Express account for the club if it doesn't have one,
+ * saving the id back to the org. Returns the account id. Admin-only.
+ */
+export async function createConnectAccount(
+  organizationId: string,
+): Promise<{ accountId?: string; error?: string }> {
+  if (!isStripeConfigured()) {
+    return { error: "Pagesat nuk janë konfiguruar ende." };
+  }
+  const session = await getOptionalSession();
+  if (!session) return { error: "Duhet të jeni i kyçur." };
+
+  const org = await requireOrgAdmin(session.user.id, organizationId);
+  if (!org) return { error: "Nuk keni qasje." };
+
+  if (org.stripeConnectAccountId) {
+    return { accountId: org.stripeConnectAccountId };
+  }
+
+  try {
+    const account = await getStripe().accounts.create({
+      type: "express",
+      metadata: { organizationId: org.id },
+    });
+    await db
+      .update(organizations)
+      .set({
+        stripeConnectAccountId: account.id,
+        stripeAccountStatus: "pending",
+      })
+      .where(eq(organizations.id, org.id));
+    return { accountId: account.id };
+  } catch (error) {
+    captureError(error, {
+      action: "createConnectAccount",
+      userId: session.user.id,
+      extra: { organizationId },
+    });
+    return { error: "Nuk mundëm të krijojmë llogarinë Stripe. Provoni sërish." };
+  }
+}
+
+/**
+ * Create a hosted Stripe onboarding link for the club's Connect account,
+ * creating the account first if needed. Returns the URL to redirect to.
+ */
+export async function createOnboardingLink(
   organizationId: string,
 ): Promise<UrlResult> {
   if (!isStripeConfigured()) {
@@ -44,78 +103,79 @@ export async function startConnectOnboarding(
   const org = await requireOrgAdmin(session.user.id, organizationId);
   if (!org) return { error: "Nuk keni qasje." };
 
-  const stripe = getStripe();
-
-  let accountId = org.stripeConnectAccountId;
+  let accountId = org.stripeConnectAccountId ?? undefined;
   if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      metadata: { organizationId: org.id },
-    });
-    accountId = account.id;
-    await db
-      .update(organizations)
-      .set({ stripeConnectAccountId: accountId })
-      .where(eq(organizations.id, org.id));
+    const created = await createConnectAccount(organizationId);
+    if (created.error) return { error: created.error };
+    accountId = created.accountId;
   }
+  if (!accountId) return { error: "Nuk u krijua llogaria Stripe." };
 
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard/club/${org.slug}`,
-    return_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard/club/${org.slug}`,
-    type: "account_onboarding",
-  });
-
-  return { url: link.url };
+  const settingsUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/club/${org.slug}/settings`;
+  try {
+    const link = await getStripe().accountLinks.create({
+      account: accountId,
+      refresh_url: `${settingsUrl}?stripe=refresh`,
+      return_url: `${settingsUrl}?stripe=success`,
+      type: "account_onboarding",
+    });
+    return { url: link.url };
+  } catch (error) {
+    captureError(error, {
+      action: "createOnboardingLink",
+      userId: session.user.id,
+      extra: { organizationId },
+    });
+    return { error: "Nuk mundëm të hapim konfigurimin e Stripe. Provoni sërish." };
+  }
 }
 
 /**
- * Charge a hiker for a paid trip via Stripe Connect, taking a 5% platform fee
- * and routing the rest to the club. Requires the club to have completed Connect
- * onboarding. (Foundation — `registerForTrip` still handles free trips.)
+ * Fetch the club's Connect account from Stripe, map charges_enabled /
+ * details_submitted to our status enum, persist it, and return it. Called on
+ * return from onboarding (and by the `account.updated` webhook's DB path).
  */
-export async function chargeForTrip(tripId: string): Promise<UrlResult> {
+export async function getConnectAccountStatus(
+  organizationId: string,
+): Promise<StatusResult> {
   if (!isStripeConfigured()) {
     return { error: "Pagesat nuk janë konfiguruar ende." };
   }
   const session = await getOptionalSession();
   if (!session) return { error: "Duhet të jeni i kyçur." };
 
-  const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
-  if (!trip) return { error: "Udhëtimi nuk u gjet." };
+  const org = await requireOrgAdmin(session.user.id, organizationId);
+  if (!org) return { error: "Nuk keni qasje." };
 
-  const price = Number(trip.priceEur);
-  if (price <= 0) return { error: "Ky udhëtim është falas." };
-
-  const org = await db.query.organizations.findFirst({
-    where: eq(organizations.id, trip.organizationId),
-    columns: { stripeConnectAccountId: true },
-  });
-  if (!org?.stripeConnectAccountId) {
-    return { error: "Klubi nuk ka aktivizuar pagesat ende." };
+  if (!org.stripeConnectAccountId) {
+    return { status: "not_connected" };
   }
 
-  const amount = Math.round(price * 100);
-  const checkout = await getStripe().checkout.sessions.create({
-    mode: "payment",
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "eur",
-          unit_amount: amount,
-          product_data: { name: trip.title },
-        },
-      },
-    ],
-    payment_intent_data: {
-      application_fee_amount: Math.round(amount * 0.05),
-      transfer_data: { destination: org.stripeConnectAccountId },
-    },
-    metadata: { tripId, userId: session.user.id },
-    success_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.slug}?paid=1`,
-    cancel_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.slug}`,
-  });
+  try {
+    const account = await getStripe().accounts.retrieve(
+      org.stripeConnectAccountId,
+    );
+    const status = mapAccountStatus(account);
 
-  return { url: checkout.url ?? undefined };
+    await db
+      .update(organizations)
+      .set({
+        stripeAccountStatus: status,
+        stripeOnboardingCompletedAt:
+          status === "active" && !org.stripeOnboardingCompletedAt
+            ? new Date()
+            : org.stripeOnboardingCompletedAt,
+      })
+      .where(eq(organizations.id, org.id));
+
+    revalidatePath(`/dashboard/club/${org.slug}/settings`);
+    return { status };
+  } catch (error) {
+    captureError(error, {
+      action: "getConnectAccountStatus",
+      userId: session.user.id,
+      extra: { organizationId },
+    });
+    return { error: "Nuk mundëm të lexojmë statusin e Stripe." };
+  }
 }

@@ -1,8 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, CreditCard, Loader2, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  CreditCard,
+  Loader2,
+  Search,
+} from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -85,7 +92,7 @@ function Field({
 export function TripForm({
   clubSlug,
   trailOptions,
-  canCollectPayments,
+  stripeActive,
   mode = "create",
   tripId,
   tripSlug,
@@ -93,7 +100,7 @@ export function TripForm({
 }: {
   clubSlug: string;
   trailOptions: TrailOption[];
-  canCollectPayments: boolean;
+  stripeActive: boolean;
   mode?: "create" | "edit";
   tripId?: string;
   tripSlug?: string;
@@ -291,15 +298,14 @@ export function TripForm({
             type="number"
             min={0}
             step="0.01"
-            disabled={!canCollectPayments}
             placeholder="0.00"
-            className="font-heading h-full flex-1 bg-transparent px-3.5 text-base font-bold text-summit placeholder:text-summit/15 focus:outline-none disabled:opacity-50"
+            className="font-heading h-full flex-1 bg-transparent px-3.5 text-base font-bold text-summit placeholder:text-summit/15 focus:outline-none"
             {...register("priceEur", {
               setValueAs: (v) => (v === "" || v == null ? 0 : Number(v)),
             })}
           />
         </div>
-        {canCollectPayments ? (
+        {stripeActive ? (
           <div className="flex items-start gap-2.5 border border-moss/15 bg-moss/5 px-3.5 py-3">
             <CreditCard className="mt-0.5 size-4 shrink-0 text-moss" />
             <div>
@@ -314,9 +320,22 @@ export function TripForm({
             </div>
           </div>
         ) : (
-          <p className="border border-summit/10 bg-summit/[0.03] px-3.5 py-3 text-[11px] text-summit/40">
-            Kaloni te Pro për të mbledhur pagesa online.
-          </p>
+          <div className="flex items-start gap-2.5 border border-alert/30 bg-alert/10 px-3.5 py-3">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-alert" />
+            <p className="text-[11px] leading-[1.55] text-alert">
+              <span className="font-bold tracking-[0.06em] uppercase">
+                Stripe nuk është aktiv
+              </span>{" "}
+              — mund ta ruani udhëtimin me çmim, por{" "}
+              <Link
+                href={`/dashboard/club/${clubSlug}/settings`}
+                className="font-bold underline underline-offset-2"
+              >
+                lidhni Stripe në cilësimet e klubit
+              </Link>{" "}
+              për të mbledhur pagesa.
+            </p>
+          </div>
         )}
       </Section>
 

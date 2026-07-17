@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import {
   auditLogs,
   organizationMembers,
+  organizations,
   tripRegistrations,
   trips,
   users,
@@ -18,14 +19,23 @@ import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
 import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
+import { captureError, trackEvent } from "@/lib/sentry";
+import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
 import {
   formatTripDateTime,
   googleCalendarUrl,
 } from "@/lib/utils/datetime";
 
+/** HikeIt's platform commission on every paid trip registration. */
+const PLATFORM_FEE_RATE = 0.025;
+
 export interface RegisterResult {
   success: boolean;
+  /** "free" → confirmed/waitlisted directly; "paid" → pay via clientSecret. */
+  type?: "free" | "paid";
   status?: "confirmed" | "waitlisted";
+  /** Present when `type === "paid"`: pass to Stripe Elements to collect payment. */
+  clientSecret?: string;
   error?: string;
 }
 
@@ -45,7 +55,16 @@ async function isClubManager(
   return row?.role === "admin" || row?.role === "organizer";
 }
 
-/** Register the current user for a trip (confirmed, or waitlisted if full). */
+/**
+ * Register the current user for a trip.
+ *
+ * - Free trip (priceEur ≤ 0): confirmed immediately (or waitlisted if full),
+ *   returns `{ type: "free" }`.
+ * - Paid trip: creates a Stripe PaymentIntent routed to the club's Connect
+ *   account with HikeIt's 2.5% application fee, records a `pending`
+ *   registration, and returns `{ type: "paid", clientSecret }` for the client
+ *   to complete with Stripe Elements. The webhook confirms it on success.
+ */
 export async function registerForTrip(tripId: string): Promise<RegisterResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
@@ -63,11 +82,157 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
       ne(tripRegistrations.status, "canceled"),
     ),
   });
-  if (existing) {
+  // A prior *pending payment* attempt is allowed to resume (see paid path);
+  // any other non-canceled registration means they're already in.
+  if (existing && existing.paymentStatus !== "pending") {
     return { success: false, error: "Jeni tashmë i regjistruar." };
   }
 
-  const [confirmedCount] = await db
+  const price = Number(trip.priceEur ?? 0);
+  return price > 0
+    ? registerPaid(session.user.id, trip, existing?.id ?? null)
+    : registerFree(session.user.id, trip);
+}
+
+/** Free trip: confirm (or waitlist), email, revalidate. */
+async function registerFree(
+  userId: string,
+  trip: typeof trips.$inferSelect,
+): Promise<RegisterResult> {
+  const confirmed = await confirmedCountFor(trip.id);
+  const isFull =
+    trip.maxParticipants !== null && confirmed >= trip.maxParticipants;
+  const status = isFull ? "waitlisted" : "confirmed";
+
+  await db.insert(tripRegistrations).values({
+    tripId: trip.id,
+    userId,
+    status,
+    paymentStatus: "free",
+  });
+
+  if (
+    status === "confirmed" &&
+    trip.maxParticipants !== null &&
+    confirmed + 1 >= trip.maxParticipants
+  ) {
+    await db.update(trips).set({ status: "full" }).where(eq(trips.id, trip.id));
+  }
+
+  await db.insert(auditLogs).values({
+    userId,
+    action: "trip.registered",
+    entityType: "trip",
+    entityId: trip.id,
+    metadata: { organizationId: trip.organizationId, status },
+  });
+
+  if (status === "confirmed") void sendConfirmation(userId, trip);
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath("/dashboard/my-trips");
+  return { success: true, type: "free", status };
+}
+
+/**
+ * Paid trip: create a Connect PaymentIntent and a `pending` registration.
+ * Confirmation happens in the `payment_intent.succeeded` webhook, never here —
+ * a client that abandons the payment form must not end up registered.
+ */
+async function registerPaid(
+  userId: string,
+  trip: typeof trips.$inferSelect,
+  existingPendingId: string | null,
+): Promise<RegisterResult> {
+  if (!isStripeConfigured()) {
+    return { success: false, error: "Pagesat nuk janë konfiguruar ende." };
+  }
+
+  const club = await db.query.organizations.findFirst({
+    where: eq(organizations.id, trip.organizationId),
+    columns: { stripeConnectAccountId: true, stripeAccountStatus: true },
+  });
+  if (
+    !club?.stripeConnectAccountId ||
+    club.stripeAccountStatus !== "active"
+  ) {
+    return {
+      success: false,
+      error: "Ky klub nuk pranon pagesa online aktualisht.",
+    };
+  }
+
+  // Refuse to sell the last seat's worth if the trip is already full — paid
+  // hikers shouldn't be charged into a waitlist.
+  const confirmed = await confirmedCountFor(trip.id);
+  if (trip.maxParticipants !== null && confirmed >= trip.maxParticipants) {
+    return { success: false, error: "Ky udhëtim është plot." };
+  }
+
+  // All money math in integer cents — never float euros.
+  const amountCents = Math.round(Number(trip.priceEur) * 100);
+  const feeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
+
+  try {
+    const intent = await getStripe().paymentIntents.create({
+      amount: amountCents,
+      currency: "eur",
+      application_fee_amount: feeCents,
+      transfer_data: { destination: club.stripeConnectAccountId },
+      metadata: {
+        tripId: trip.id,
+        userId,
+        organizationId: trip.organizationId,
+      },
+      automatic_payment_methods: { enabled: true },
+    });
+
+    if (!intent.client_secret) {
+      return { success: false, error: "Nuk u krijua pagesa. Provoni sërish." };
+    }
+
+    if (existingPendingId) {
+      // Resume an abandoned attempt — reuse the row (unique trip+user) and
+      // point it at the fresh intent.
+      await db
+        .update(tripRegistrations)
+        .set({
+          status: "pending",
+          paymentStatus: "pending",
+          stripePaymentIntentId: intent.id,
+        })
+        .where(eq(tripRegistrations.id, existingPendingId));
+    } else {
+      await db.insert(tripRegistrations).values({
+        tripId: trip.id,
+        userId,
+        status: "pending",
+        paymentStatus: "pending",
+        stripePaymentIntentId: intent.id,
+      });
+    }
+
+    trackEvent("trip.payment.started", {
+      tripId: trip.id,
+      organizationId: trip.organizationId,
+      amountCents,
+      feeCents,
+    });
+
+    return { success: true, type: "paid", clientSecret: intent.client_secret };
+  } catch (error) {
+    captureError(error, {
+      action: "registerForTrip.paid",
+      userId,
+      extra: { tripId: trip.id, organizationId: trip.organizationId },
+    });
+    return { success: false, error: "Pagesa dështoi të nisë. Provoni sërish." };
+  }
+}
+
+/** Count of confirmed registrations for a trip. */
+async function confirmedCountFor(tripId: string): Promise<number> {
+  const [row] = await db
     .select({ value: count() })
     .from(tripRegistrations)
     .where(
@@ -76,43 +241,7 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
         eq(tripRegistrations.status, "confirmed"),
       ),
     );
-
-  const confirmed = confirmedCount?.value ?? 0;
-  const isFull =
-    trip.maxParticipants !== null && confirmed >= trip.maxParticipants;
-  const status = isFull ? "waitlisted" : "confirmed";
-
-  await db.insert(tripRegistrations).values({
-    tripId,
-    userId: session.user.id,
-    status,
-    paymentStatus: "free",
-  });
-
-  // Flip the trip to "full" once this confirmed seat takes the last slot.
-  if (
-    status === "confirmed" &&
-    trip.maxParticipants !== null &&
-    confirmed + 1 >= trip.maxParticipants
-  ) {
-    await db.update(trips).set({ status: "full" }).where(eq(trips.id, tripId));
-  }
-
-  await db.insert(auditLogs).values({
-    userId: session.user.id,
-    action: "trip.registered",
-    entityType: "trip",
-    entityId: tripId,
-    metadata: { organizationId: trip.organizationId, status },
-  });
-
-  if (status === "confirmed") {
-    void sendConfirmation(session.user.id, trip);
-  }
-
-  revalidatePath(`/trips/${trip.slug}`);
-  revalidatePath("/dashboard/my-trips");
-  return { success: true, status };
+  return row?.value ?? 0;
 }
 
 async function sendConfirmation(
