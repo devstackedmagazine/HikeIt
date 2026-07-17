@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth/client";
@@ -56,10 +56,26 @@ function buildItems(
   ];
 }
 
-function isActive(pathname: string, item: NavItem): boolean {
-  const path = item.href.split("?")[0] ?? item.href;
-  if (item.exact) return pathname === path;
-  return pathname === path || pathname.startsWith(`${path}/`);
+/**
+ * `usePathname()` never includes the query string, so a naive path-only
+ * comparison can't tell "?tab=members" apart from "?tab=settings" (or from
+ * no tab at all) — every same-path item would compare equal. Parse each
+ * item's own `?tab=` (if any) and check it against the page's actual current
+ * `tab` search param instead.
+ */
+function isActive(
+  pathname: string,
+  currentTab: string | null,
+  item: NavItem,
+): boolean {
+  const [path, query] = item.href.split("?");
+  const onPath = item.exact
+    ? pathname === path
+    : pathname === path || pathname.startsWith(`${path}/`);
+  if (!onPath) return false;
+
+  const itemTab = query ? new URLSearchParams(query).get("tab") : null;
+  return itemTab ? currentTab === itemTab : !currentTab;
 }
 
 export function DashboardSidebar({
@@ -69,6 +85,7 @@ export function DashboardSidebar({
   adminClubSlug,
 }: DashboardNavProps) {
   const pathname = usePathname();
+  const currentTab = useSearchParams().get("tab");
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const items = buildItems(variant, adminClubSlug);
@@ -123,7 +140,7 @@ export function DashboardSidebar({
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 py-3">
         {items.map((item) => {
-          const active = isActive(pathname, item);
+          const active = isActive(pathname, currentTab, item);
           return (
             <Link
               key={item.label}
@@ -182,12 +199,13 @@ export function DashboardMobileTabs({
   adminClubSlug: string | null;
 }) {
   const pathname = usePathname();
+  const currentTab = useSearchParams().get("tab");
   const items = buildItems(variant, adminClubSlug).slice(0, 5);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-summit/[0.06] bg-abyss md:hidden">
       {items.map((item) => {
-        const active = isActive(pathname, item);
+        const active = isActive(pathname, currentTab, item);
         return (
           <Link
             key={item.label}

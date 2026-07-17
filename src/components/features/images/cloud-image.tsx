@@ -17,6 +17,9 @@ export interface CloudImageProps {
   size: Exclude<ImageSize, "original">;
   alt: string;
   className?: string;
+  /** Extra classes for the inner `<Image>` itself (e.g. a hover transform),
+   * as opposed to `className`, which applies to the outer wrapper. */
+  imageClassName?: string;
   fallback?: keyof typeof FALLBACK_ICON;
   priority?: boolean;
   sizes?: string;
@@ -31,6 +34,7 @@ export function CloudImage({
   size,
   alt,
   className,
+  imageClassName,
   fallback = "trip",
   priority,
   sizes = "(max-width: 768px) 100vw, 33vw",
@@ -52,7 +56,7 @@ export function CloudImage({
           fill
           sizes={sizes}
           priority={priority}
-          className="object-cover"
+          className={cn("object-cover", imageClassName)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">

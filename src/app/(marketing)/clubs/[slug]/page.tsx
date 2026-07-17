@@ -15,12 +15,7 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { PhotoGallery } from "@/components/features/images/photo-gallery";
 import { DifficultyBadge } from "@/components/shared/difficulty-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
 import { getClubBySlug } from "@/server/queries/clubs";
@@ -58,20 +53,20 @@ function TripCard({ trip }: { trip: Trip }) {
   return (
     <Link
       href={`/trips/${trip.slug}`}
-      className="block rounded-xl border p-4 transition-colors hover:bg-muted"
+      className="hover:bg-muted block rounded-xl border p-4 transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="font-medium leading-tight">{trip.title}</p>
+        <p className="leading-tight font-medium">{trip.title}</p>
         {trip.difficulty ? (
           <DifficultyBadge difficulty={trip.difficulty} />
         ) : null}
       </div>
-      <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+      <div className="text-muted-foreground mt-3 flex items-center justify-between text-sm">
         <span className="inline-flex items-center gap-1">
           <CalendarDays className="size-4" />
           {formatTripDate(trip.startDatetime)}
         </span>
-        <span className="font-medium text-foreground">
+        <span className="text-foreground font-medium">
           {free ? "Falas" : `€${trip.priceEur}`}
         </span>
       </div>
@@ -132,7 +127,7 @@ export default async function ClubProfilePage({
           priority
         />
         <div className="mx-auto h-full max-w-5xl px-4 sm:px-6">
-          <div className="absolute -bottom-10 size-24 overflow-hidden rounded-2xl border-4 border-background bg-muted">
+          <div className="border-background bg-muted absolute -bottom-10 size-24 overflow-hidden rounded-2xl border-4">
             <CloudImage
               publicId={club.logoUrl}
               size="avatar"
@@ -148,7 +143,7 @@ export default async function ClubProfilePage({
         <div className="mt-14 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{club.name}</h1>
-            <p className="mt-1 flex items-center gap-1 text-muted-foreground">
+            <p className="text-muted-foreground mt-1 flex items-center gap-1">
               <MapPin className="size-4" />
               {club.city ?? "Kosovë"}
             </p>
@@ -177,11 +172,11 @@ export default async function ClubProfilePage({
         </div>
 
         {/* Stats bar */}
-        <div className="mt-8 grid grid-cols-2 gap-4 rounded-2xl border bg-moss/30 p-6 sm:grid-cols-4">
+        <div className="bg-moss mt-8 grid grid-cols-2 gap-4 rounded-2xl border p-6 sm:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
-              <p className="text-2xl font-bold text-primary">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-primary text-2xl font-bold">{stat.value}</p>
+              <p className="text-muted-foreground text-xs">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -190,11 +185,11 @@ export default async function ClubProfilePage({
         {club.description ? (
           <section className="mt-10">
             <h2 className="text-xl font-bold">Rreth klubit</h2>
-            <p className="mt-2 leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground mt-2 leading-relaxed">
               {club.description}
             </p>
             {club.foundedYear ? (
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 Themeluar në {club.foundedYear}
               </p>
             ) : null}
@@ -207,7 +202,7 @@ export default async function ClubProfilePage({
             <h2 className="text-xl font-bold">Udhëtime të ardhshme</h2>
             <Link
               href={`/trips?club=${club.slug}`}
-              className="text-sm text-primary underline-offset-4 hover:underline"
+              className="text-primary text-sm underline-offset-4 hover:underline"
             >
               Shiko të gjitha
             </Link>
@@ -248,17 +243,17 @@ export default async function ClubProfilePage({
               <CardTitle className="text-base">Anëtarët</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-primary">
+              <p className="text-primary text-2xl font-bold">
                 {club.memberCount}
               </p>
-              <p className="text-sm text-muted-foreground">anëtarë aktivë</p>
+              <p className="text-muted-foreground text-sm">anëtarë aktivë</p>
             </CardContent>
           </Card>
 
           <Card className="flex flex-col justify-center">
             <CardContent className="space-y-3 py-6">
               <p className="font-semibold">Bashkohu me {club.name}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Bëhu pjesë e komunitetit dhe merr pjesë në udhëtime.
               </p>
               <JoinClubButton

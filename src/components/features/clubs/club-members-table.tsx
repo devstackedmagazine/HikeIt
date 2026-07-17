@@ -32,17 +32,25 @@ import {
 } from "@/server/actions/clubs";
 import type { MemberWithUser } from "@/server/queries/clubs";
 
+const LAST_ADMIN_MESSAGE =
+  "Je administratori i vetëm — cakto një admin tjetër fillimisht.";
+
 export function ClubMembersTable({
   members,
   clubSlug,
   canManage,
+  currentUserId,
 }: {
   members: MemberWithUser[];
   clubSlug: string;
   canManage: boolean;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const adminCount = members.filter((m) => m.role === "admin").length;
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
@@ -53,17 +61,27 @@ export function ClubMembersTable({
   });
 
   async function onRoleChange(membershipId: string, role: string) {
-    await changeMemberRole(
+    setError(null);
+    const result = await changeMemberRole(
       clubSlug,
       membershipId,
       role as "member" | "organizer" | "admin",
     );
+    if (!result.success) {
+      setError(result.error ?? "Diçka shkoi keq.");
+      return;
+    }
     router.refresh();
   }
 
   async function onRemove(membershipId: string) {
     if (!confirm("Hiq këtë anëtar?")) return;
-    await removeMember(clubSlug, membershipId);
+    setError(null);
+    const result = await removeMember(clubSlug, membershipId);
+    if (!result.success) {
+      setError(result.error ?? "Diçka shkoi keq.");
+      return;
+    }
     router.refresh();
   }
 
@@ -79,9 +97,11 @@ export function ClubMembersTable({
         {canManage ? <InviteDialog clubSlug={clubSlug} /> : null}
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         {members.length} anëtarë gjithsej
       </p>
+
+      {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
       <div className="overflow-x-auto rounded-xl border">
         <Table>
@@ -95,50 +115,68 @@ export function ClubMembersTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((m) => (
-              <TableRow key={m.membershipId}>
-                <TableCell className="font-medium">
-                  {m.name ?? "Anëtar"}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {m.email}
-                </TableCell>
-                <TableCell>
-                  {canManage ? (
-                    <select
-                      value={m.role}
-                      onChange={(e) =>
-                        onRoleChange(m.membershipId, e.target.value)
-                      }
-                      className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
-                    >
-                      <option value="member">Anëtar</option>
-                      <option value="organizer">Organizator</option>
-                      <option value="admin">Administrator</option>
-                    </select>
-                  ) : (
-                    <Badge variant="secondary">
-                      {memberRoleLabels[m.role]}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatTripDate(m.joinedAt)}
-                </TableCell>
-                {canManage ? (
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => onRemove(m.membershipId)}
-                      aria-label="Hiq"
-                    >
-                      <Trash2 className="text-destructive" />
-                    </Button>
+            {filtered.map((m) => {
+              const isOnlyAdmin =
+                m.userId === currentUserId &&
+                m.role === "admin" &&
+                adminCount <= 1;
+
+              return (
+                <TableRow key={m.membershipId}>
+                  <TableCell className="font-medium">
+                    {m.name ?? "Anëtar"}
                   </TableCell>
-                ) : null}
-              </TableRow>
-            ))}
+                  <TableCell className="text-muted-foreground">
+                    {m.email}
+                  </TableCell>
+                  <TableCell>
+                    {canManage ? (
+                      <div className="space-y-1">
+                        <select
+                          value={m.role}
+                          disabled={isOnlyAdmin}
+                          title={isOnlyAdmin ? LAST_ADMIN_MESSAGE : undefined}
+                          onChange={(e) =>
+                            onRoleChange(m.membershipId, e.target.value)
+                          }
+                          className="border-input h-8 rounded-md border bg-transparent px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="member">Anëtar</option>
+                          <option value="organizer">Organizator</option>
+                          <option value="admin">Administrator</option>
+                        </select>
+                        {isOnlyAdmin ? (
+                          <p className="text-muted-foreground text-xs italic">
+                            Admin i vetëm — nuk mund të ndryshosh rolin
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">
+                        {memberRoleLabels[m.role]}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatTripDate(m.joinedAt)}
+                  </TableCell>
+                  {canManage ? (
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => onRemove(m.membershipId)}
+                        disabled={isOnlyAdmin}
+                        title={isOnlyAdmin ? LAST_ADMIN_MESSAGE : undefined}
+                        aria-label="Hiq"
+                      >
+                        <Trash2 className="text-destructive" />
+                      </Button>
+                    </TableCell>
+                  ) : null}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -200,14 +238,18 @@ function InviteDialog({ clubSlug }: { clubSlug: string }) {
               onChange={(e) =>
                 setRole(e.target.value as "member" | "organizer")
               }
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+              className="border-input h-9 w-full rounded-lg border bg-transparent px-2.5 text-sm"
             >
               <option value="member">Anëtar</option>
               <option value="organizer">Organizator</option>
             </select>
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button onClick={submit} disabled={loading || !email} className="w-full">
+          {error ? <p className="text-destructive text-sm">{error}</p> : null}
+          <Button
+            onClick={submit}
+            disabled={loading || !email}
+            className="w-full"
+          >
             {loading ? <Loader2 className="animate-spin" /> : null}
             Dërgo ftesën
           </Button>
