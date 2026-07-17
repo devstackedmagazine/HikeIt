@@ -1,8 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  enabled: process.env.NODE_ENV === "production",
-  tracesSampleRate: 0.05,
-});
+// See sentry.server.config.ts for why this is gated at the top level rather
+// than via `enabled: false`.
+if (process.env.NODE_ENV === "production") {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    tracesSampleRate: 0.05,
+  });
+}
