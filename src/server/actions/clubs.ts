@@ -4,10 +4,7 @@ import { and, count, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
-import {
-  getOptionalSession,
-  requireClubAdmin,
-} from "@/lib/auth/helpers";
+import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -17,7 +14,7 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
-import { type CreateClubInput,createClubSchema } from "@/lib/validations/club";
+import { type CreateClubInput, createClubSchema } from "@/lib/validations/club";
 
 export interface ActionResult {
   success: boolean;
@@ -294,6 +291,24 @@ export async function inviteMember(
 }
 
 /** Admin: change a member's role. */
+const LAST_ADMIN_ERROR =
+  "Nuk mund të ndryshosh rolin tënd — je administratori i vetëm i klubit. Cakto një admin tjetër fillimisht.";
+
+/** True if this organization currently has one active admin or fewer. */
+async function isOnlyAdmin(organizationId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organizationId),
+        eq(organizationMembers.role, "admin"),
+        isNull(organizationMembers.leftAt),
+      ),
+    );
+  return (row?.value ?? 0) <= 1;
+}
+
 export async function changeMemberRole(
   slug: string,
   membershipId: string,
@@ -307,15 +322,29 @@ export async function changeMemberRole(
     return { success: false, error: "Nuk keni qasje." };
   }
 
+  const target = await db.query.organizationMembers.findFirst({
+    where: and(
+      eq(organizationMembers.id, membershipId),
+      eq(organizationMembers.organizationId, access.organization.id),
+    ),
+  });
+  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
+
+  // Prevent an admin demoting themselves when they're the only admin left —
+  // that would lock the club out of management entirely.
+  if (
+    target.userId === session.user.id &&
+    target.role === "admin" &&
+    role !== "admin" &&
+    (await isOnlyAdmin(access.organization.id))
+  ) {
+    return { success: false, error: LAST_ADMIN_ERROR };
+  }
+
   await db
     .update(organizationMembers)
     .set({ role })
-    .where(
-      and(
-        eq(organizationMembers.id, membershipId),
-        eq(organizationMembers.organizationId, access.organization.id),
-      ),
-    );
+    .where(eq(organizationMembers.id, membershipId));
 
   revalidatePath(`/dashboard/club/${slug}`);
   return { success: true };
@@ -334,15 +363,27 @@ export async function removeMember(
     return { success: false, error: "Nuk keni qasje." };
   }
 
+  const target = await db.query.organizationMembers.findFirst({
+    where: and(
+      eq(organizationMembers.id, membershipId),
+      eq(organizationMembers.organizationId, access.organization.id),
+    ),
+  });
+  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
+
+  // Same guard as changeMemberRole — the only admin can't remove themselves.
+  if (
+    target.userId === session.user.id &&
+    target.role === "admin" &&
+    (await isOnlyAdmin(access.organization.id))
+  ) {
+    return { success: false, error: LAST_ADMIN_ERROR };
+  }
+
   await db
     .update(organizationMembers)
     .set({ leftAt: new Date() })
-    .where(
-      and(
-        eq(organizationMembers.id, membershipId),
-        eq(organizationMembers.organizationId, access.organization.id),
-      ),
-    );
+    .where(eq(organizationMembers.id, membershipId));
 
   revalidatePath(`/dashboard/club/${slug}`);
   return { success: true };

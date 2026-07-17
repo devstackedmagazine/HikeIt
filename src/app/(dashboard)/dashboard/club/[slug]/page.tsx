@@ -35,12 +35,18 @@ const ACTION_LABELS: Record<string, string> = {
   "trip.canceled": "Udhëtim u anulua",
 };
 
+const TABS = ["overview", "trips", "members", "settings"] as const;
+
 export default async function ClubAdminPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { slug } = await params;
+  const { tab: tabParam } = await searchParams;
+  const tab = TABS.find((t) => t === tabParam) ?? "overview";
   const user = await getRequiredUser();
   const access = await requireClubAdmin(user.id, slug);
   if (!access) notFound();
@@ -64,7 +70,7 @@ export default async function ClubAdminPage({
         <p className="text-muted-foreground">{club.city}</p>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs key={tab} defaultValue={tab}>
         <TabsList>
           <TabsTrigger value="overview">Përmbledhje</TabsTrigger>
           <TabsTrigger value="trips">Udhëtimet</TabsTrigger>
@@ -157,6 +163,7 @@ export default async function ClubAdminPage({
             members={membersResult.members}
             clubSlug={slug}
             canManage={access.role === "admin"}
+            currentUserId={user.id}
           />
         </TabsContent>
 
