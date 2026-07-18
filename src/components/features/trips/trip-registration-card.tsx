@@ -11,8 +11,6 @@ import {
   registerForTrip,
 } from "@/server/actions/trip-registrations";
 
-import { TripPaymentForm } from "./trip-payment-form";
-
 const PLATFORM_FEE_RATE = 0.025;
 const STRIPE_PCT = 0.014;
 const STRIPE_FIXED = 0.25;
@@ -25,7 +23,12 @@ export interface TripRegistrationCardProps {
   priceEur: string;
   confirmedCount: number;
   maxParticipants: number | null;
-  registration: { id: string; status: string } | null;
+  registration: { id: string; status: string; paymentStatus: string } | null;
+  /** True when Stripe Checkout redirected back with `?payment=success` —
+   * purely informational. The webhook, not this flag, confirms payment; if
+   * the DB still shows `pending` we tell the hiker it's processing, never
+   * that they're registered. */
+  returnedFromCheckout?: boolean;
 }
 
 export function TripRegistrationCard({
@@ -37,16 +40,25 @@ export function TripRegistrationCard({
   confirmedCount,
   maxParticipants,
   registration,
+  returnedFromCheckout = false,
 }: TripRegistrationCardProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const price = Number(priceEur);
   const free = price === 0;
+  // Only "confirmed"/"waitlisted" count as registered — a "pending" row means
+  // payment hasn't been confirmed by the webhook yet, and must never render
+  // as success regardless of what the client thinks happened at Checkout.
   const isRegistered =
-    registration !== null && registration.status !== "canceled";
+    registration !== null &&
+    (registration.status === "confirmed" ||
+      registration.status === "waitlisted");
+  const isPaymentProcessing =
+    registration !== null &&
+    registration.status === "pending" &&
+    registration.paymentStatus === "pending";
   const isFull = maxParticipants !== null && confirmedCount >= maxParticipants;
   const remaining =
     maxParticipants !== null
@@ -70,10 +82,11 @@ export function TripRegistrationCard({
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
-    // Paid trips return a clientSecret → collect payment inline.
-    if (result.type === "paid" && result.clientSecret) {
-      setClientSecret(result.clientSecret);
-      setLoading(false);
+    // Paid trips: full-page redirect to Stripe's hosted Checkout. The
+    // registration stays "pending" until the webhook confirms payment —
+    // never mark it confirmed from the client.
+    if (result.type === "paid" && result.checkoutUrl) {
+      window.location.href = result.checkoutUrl;
       return;
     }
     // Free trips are confirmed immediately.
@@ -122,7 +135,7 @@ export function TripRegistrationCard({
       ) : null}
 
       {/* Fee breakdown for paid trips (not while paying). */}
-      {!free && !clientSecret && !isRegistered && !isPast ? (
+      {!free && !isRegistered && !isPast ? (
         <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] text-summit/25 uppercase">
           Stripe merr ~€{stripeFee.toFixed(2)} · HikeIt €
           {platformFee.toFixed(2)} (2.5%)
@@ -130,17 +143,7 @@ export function TripRegistrationCard({
       ) : null}
 
       <div className="mt-4">
-        {clientSecret ? (
-          <TripPaymentForm
-            clientSecret={clientSecret}
-            priceLabel={`€${price}`}
-            tripSlug={slug}
-            onCancel={() => {
-              setClientSecret(null);
-              router.refresh();
-            }}
-          />
-        ) : isPast ? (
+        {isPast ? (
           <span className={cn(buttonClass, "border-summit/15 text-summit/35")}>
             Përfundoi
           </span>
@@ -169,6 +172,25 @@ export function TripRegistrationCard({
               Anulo regjistrimin
             </button>
           </div>
+        ) : isPaymentProcessing ? (
+          <div className="space-y-2">
+            <span className="flex items-center justify-center gap-2 border border-summit/20 bg-summit/[0.06] py-3 text-[12px] font-bold text-summit/60 uppercase">
+              <Loader2 className="size-4 animate-spin" />
+              Pagesa po konfirmohet…
+            </span>
+            {returnedFromCheckout ? (
+              <p className="text-center text-[10px] tracking-[0.02em] text-summit/35 uppercase">
+                U kthyet nga Stripe — kjo mund të zgjasë disa sekonda.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => router.refresh()}
+              className="w-full text-center text-[10px] font-bold tracking-[0.08em] text-summit/40 uppercase transition-colors hover:text-summit/70"
+            >
+              Rifresko statusin
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -190,11 +212,11 @@ export function TripRegistrationCard({
         <p className="mt-2 text-[11px] text-danger" role="alert">
           {error}
         </p>
-      ) : !clientSecret ? (
+      ) : (
         <p className="mt-2.5 text-center text-[10px] tracking-[0.04em] text-summit/25 uppercase">
           Anulimi falas deri 24 ore para nisjes.
         </p>
-      ) : null}
+      )}
     </div>
   );
 }

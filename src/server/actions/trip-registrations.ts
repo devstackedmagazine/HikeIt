@@ -31,11 +31,11 @@ const PLATFORM_FEE_RATE = 0.025;
 
 export interface RegisterResult {
   success: boolean;
-  /** "free" → confirmed/waitlisted directly; "paid" → pay via clientSecret. */
+  /** "free" → confirmed/waitlisted directly; "paid" → redirect to Checkout. */
   type?: "free" | "paid";
   status?: "confirmed" | "waitlisted";
-  /** Present when `type === "paid"`: pass to Stripe Elements to collect payment. */
-  clientSecret?: string;
+  /** Present when `type === "paid"`: full-page redirect to Stripe Checkout. */
+  checkoutUrl?: string;
   error?: string;
 }
 
@@ -60,10 +60,11 @@ async function isClubManager(
  *
  * - Free trip (priceEur ≤ 0): confirmed immediately (or waitlisted if full),
  *   returns `{ type: "free" }`.
- * - Paid trip: creates a Stripe PaymentIntent routed to the club's Connect
+ * - Paid trip: creates a Stripe Checkout Session routed to the club's Connect
  *   account with HikeIt's 2.5% application fee, records a `pending`
- *   registration, and returns `{ type: "paid", clientSecret }` for the client
- *   to complete with Stripe Elements. The webhook confirms it on success.
+ *   registration, and returns `{ type: "paid", checkoutUrl }` for the client
+ *   to redirect to Stripe's hosted page. The webhook confirms it on success —
+ *   the client never marks a registration confirmed on its own.
  */
 export async function registerForTrip(tripId: string): Promise<RegisterResult> {
   const session = await getOptionalSession();
@@ -135,9 +136,9 @@ async function registerFree(
 }
 
 /**
- * Paid trip: create a Connect PaymentIntent and a `pending` registration.
+ * Paid trip: create a Connect Checkout Session and a `pending` registration.
  * Confirmation happens in the `payment_intent.succeeded` webhook, never here —
- * a client that abandons the payment form must not end up registered.
+ * a hiker who abandons Checkout must not end up registered.
  */
 async function registerPaid(
   userId: string,
@@ -174,32 +175,55 @@ async function registerPaid(
   const feeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
 
   try {
-    const intent = await getStripe().paymentIntents.create({
-      amount: amountCents,
-      currency: "eur",
-      application_fee_amount: feeCents,
-      transfer_data: { destination: club.stripeConnectAccountId },
+    const checkoutSession = await getStripe().checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            unit_amount: amountCents,
+            product_data: { name: trip.title },
+          },
+          quantity: 1,
+        },
+      ],
+      payment_intent_data: {
+        application_fee_amount: feeCents,
+        transfer_data: { destination: club.stripeConnectAccountId },
+        metadata: {
+          tripId: trip.id,
+          userId,
+          organizationId: trip.organizationId,
+        },
+      },
       metadata: {
         tripId: trip.id,
         userId,
         organizationId: trip.organizationId,
       },
-      automatic_payment_methods: { enabled: true },
+      success_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.id}?payment=success`,
+      cancel_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.id}?payment=canceled`,
     });
 
-    if (!intent.client_secret) {
+    const paymentIntentId =
+      typeof checkoutSession.payment_intent === "string"
+        ? checkoutSession.payment_intent
+        : checkoutSession.payment_intent?.id;
+
+    if (!checkoutSession.url || !paymentIntentId) {
       return { success: false, error: "Nuk u krijua pagesa. Provoni sërish." };
     }
 
     if (existingPendingId) {
       // Resume an abandoned attempt — reuse the row (unique trip+user) and
-      // point it at the fresh intent.
+      // point it at the fresh session/intent.
       await db
         .update(tripRegistrations)
         .set({
           status: "pending",
           paymentStatus: "pending",
-          stripePaymentIntentId: intent.id,
+          stripePaymentIntentId: paymentIntentId,
         })
         .where(eq(tripRegistrations.id, existingPendingId));
     } else {
@@ -208,7 +232,7 @@ async function registerPaid(
         userId,
         status: "pending",
         paymentStatus: "pending",
-        stripePaymentIntentId: intent.id,
+        stripePaymentIntentId: paymentIntentId,
       });
     }
 
@@ -219,7 +243,7 @@ async function registerPaid(
       feeCents,
     });
 
-    return { success: true, type: "paid", clientSecret: intent.client_secret };
+    return { success: true, type: "paid", checkoutUrl: checkoutSession.url };
   } catch (error) {
     captureError(error, {
       action: "registerForTrip.paid",

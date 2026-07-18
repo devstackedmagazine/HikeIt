@@ -57,6 +57,11 @@ async function ownerEmail(ownerId: string | null): Promise<string | null> {
 export async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
+  // Trip-payment Checkout Sessions also carry `organizationId` (for the
+  // Connect transfer) but are confirmed via the PaymentIntent webhooks
+  // instead — never treat one as a subscription checkout.
+  if (session.metadata?.tripId) return;
+
   const organizationId = session.metadata?.organizationId;
   const tier = (session.metadata?.tier as Tier) ?? "pro";
   if (!organizationId) return;
