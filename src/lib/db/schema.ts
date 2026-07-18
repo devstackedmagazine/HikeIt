@@ -29,6 +29,14 @@ export const subscriptionTierEnum = pgEnum("subscription_tier", [
   "team",
 ]);
 
+/** Stripe Connect Express onboarding state for a club's payout account. */
+export const stripeAccountStatusEnum = pgEnum("stripe_account_status", [
+  "not_connected",
+  "pending",
+  "active",
+  "restricted",
+]);
+
 /** A member's role within a single organization. */
 export const orgMemberRoleEnum = pgEnum("org_member_role", [
   "admin",
@@ -152,6 +160,14 @@ export const organizations = pgTable("organizations", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeConnectAccountId: text("stripe_connect_account_id"),
+  // Connect Express onboarding state, kept in sync via the `account.updated`
+  // webhook. `not_connected` until the club starts onboarding.
+  stripeAccountStatus: stripeAccountStatusEnum("stripe_account_status")
+    .notNull()
+    .default("not_connected"),
+  stripeOnboardingCompletedAt: timestamp("stripe_onboarding_completed_at", {
+    withTimezone: true,
+  }),
   subscriptionStatus: text("subscription_status"),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -306,7 +322,10 @@ export const tripRegistrations = pgTable(
       .notNull()
       .default("free"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
+    stripeChargeId: text("stripe_charge_id"),
     amountPaidEur: numeric("amount_paid_eur", { precision: 8, scale: 2 }),
+    // HikeIt's 2.5% application fee recorded per transaction, for revenue audit.
+    platformFeeEur: numeric("platform_fee_eur", { precision: 8, scale: 2 }),
     waiverSignedAt: timestamp("waiver_signed_at", { withTimezone: true }),
     notes: text("notes"),
     registeredAt: timestamp("registered_at", { withTimezone: true })
@@ -318,6 +337,8 @@ export const tripRegistrations = pgTable(
     unique("trip_registrations_trip_user_unique").on(t.tripId, t.userId),
     index("trip_registrations_trip_id_idx").on(t.tripId),
     index("trip_registrations_user_id_idx").on(t.userId),
+    // Payment webhooks look registrations up by payment intent id.
+    index("trip_registrations_payment_intent_idx").on(t.stripePaymentIntentId),
   ],
 );
 

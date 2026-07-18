@@ -131,7 +131,12 @@ export interface ClubStats {
   membersThisMonth: number;
   activeTrips: number;
   completedTrips: number;
+  /** Net collected (sum of paid amounts). */
   revenue: number;
+  /** Total HikeIt platform fee taken from this club's payments, for audit. */
+  platformFees: number;
+  /** Count of paid registrations in the current calendar month. */
+  paidThisMonth: number;
 }
 
 /** Aggregate stat counters for a club admin dashboard. */
@@ -140,8 +145,8 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [members, monthMembers, active, completed, revenue] = await Promise.all(
-    [
+  const [members, monthMembers, active, completed, revenue, monthPaid] =
+    await Promise.all([
       db
         .select({ value: count() })
         .from(organizationMembers)
@@ -181,22 +186,42 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
             isNull(trips.deletedAt),
           ),
         ),
+      // Only *paid* registrations count as revenue — a pending/failed one has
+      // an amount recorded on its intent but no money actually collected.
       db
         .select({
-          value: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
+          revenue: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
+          fees: sql<number>`coalesce(sum(${tripRegistrations.platformFeeEur}), 0)`,
         })
         .from(tripRegistrations)
         .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
-        .where(eq(trips.organizationId, organizationId)),
-    ],
-  );
+        .where(
+          and(
+            eq(trips.organizationId, organizationId),
+            eq(tripRegistrations.paymentStatus, "paid"),
+          ),
+        ),
+      db
+        .select({ value: count() })
+        .from(tripRegistrations)
+        .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
+        .where(
+          and(
+            eq(trips.organizationId, organizationId),
+            eq(tripRegistrations.paymentStatus, "paid"),
+            sql`${tripRegistrations.registeredAt} >= ${startOfMonth.toISOString()}`,
+          ),
+        ),
+    ]);
 
   return {
     memberCount: members[0]?.value ?? 0,
     membersThisMonth: monthMembers[0]?.value ?? 0,
     activeTrips: active[0]?.value ?? 0,
     completedTrips: completed[0]?.value ?? 0,
-    revenue: Number(revenue[0]?.value ?? 0),
+    revenue: Number(revenue[0]?.revenue ?? 0),
+    platformFees: Number(revenue[0]?.fees ?? 0),
+    paidThisMonth: monthPaid[0]?.value ?? 0,
   };
 }
 

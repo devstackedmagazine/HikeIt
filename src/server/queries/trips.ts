@@ -244,6 +244,7 @@ export interface RegistrationWithUser {
   id: string;
   status: TripRegistration["status"];
   paymentStatus: TripRegistration["paymentStatus"];
+  amountPaidEur: string | null;
   registeredAt: Date;
   userName: string | null;
   userEmail: string;
@@ -259,6 +260,7 @@ export async function getTripRegistrations(
       id: tripRegistrations.id,
       status: tripRegistrations.status,
       paymentStatus: tripRegistrations.paymentStatus,
+      amountPaidEur: tripRegistrations.amountPaidEur,
       registeredAt: tripRegistrations.registeredAt,
       userName: users.name,
       userEmail: users.email,
