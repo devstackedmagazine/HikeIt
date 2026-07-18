@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Download, Loader2, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,9 +25,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { registrationStatusLabels } from "@/lib/i18n/labels";
 import {
   emailTripRegistrants,
+  removeRegistration,
   updateRegistrationStatus,
 } from "@/server/actions/trip-registrations";
 import type { RegistrationWithUser } from "@/server/queries/trips";
@@ -110,34 +111,13 @@ export function TripRegistrationsPanel({
                     {r.userEmail}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      {registrationStatusLabels[r.status]}
-                    </Badge>
+                    <StatusBadge status={r.status} />
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => setStatus(r.id, "confirmed")}
-                      >
-                        Konfirmo
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => setStatus(r.id, "waitlisted")}
-                      >
-                        Pritje
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => setStatus(r.id, "canceled")}
-                      >
-                        Hiq
-                      </Button>
-                    </div>
+                    <RegistrationActions
+                      registration={r}
+                      onSetStatus={setStatus}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -146,6 +126,191 @@ export function TripRegistrationsPanel({
         </div>
       )}
     </div>
+  );
+}
+
+/** Status badge shown in the status column. */
+function StatusBadge({ status }: { status: RegistrationWithUser["status"] }) {
+  return <Badge variant="secondary">{status.toUpperCase()}</Badge>;
+}
+
+/**
+ * Status-appropriate action controls for a single registration.
+ * - confirmed + paid → remove with automatic refund (Danger)
+ * - confirmed + free → remove (Danger)
+ * - pending payment → "NË PRITJE PAGESE" badge, no actions
+ * - waitlisted → KONFIRMO (Moss) + HIQ (Danger)
+ * - canceled / refunded → "I HEQUR" badge, no actions
+ */
+function RegistrationActions({
+  registration: r,
+  onSetStatus,
+}: {
+  registration: RegistrationWithUser;
+  onSetStatus: (
+    id: string,
+    status: "confirmed" | "waitlisted" | "canceled",
+  ) => void | Promise<void>;
+}) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  const amountLabel = r.amountPaidEur
+    ? `€${Number(r.amountPaidEur).toFixed(2)}`
+    : "€0";
+
+  async function remove() {
+    setError(null);
+    const result = await removeRegistration(r.id);
+    if (!result.success) {
+      setError(result.error ?? "Diçka shkoi keq.");
+      return;
+    }
+    router.refresh();
+  }
+
+  // Terminal states: nothing to do.
+  if (r.status === "canceled" || r.paymentStatus === "refunded") {
+    return (
+      <Badge className="border-2 border-summit/20 bg-summit/10 text-summit/50">
+        I HEQUR
+      </Badge>
+    );
+  }
+
+  // Pending payment: block any action until it resolves.
+  if (r.status === "pending" && r.paymentStatus === "pending") {
+    return (
+      <span
+        title="Prisni që pagesa të konfirmohet ose të dështojë."
+        className="inline-flex cursor-help items-center border-2 border-alert/50 bg-alert/15 px-2.5 py-1 text-[11px] font-bold tracking-[0.04em] text-alert uppercase"
+      >
+        Në pritje pagese
+      </span>
+    );
+  }
+
+  if (r.status === "waitlisted") {
+    return (
+      <div className="space-y-1">
+        <div className="flex gap-1">
+          <Button
+            size="xs"
+            className="border-2 border-moss bg-moss/20 font-bold text-moss uppercase hover:bg-moss/30"
+            onClick={() => onSetStatus(r.id, "confirmed")}
+          >
+            Konfirmo
+          </Button>
+          <ConfirmRemoveDialog
+            triggerLabel="Hiq"
+            title="Hiq nga udhëtimi"
+            description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
+            onConfirm={remove}
+          />
+        </div>
+        {error ? <ActionError message={error} /> : null}
+      </div>
+    );
+  }
+
+  // confirmed (or attended/no_show) — remove path, with refund if paid.
+  const isPaid = r.paymentStatus === "paid";
+  return (
+    <div className="space-y-1">
+      <ConfirmRemoveDialog
+        triggerLabel={isPaid ? "Hiq me rimbursim" : "Hiq"}
+        title={isPaid ? "Hiq me rimbursim" : "Hiq nga udhëtimi"}
+        description={
+          isPaid
+            ? `A jeni i sigurt? Pagesa e ${amountLabel} do t'i kthehet hikerit automatikisht.`
+            : "A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
+        }
+        onConfirm={remove}
+      />
+      {error ? <ActionError message={error} /> : null}
+    </div>
+  );
+}
+
+function ActionError({ message }: { message: string }) {
+  return (
+    <p className="text-[11px] text-danger" role="alert">
+      {message}
+    </p>
+  );
+}
+
+/**
+ * Alpine Brutalism confirmation dialog: Abyss background, Summit text, 2px
+ * Forest borders, zero border radius. Danger button confirms, Forest button
+ * cancels. Built directly on the base-ui alert-dialog so the styled wrapper's
+ * rounded corners don't leak in.
+ */
+function ConfirmRemoveDialog({
+  triggerLabel,
+  title,
+  description,
+  onConfirm,
+}: {
+  triggerLabel: string;
+  title: string;
+  description: string;
+  onConfirm: () => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function confirm() {
+    setLoading(true);
+    await onConfirm();
+    setLoading(false);
+    setOpen(false);
+  }
+
+  return (
+    <AlertDialog.Root open={open} onOpenChange={setOpen}>
+      <AlertDialog.Trigger
+        render={
+          <Button
+            size="xs"
+            className="border-2 border-danger bg-danger/15 font-bold text-danger uppercase hover:bg-danger hover:text-summit"
+          />
+        }
+      >
+        {triggerLabel}
+      </AlertDialog.Trigger>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 border-forest bg-abyss p-6 text-summit outline-none sm:max-w-md">
+          <AlertDialog.Title className="font-heading text-[16px] font-extrabold tracking-[0.04em] text-summit uppercase">
+            {title}
+          </AlertDialog.Title>
+          <AlertDialog.Description className="mt-3 text-[13px] leading-relaxed text-summit/70">
+            {description}
+          </AlertDialog.Description>
+          <div className="mt-6 flex justify-end gap-2">
+            <AlertDialog.Close
+              render={
+                <Button
+                  disabled={loading}
+                  className="border-2 border-forest bg-transparent font-bold tracking-[0.04em] text-summit uppercase hover:bg-forest disabled:opacity-50"
+                />
+              }
+            >
+              Anulo
+            </AlertDialog.Close>
+            <Button
+              onClick={confirm}
+              disabled={loading}
+              className="border-2 border-danger bg-danger font-bold tracking-[0.04em] text-summit uppercase hover:bg-red-900 hover:border-red-900 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : null}
+              Hiq
+            </Button>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }
 

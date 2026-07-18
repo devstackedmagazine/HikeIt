@@ -103,7 +103,13 @@ export default async function ClubAdminPage({
             <StatCard
               icon={TrendingUp}
               label="Të ardhura"
-              value={`€${stats.revenue}`}
+              value={`€${stats.revenue.toFixed(2)}`}
+              accent="sunset"
+              hint={
+                stats.revenue > 0
+                  ? `${stats.paidThisMonth} pagesa këtë muaj · HikeIt €${stats.platformFees.toFixed(2)}`
+                  : undefined
+              }
             />
           </div>
 

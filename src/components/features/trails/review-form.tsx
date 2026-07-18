@@ -18,7 +18,7 @@ export function ReviewForm({ trailId }: { trailId: string }) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [comment, setComment] = useState("");
-  const [condition, setCondition] = useState("");
+  const [condition, setCondition] = useState("Mesatar");
   const [hikedAt, setHikedAt] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);

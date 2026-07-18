@@ -18,9 +18,9 @@ export default async function CreateTripPage({
   if (!access) notFound();
 
   const trailOptions = await getTrailOptions();
-  const canCollectPayments =
-    access.organization.subscriptionTier === "pro" ||
-    access.organization.subscriptionTier === "team";
+  // Any club can set a price; the form only *warns* if Stripe isn't active yet.
+  const stripeActive =
+    access.organization.stripeAccountStatus === "active";
 
   return (
     <div className="-mx-6 -my-5 min-h-svh bg-abyss px-6 py-5 pb-24 md:pb-12">
@@ -39,7 +39,7 @@ export default async function CreateTripPage({
         <TripForm
           clubSlug={slug}
           trailOptions={trailOptions}
-          canCollectPayments={canCollectPayments}
+          stripeActive={stripeActive}
         />
       </div>
     </div>

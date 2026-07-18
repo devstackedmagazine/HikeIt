@@ -62,10 +62,7 @@ export default async function EditTripPage({
         tripId={trip.id}
         tripSlug={trip.slug}
         trailOptions={trailOptions}
-        canCollectPayments={
-          access.organization.subscriptionTier === "pro" ||
-          access.organization.subscriptionTier === "team"
-        }
+        stripeActive={access.organization.stripeAccountStatus === "active"}
         initialValues={{
           title: trip.title,
           description: trip.description ?? "",
