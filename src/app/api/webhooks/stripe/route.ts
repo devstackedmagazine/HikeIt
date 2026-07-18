@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 
 import { env } from "@/config/env";
-import { captureError } from "@/lib/sentry";
+import { captureError, captureMessage } from "@/lib/sentry";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
 import {
   handleCheckoutCompleted,
@@ -38,6 +38,14 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Diagnostic: every verified event that reaches the dispatch, with its type
+  // and (for Connect) which account it came from.
+  captureMessage("webhook event received", "info", {
+    eventId: event.id,
+    eventType: event.type,
+    eventAccount: event.account ?? null,
+  });
+
   // Heavy work is awaited but each handler is defensively wrapped: a thrown
   // handler must not make us return non-200, or Stripe will retry endlessly.
   try {
@@ -59,19 +67,56 @@ export async function POST(request: Request) {
         break;
       // Trip payments (Connect). Only PaymentIntents we created for a trip
       // carry `metadata.tripId`; ignore any others (e.g. future direct charges).
-      case "payment_intent.succeeded":
-        if (event.data.object.metadata?.tripId) {
-          await handleTripPaymentSucceeded(event.data.object);
+      case "payment_intent.succeeded": {
+        const pi = event.data.object;
+        // Diagnostic: log entry into the branch BEFORE any guard, so we can
+        // see whether the event reaches here at all and what metadata/account
+        // it carries.
+        captureMessage("webhook payment_intent.succeeded entered", "info", {
+          eventId: event.id,
+          eventAccount: event.account ?? null,
+          intentId: pi.id,
+          hasMetadataTripId: Boolean(pi.metadata?.tripId),
+          metadataKeys: Object.keys(pi.metadata ?? {}),
+        });
+        if (pi.metadata?.tripId) {
+          await handleTripPaymentSucceeded(pi);
+        } else {
+          captureMessage(
+            "webhook payment_intent.succeeded skipped: no tripId in metadata",
+            "warning",
+            { eventId: event.id, eventAccount: event.account ?? null, intentId: pi.id },
+          );
         }
         break;
-      case "payment_intent.payment_failed":
-        if (event.data.object.metadata?.tripId) {
-          await handleTripPaymentFailed(event.data.object);
+      }
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object;
+        captureMessage("webhook payment_intent.payment_failed entered", "info", {
+          eventId: event.id,
+          eventAccount: event.account ?? null,
+          intentId: pi.id,
+          hasMetadataTripId: Boolean(pi.metadata?.tripId),
+        });
+        if (pi.metadata?.tripId) {
+          await handleTripPaymentFailed(pi);
+        } else {
+          captureMessage(
+            "webhook payment_intent.payment_failed skipped: no tripId in metadata",
+            "warning",
+            { eventId: event.id, eventAccount: event.account ?? null, intentId: pi.id },
+          );
         }
         break;
+      }
       case "account.updated":
         await handleConnectAccountUpdated(event.data.object);
         break;
+      default:
+        captureMessage("webhook event type not handled", "info", {
+          eventId: event.id,
+          eventType: event.type,
+        });
     }
   } catch (error) {
     captureError(error, {
