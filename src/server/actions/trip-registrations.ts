@@ -420,8 +420,17 @@ export async function removeRegistration(
       };
     }
     try {
+      // These are destination charges (created on the platform account with
+      // `transfer_data.destination` + `application_fee_amount`), so the charge
+      // and its refund live on the *platform* account — never on the club's
+      // connected account. Refund there, and claw the money back out of the
+      // club (`reverse_transfer`) and out of HikeIt's fee
+      // (`refund_application_fee`) so a full refund isn't paid for by the
+      // platform alone.
       await getStripe().refunds.create({
         payment_intent: registration.stripePaymentIntentId,
+        reverse_transfer: true,
+        refund_application_fee: true,
       });
     } catch (error) {
       captureError(error, {
