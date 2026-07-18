@@ -206,12 +206,17 @@ async function registerPaid(
       cancel_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.id}?payment=canceled`,
     });
 
+    // In `payment` mode the PaymentIntent is created asynchronously by Stripe,
+    // so `payment_intent` is typically null on the freshly created session —
+    // only `url` is guaranteed here. The webhook fills in the intent id later
+    // (it correlates by tripId+userId metadata), so don't block the redirect
+    // on an id we can't have yet.
     const paymentIntentId =
       typeof checkoutSession.payment_intent === "string"
         ? checkoutSession.payment_intent
-        : checkoutSession.payment_intent?.id;
+        : (checkoutSession.payment_intent?.id ?? null);
 
-    if (!checkoutSession.url || !paymentIntentId) {
+    if (!checkoutSession.url) {
       return { success: false, error: "Nuk u krijua pagesa. Provoni sërish." };
     }
 

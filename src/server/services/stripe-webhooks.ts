@@ -223,9 +223,22 @@ export async function handlePaymentFailed(
 export async function handleTripPaymentSucceeded(
   intent: Stripe.PaymentIntent,
 ): Promise<void> {
-  const registration = await db.query.tripRegistrations.findFirst({
-    where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
-  });
+  // The Checkout Session's PaymentIntent id isn't known when we create the
+  // pending registration (Stripe makes it asynchronously), so the row may
+  // still have a null stripePaymentIntentId. Look up by intent id first, then
+  // fall back to the tripId+userId we stamped on the intent's metadata.
+  const registration =
+    (await db.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
+    })) ??
+    (intent.metadata?.tripId && intent.metadata?.userId
+      ? await db.query.tripRegistrations.findFirst({
+          where: and(
+            eq(tripRegistrations.tripId, intent.metadata.tripId),
+            eq(tripRegistrations.userId, intent.metadata.userId),
+          ),
+        })
+      : undefined);
   if (!registration) return;
   // Idempotency: Stripe can deliver the same event more than once.
   if (registration.paymentStatus === "paid") return;
@@ -242,6 +255,7 @@ export async function handleTripPaymentSucceeded(
     .set({
       status: "confirmed",
       paymentStatus: "paid",
+      stripePaymentIntentId: intent.id,
       stripeChargeId: chargeId,
       amountPaidEur: amountEur.toFixed(2),
       platformFeeEur: feeEur.toFixed(2),
@@ -328,9 +342,20 @@ export async function handleTripPaymentSucceeded(
 export async function handleTripPaymentFailed(
   intent: Stripe.PaymentIntent,
 ): Promise<void> {
-  const registration = await db.query.tripRegistrations.findFirst({
-    where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
-  });
+  // Same lookup fallback as the success handler — the pending row may not have
+  // the intent id yet, so fall back to tripId+userId from the intent metadata.
+  const registration =
+    (await db.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.stripePaymentIntentId, intent.id),
+    })) ??
+    (intent.metadata?.tripId && intent.metadata?.userId
+      ? await db.query.tripRegistrations.findFirst({
+          where: and(
+            eq(tripRegistrations.tripId, intent.metadata.tripId),
+            eq(tripRegistrations.userId, intent.metadata.userId),
+          ),
+        })
+      : undefined);
   if (!registration || registration.paymentStatus === "paid") return;
 
   await db
