@@ -2,13 +2,10 @@ import {
   Award,
   Car,
   Droplets,
-  Flag,
   Flashlight,
   Footprints,
-  Heart,
   type LucideIcon,
   Package,
-  Share2,
   Shield,
   Shirt,
 } from "lucide-react";
@@ -20,6 +17,7 @@ import { TripGallery } from "@/components/features/images/trip-gallery";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { TripOrganizerCard } from "@/components/features/trips/trip-organizer-card";
 import { TripRegistrationCard } from "@/components/features/trips/trip-registration-card";
+import { TripSocialActions } from "@/components/features/trips/trip-social-actions";
 import { TripWeatherWidget } from "@/components/features/weather/trip-weather-widget";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
@@ -209,16 +207,7 @@ export default async function PublicTripPage({
           ) : null}
 
           {/* Social actions */}
-          <div className="flex items-center gap-3 border-t border-summit/[0.06] pt-4">
-            {[Share2, Heart, Flag].map((Icon, i) => (
-              <span
-                key={i}
-                className="flex size-8 items-center justify-center border border-summit/15 text-summit/40"
-              >
-                <Icon className="size-3.5" />
-              </span>
-            ))}
-          </div>
+          <TripSocialActions />
         </div>
 
         {/* Right sticky sidebar */}

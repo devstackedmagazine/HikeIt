@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -186,15 +187,12 @@ export function TripRegistrationCard({
                 ? "Në listën e pritjes"
                 : "Regjistruar ✓"}
             </span>
-            <button
-              type="button"
-              onClick={cancel}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 border border-summit/15 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/45 uppercase transition-colors hover:text-summit disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
-              Anulo regjistrimin
-            </button>
+            <CancelConfirmDialog
+              priceLabel={`€${price}`}
+              isPaid={!free}
+              loading={loading}
+              onConfirm={cancel}
+            />
             {!free ? (
               <p className="text-center text-[9px] leading-relaxed tracking-[0.02em] text-summit/30 uppercase">
                 Rimbursim i plotë nëse anulohet 24 orë para nisjes.
@@ -240,5 +238,90 @@ export function TripRegistrationCard({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Alpine Brutalism confirmation dialog for the hiker's own cancellation:
+ * Abyss background, Summit text, 2px Forest borders, zero border radius.
+ * Danger button confirms ("ANULO REGJISTRIMIN"), Forest button ("KTHEHU")
+ * backs out. Built directly on the base-ui alert-dialog, same pattern as the
+ * club admin's removal dialog.
+ */
+function CancelConfirmDialog({
+  priceLabel,
+  isPaid,
+  loading,
+  onConfirm,
+}: {
+  priceLabel: string;
+  isPaid: boolean;
+  loading: boolean;
+  onConfirm: () => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  async function confirm() {
+    await onConfirm();
+    setOpen(false);
+  }
+
+  return (
+    <AlertDialog.Root open={open} onOpenChange={setOpen}>
+      <AlertDialog.Trigger
+        render={
+          <button
+            type="button"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 border border-summit/15 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/45 uppercase transition-colors hover:text-summit disabled:opacity-50"
+          />
+        }
+      >
+        {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
+        Anulo regjistrimin
+      </AlertDialog.Trigger>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 border-forest bg-abyss p-6 text-summit outline-none sm:max-w-md">
+          <AlertDialog.Title className="font-heading text-[16px] font-extrabold tracking-[0.04em] text-summit uppercase">
+            A jeni i sigurt?
+          </AlertDialog.Title>
+          <AlertDialog.Description className="mt-3 space-y-2 text-[13px] leading-relaxed text-summit/70">
+            <p>
+              Nëse anuloni regjistrimin, nuk do të mund të regjistroheni
+              përsëri në këtë udhëtim.
+            </p>
+            {isPaid ? (
+              <p>
+                Pagesa juaj e {priceLabel} do t&apos;ju rimbursohet plotësisht
+                nëse anulohet 24 orë para nisjes.
+              </p>
+            ) : null}
+          </AlertDialog.Description>
+          <div className="mt-6 flex justify-end gap-2">
+            <AlertDialog.Close
+              render={
+                <button
+                  type="button"
+                  disabled={loading}
+                  className="border-2 border-forest bg-transparent px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-forest disabled:opacity-50"
+                />
+              }
+            >
+              Kthehu
+            </AlertDialog.Close>
+            <button
+              type="button"
+              onClick={confirm}
+              disabled={loading}
+              className="flex items-center gap-2 border-2 border-danger bg-danger px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
+              Anulo regjistrimin
+            </button>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }

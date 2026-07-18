@@ -42,8 +42,8 @@ export function ClickableMap({
 
   return (
     <MapContainer
-      center={marker ?? [42.6, 21.0]}
-      zoom={7}
+      center={marker ?? [42.6, 20.9]}
+      zoom={9}
       scrollWheelZoom={false}
       style={{ height: "100%", width: "100%" }}
       className="z-0"
