@@ -9,6 +9,7 @@ import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import {
   auditLogs,
+  notifications,
   organizationMembers,
   organizations,
   tripRegistrations,
@@ -365,6 +366,150 @@ export async function updateRegistrationStatus(
     .where(eq(tripRegistrations.id, registrationId));
 
   revalidatePath(`/dashboard/club/${trip.slug}`);
+  return { success: true };
+}
+
+/**
+ * Admin: remove a participant from a trip.
+ *
+ * - Paid registration → refund the Stripe payment in full, mark the row
+ *   `canceled`/`refunded`, and notify the hiker (email + in-app).
+ * - Free registration → mark `canceled` and notify the hiker.
+ * - Pending payment → blocked; the admin must wait for it to resolve, since
+ *   there's nothing settled to refund and the webhook may still confirm it.
+ *
+ * Stripe errors are never surfaced raw — they're caught, logged to Sentry, and
+ * mapped to an Albanian message.
+ */
+export async function removeRegistration(
+  registrationId: string,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  const registration = await db.query.tripRegistrations.findFirst({
+    where: eq(tripRegistrations.id, registrationId),
+  });
+  if (!registration) return { success: false, error: "Nuk u gjet." };
+
+  const trip = await db.query.trips.findFirst({
+    where: eq(trips.id, registration.tripId),
+    columns: { id: true, title: true, slug: true, organizationId: true },
+  });
+  if (!trip || !(await isClubManager(session.user.id, trip.organizationId))) {
+    return { success: false, error: "Nuk keni qasje." };
+  }
+
+  // A payment still in flight has nothing settled to refund and may yet be
+  // confirmed by the webhook — don't let the admin remove into that race.
+  if (registration.paymentStatus === "pending") {
+    return {
+      success: false,
+      error:
+        "Pagesa ende nuk është konfirmuar. Prisni derisa të përfundojë para se ta hiqni.",
+    };
+  }
+
+  const isPaid = registration.paymentStatus === "paid";
+
+  if (isPaid) {
+    if (!isStripeConfigured() || !registration.stripePaymentIntentId) {
+      return {
+        success: false,
+        error: "Rimbursimi nuk mund të kryhet tani. Provoni sërish më vonë.",
+      };
+    }
+    try {
+      await getStripe().refunds.create({
+        payment_intent: registration.stripePaymentIntentId,
+      });
+    } catch (error) {
+      captureError(error, {
+        action: "removeRegistration.refund",
+        userId: session.user.id,
+        extra: {
+          registrationId,
+          tripId: trip.id,
+          paymentIntentId: registration.stripePaymentIntentId,
+        },
+      });
+      return {
+        success: false,
+        error: "Rimbursimi dështoi. Provoni sërish ose kontaktoni mbështetjen.",
+      };
+    }
+  }
+
+  await db
+    .update(tripRegistrations)
+    .set({
+      status: "canceled",
+      paymentStatus: isPaid ? "refunded" : registration.paymentStatus,
+      canceledAt: new Date(),
+    })
+    .where(eq(tripRegistrations.id, registrationId));
+
+  const amountLabel = registration.amountPaidEur
+    ? `€${Number(registration.amountPaidEur).toFixed(2)}`
+    : "€0";
+
+  // In-app notification (best-effort — the removal itself has already committed).
+  try {
+    await db.insert(notifications).values({
+      userId: registration.userId,
+      type: "trip",
+      title: "Jeni hequr nga udhëtimi",
+      body: isPaid
+        ? `Klubi ju ka hequr nga udhëtimi. Rimbursimi i ${amountLabel} është në proces.`
+        : "Klubi ju ka hequr nga udhëtimi.",
+      link: `/trips/${trip.slug}`,
+    });
+  } catch {
+    // Best-effort.
+  }
+
+  // Email the hiker (best-effort).
+  const removalMessage = isPaid
+    ? `Klubi ju ka hequr nga udhëtimi "${trip.title}".\n\nRimbursimi i plotë prej ${amountLabel} do të shfaqet në llogarinë tuaj brenda 5–10 ditësh pune.`
+    : `Klubi ju ka hequr nga udhëtimi "${trip.title}".`;
+  try {
+    const hiker = await db.query.users.findFirst({
+      where: eq(users.id, registration.userId),
+      columns: { email: true },
+    });
+    if (hiker?.email) {
+      await sendEmail({
+        to: hiker.email,
+        subject: "Keni qenë hequr nga udhëtimi",
+        template: GenericMessage({
+          heading: "Keni qenë hequr nga udhëtimi",
+          message: removalMessage,
+        }),
+      });
+    }
+  } catch {
+    // Best-effort.
+  }
+
+  await db.insert(auditLogs).values({
+    userId: session.user.id,
+    action: isPaid ? "trip.registration.refunded" : "trip.registration.removed",
+    entityType: "trip",
+    entityId: trip.id,
+    metadata: {
+      registrationId,
+      hikerId: registration.userId,
+      ...(isPaid
+        ? {
+            amountEur: Number(registration.amountPaidEur ?? 0),
+            paymentIntentId: registration.stripePaymentIntentId,
+          }
+        : {}),
+    },
+  });
+
+  revalidatePath(`/dashboard/club/${trip.slug}`);
+  revalidatePath(`/dashboard/club/${trip.slug}/trips/${trip.slug}`);
   return { success: true };
 }
 
