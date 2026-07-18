@@ -3,13 +3,18 @@
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils/cn";
 import {
   cancelMyRegistration,
   registerForTrip,
 } from "@/server/actions/trip-registrations";
+
+import { StripeRedirectOverlay } from "./stripe-redirect-overlay";
+
+/** How often we re-check the DB while a payment is confirming. */
+const POLL_INTERVAL_MS = 3000;
 
 const PLATFORM_FEE_RATE = 0.025;
 const STRIPE_PCT = 0.014;
@@ -45,6 +50,7 @@ export function TripRegistrationCard({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   const price = Number(priceEur);
   const free = price === 0;
@@ -73,6 +79,15 @@ export function TripRegistrationCard({
   const platformFee = price * PLATFORM_FEE_RATE;
   const stripeFee = price * STRIPE_PCT + STRIPE_FIXED;
 
+  // While a payment is confirming, poll the DB every few seconds so the card
+  // flips to "REGJISTRUAR ✓" the moment the webhook lands — no manual refresh,
+  // no waiting on a club approval step (payment = registered, Option A).
+  useEffect(() => {
+    if (!isPaymentProcessing) return;
+    const id = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [isPaymentProcessing, router]);
+
   async function register() {
     setLoading(true);
     setError(null);
@@ -82,10 +97,12 @@ export function TripRegistrationCard({
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
-    // Paid trips: full-page redirect to Stripe's hosted Checkout. The
-    // registration stays "pending" until the webhook confirms payment —
-    // never mark it confirmed from the client.
+    // Paid trips: full-page, top-level redirect to Stripe's hosted Checkout.
+    // Swap the whole page for the branded transition overlay first so the
+    // handoff feels intentional. The registration stays "pending" until the
+    // webhook confirms payment — never mark it confirmed from the client.
     if (result.type === "paid" && result.checkoutUrl) {
+      setRedirecting(true);
       window.location.href = result.checkoutUrl;
       return;
     }
@@ -106,6 +123,8 @@ export function TripRegistrationCard({
     "flex w-full items-center justify-center gap-2 border py-3.5 font-heading text-[14px] font-extrabold tracking-[0.04em] uppercase transition-colors";
   const primaryClass =
     "border-moss/50 bg-moss/20 text-moss hover:border-moss/70 hover:bg-moss/30";
+
+  if (redirecting) return <StripeRedirectOverlay />;
 
   return (
     <div className="border border-summit/12 bg-summit/[0.03] p-[18px]">
@@ -174,22 +193,15 @@ export function TripRegistrationCard({
           </div>
         ) : isPaymentProcessing ? (
           <div className="space-y-2">
-            <span className="flex items-center justify-center gap-2 border border-summit/20 bg-summit/[0.06] py-3 text-[12px] font-bold text-summit/60 uppercase">
+            <span className="flex items-center justify-center gap-2 border border-moss/40 bg-moss/15 py-3 text-[12px] font-bold text-moss uppercase">
               <Loader2 className="size-4 animate-spin" />
               Pagesa po konfirmohet…
             </span>
-            {returnedFromCheckout ? (
-              <p className="text-center text-[10px] tracking-[0.02em] text-summit/35 uppercase">
-                U kthyet nga Stripe — kjo mund të zgjasë disa sekonda.
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => router.refresh()}
-              className="w-full text-center text-[10px] font-bold tracking-[0.08em] text-summit/40 uppercase transition-colors hover:text-summit/70"
-            >
-              Rifresko statusin
-            </button>
+            <p className="text-center text-[10px] tracking-[0.02em] text-summit/35 uppercase">
+              {returnedFromCheckout
+                ? "U kthyet nga Stripe — konfirmohet automatikisht."
+                : "Do të konfirmohet automatikisht."}
+            </p>
           </div>
         ) : (
           <button
