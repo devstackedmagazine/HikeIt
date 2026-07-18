@@ -312,7 +312,18 @@ export interface ActionResult {
   error?: string;
 }
 
-/** Hiker: cancel their own registration. */
+/** Free self-cancellation window: no cancellations inside this many ms before
+ * the trip starts. Matches the "free cancellation 24h before" policy. */
+const CANCELLATION_CUTOFF_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Hiker: cancel their own registration.
+ *
+ * Self-cancellation is blocked once the trip is within 24h of starting — the
+ * hiker must contact the club. Otherwise a paid registration is refunded in
+ * full (reversing the club transfer + HikeIt's fee, as these are destination
+ * charges) before the row is canceled.
+ */
 export async function cancelMyRegistration(
   registrationId: string,
 ): Promise<ActionResult> {
@@ -326,13 +337,75 @@ export async function cancelMyRegistration(
     ),
   });
   if (!registration) return { success: false, error: "Nuk u gjet." };
+  if (registration.status === "canceled") {
+    return { success: false, error: "Ky regjistrim është anuluar tashmë." };
+  }
 
+  const trip = await db.query.trips.findFirst({
+    where: eq(trips.id, registration.tripId),
+    columns: { slug: true, startDatetime: true },
+  });
+  if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
+
+  // Cancellation deadline: within 24h of the start, self-cancellation is off.
+  if (
+    trip.startDatetime.getTime() - Date.now() < CANCELLATION_CUTOFF_MS
+  ) {
+    return {
+      success: false,
+      error:
+        "Anulimi falas mbyllet 24 orë para nisjes. Kontaktoni klubin për ndihmë.",
+    };
+  }
+
+  // Refund a paid registration before canceling. A payment still pending can't
+  // be self-canceled here — there's nothing settled to refund and the webhook
+  // may still confirm it.
+  if (registration.paymentStatus === "pending") {
+    return {
+      success: false,
+      error:
+        "Pagesa ende nuk është konfirmuar. Provoni sërish pasi të përfundojë.",
+    };
+  }
+  if (registration.paymentStatus === "paid") {
+    if (!isStripeConfigured() || !registration.stripePaymentIntentId) {
+      return {
+        success: false,
+        error: "Rimbursimi nuk mund të kryhet tani. Provoni sërish më vonë.",
+      };
+    }
+    try {
+      await getStripe().refunds.create({
+        payment_intent: registration.stripePaymentIntentId,
+        reverse_transfer: true,
+        refund_application_fee: true,
+      });
+    } catch (error) {
+      captureError(error, {
+        action: "cancelMyRegistration.refund",
+        userId: session.user.id,
+        extra: { registrationId, paymentIntentId: registration.stripePaymentIntentId },
+      });
+      return {
+        success: false,
+        error: "Rimbursimi dështoi. Provoni sërish ose kontaktoni klubin.",
+      };
+    }
+  }
+
+  const isPaid = registration.paymentStatus === "paid";
   await db
     .update(tripRegistrations)
-    .set({ status: "canceled", canceledAt: new Date() })
+    .set({
+      status: "canceled",
+      paymentStatus: isPaid ? "refunded" : registration.paymentStatus,
+      canceledAt: new Date(),
+    })
     .where(eq(tripRegistrations.id, registrationId));
 
   revalidatePath("/dashboard/my-trips");
+  revalidatePath(`/trips/${trip.slug}`);
   return { success: true };
 }
 

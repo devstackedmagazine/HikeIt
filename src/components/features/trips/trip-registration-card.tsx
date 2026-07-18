@@ -114,8 +114,13 @@ export function TripRegistrationCard({
   async function cancel() {
     if (!registration) return;
     setLoading(true);
-    await cancelMyRegistration(registration.id);
+    setError(null);
+    const result = await cancelMyRegistration(registration.id);
     setLoading(false);
+    if (!result.success) {
+      setError(result.error ?? "Diçka shkoi keq.");
+      return;
+    }
     router.refresh();
   }
 
@@ -190,6 +195,11 @@ export function TripRegistrationCard({
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
               Anulo regjistrimin
             </button>
+            {!free ? (
+              <p className="text-center text-[9px] leading-relaxed tracking-[0.02em] text-summit/30 uppercase">
+                Rimbursim i plotë nëse anulohet 24 orë para nisjes.
+              </p>
+            ) : null}
           </div>
         ) : isPaymentProcessing ? (
           <div className="space-y-2">
