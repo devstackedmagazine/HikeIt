@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { ClubPaymentsSection } from "@/components/features/billing/club-payments-section";
 import { ImageUploader } from "@/components/features/images/image-uploader";
+import { LogoutButton } from "@/components/shared/logout-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -184,6 +185,15 @@ export function ClubSettings({
         organizationId={club.id}
         status={club.stripeAccountStatus}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Llogaria</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <LogoutButton variant="brutalist" />
+        </CardContent>
+      </Card>
 
       {canDelete ? <DangerZone club={club} /> : null}
     </div>

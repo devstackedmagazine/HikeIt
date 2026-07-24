@@ -11,7 +11,7 @@ import { authClient } from "@/lib/auth/client";
 export function LogoutButton({
   variant = "outline",
 }: {
-  variant?: "outline" | "ghost" | "default";
+  variant?: "outline" | "ghost" | "default" | "brutalist";
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,20 @@ export function LogoutButton({
     await authClient.signOut();
     router.push("/login");
     router.refresh();
+  }
+
+  if (variant === "brutalist") {
+    return (
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={loading}
+        className="flex w-full items-center justify-center gap-2 rounded-none border-2 border-forest bg-summit py-3 text-[12px] font-extrabold tracking-[0.08em] text-forest uppercase transition-colors hover:bg-forest hover:text-summit disabled:opacity-50"
+      >
+        <LogOut className="size-4" />
+        {loading ? "Duke dalë…" : "Dilo nga llogaria"}
+      </button>
+    );
   }
 
   return (

@@ -34,7 +34,7 @@ export function TripSocialActions() {
           onClick={share}
           aria-label="Kopjo lidhjen"
           className={cn(
-            "flex size-8 items-center justify-center border transition-colors",
+            "flex size-11 items-center justify-center border transition-colors md:size-8",
             copied
               ? "border-moss/50 text-moss"
               : "border-summit/15 text-summit/40 hover:border-summit/30 hover:text-summit/70",
@@ -54,7 +54,7 @@ export function TripSocialActions() {
               <button
                 type="button"
                 aria-label="Ruaj"
-                className="flex size-8 items-center justify-center border border-summit/15 text-summit/40 transition-colors hover:border-summit/30 hover:text-summit/70"
+                className="flex size-11 items-center justify-center border border-summit/15 text-summit/40 transition-colors hover:border-summit/30 hover:text-summit/70 md:size-8"
               />
             }
           >
@@ -69,7 +69,7 @@ export function TripSocialActions() {
               <button
                 type="button"
                 aria-label="Raporto"
-                className="flex size-8 items-center justify-center border border-summit/15 text-summit/40 transition-colors hover:border-summit/30 hover:text-summit/70"
+                className="flex size-11 items-center justify-center border border-summit/15 text-summit/40 transition-colors hover:border-summit/30 hover:text-summit/70 md:size-8"
               />
             }
           >

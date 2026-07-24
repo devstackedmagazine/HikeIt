@@ -133,7 +133,7 @@ export function TripRegistrationCard({
   if (redirecting) return <StripeRedirectOverlay />;
 
   return (
-    <div className="border border-summit/12 bg-summit/[0.03] p-[18px]">
+    <div className="min-w-0 border border-summit/12 bg-summit/[0.03] p-4 sm:p-[18px]">
       <p className="mb-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
         Çmimi per person
       </p>
@@ -161,7 +161,7 @@ export function TripRegistrationCard({
 
       {/* Fee breakdown for paid trips (not while paying). */}
       {!free && !isRegistered && !isPast ? (
-        <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] text-summit/25 uppercase">
+        <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words text-summit/25 uppercase">
           Stripe merr ~€{stripeFee.toFixed(2)} · HikeIt €
           {platformFee.toFixed(2)} (2.5%)
         </p>

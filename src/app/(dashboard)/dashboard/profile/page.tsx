@@ -15,6 +15,7 @@ import { ChangePasswordRow } from "@/components/features/profile/change-password
 import { DeleteAccountButton } from "@/components/features/profile/delete-account-button";
 import { LanguageToggle } from "@/components/features/profile/language-toggle";
 import { ProfileForm } from "@/components/features/profile/profile-form";
+import { LogoutButton } from "@/components/shared/logout-button";
 import { getRequiredUser } from "@/lib/auth/helpers";
 import { cn } from "@/lib/utils/cn";
 import { getUserProfile } from "@/server/queries/users";
@@ -261,6 +262,7 @@ export default async function ProfilePage() {
             initial={profile.preferences?.alertSensitivity}
           />
           <LanguageToggle initial={profile.preferences?.language} />
+          <LogoutButton variant="brutalist" />
           <DeleteAccountButton email={profile.email} />
         </aside>
       </div>
