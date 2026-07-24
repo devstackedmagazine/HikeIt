@@ -288,6 +288,7 @@ export async function getUserRegistration(
       eq(tripRegistrations.userId, userId),
       ne(tripRegistrations.status, "canceled"),
     ),
+    orderBy: (t, { desc }) => [desc(t.registeredAt)],
   });
   if (active) return active;
 

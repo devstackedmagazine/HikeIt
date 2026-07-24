@@ -67,10 +67,16 @@ export function TripRegistrationCard({
     registration !== null &&
     (registration.status === "confirmed" ||
       registration.status === "waitlisted");
+  // Gated on `returnedFromCheckout` (the `?payment=success` redirect) too — a
+  // `pending`/`pending` row alone isn't enough, since that's also what a
+  // hiker sees if they abandon or cancel Checkout, or simply revisit the page
+  // later without coming back through Stripe. Without this gate the card
+  // polls forever for a webhook that's never coming.
   const isPaymentProcessing =
     registration !== null &&
     registration.status === "pending" &&
-    registration.paymentStatus === "pending";
+    registration.paymentStatus === "pending" &&
+    returnedFromCheckout;
   const isFull = maxParticipants !== null && confirmedCount >= maxParticipants;
   const remaining =
     maxParticipants !== null

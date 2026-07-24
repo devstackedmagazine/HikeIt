@@ -83,6 +83,7 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
       eq(tripRegistrations.userId, session.user.id),
       ne(tripRegistrations.status, "canceled"),
     ),
+    orderBy: (t, { desc }) => [desc(t.registeredAt)],
   });
   // A prior *pending payment* attempt is allowed to resume (see paid path);
   // any other non-canceled registration means they're already in.
