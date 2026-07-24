@@ -29,7 +29,12 @@ export interface TripRegistrationCardProps {
   priceEur: string;
   confirmedCount: number;
   maxParticipants: number | null;
-  registration: { id: string; status: string; paymentStatus: string } | null;
+  registration: {
+    id: string;
+    status: string;
+    paymentStatus: string;
+    isReregistration: boolean;
+  } | null;
   /** True when Stripe Checkout redirected back with `?payment=success` —
    * purely informational. The webhook, not this flag, confirms payment; if
    * the DB still shows `pending` we tell the hiker it's processing, never
@@ -187,13 +192,19 @@ export function TripRegistrationCard({
                 ? "Në listën e pritjes"
                 : "Regjistruar ✓"}
             </span>
-            <CancelConfirmDialog
-              priceLabel={`€${price}`}
-              isPaid={!free}
-              loading={loading}
-              onConfirm={cancel}
-            />
-            {!free ? (
+            {registration?.isReregistration ? (
+              <p className="text-center text-[10px] tracking-[0.04em] text-summit/35 uppercase">
+                Për anulim kontaktoni klubin direkt.
+              </p>
+            ) : (
+              <CancelConfirmDialog
+                priceLabel={`€${price}`}
+                isPaid={!free}
+                loading={loading}
+                onConfirm={cancel}
+              />
+            )}
+            {!free && !registration?.isReregistration ? (
               <p className="text-center text-[9px] leading-relaxed tracking-[0.02em] text-summit/30 uppercase">
                 Rimbursim i plotë nëse anulohet 24 orë para nisjes.
               </p>
@@ -293,7 +304,7 @@ function CancelConfirmDialog({
             </p>
             {isPaid ? (
               <p>
-                Pagesa juaj e {priceLabel} do t&apos;ju rimbursohet plotësisht
+                Pagesa juaj prej {priceLabel}{" "}do t&apos;ju rimbursohet plotësisht
                 nëse anulohet 24 orë para nisjes.
               </p>
             ) : null}

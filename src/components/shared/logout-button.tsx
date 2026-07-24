@@ -32,7 +32,7 @@ export function LogoutButton({
         className="flex w-full items-center justify-center gap-2 rounded-none border-2 border-forest bg-summit py-3 text-[12px] font-extrabold tracking-[0.08em] text-forest uppercase transition-colors hover:bg-forest hover:text-summit disabled:opacity-50"
       >
         <LogOut className="size-4" />
-        {loading ? "Duke dalë…" : "Dilo nga llogaria"}
+        {loading ? "Duke dalë…" : "Dil nga llogaria"}
       </button>
     );
   }

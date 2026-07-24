@@ -90,16 +90,43 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
     return { success: false, error: "Jeni tashmë i regjistruar." };
   }
 
+  // No active registration — check for a prior canceled one. A hiker who was
+  // refunded (or never paid) may re-register with a brand-new row; one whose
+  // cancellation wasn't refunded (an edge case — cancellation normally always
+  // refunds) must contact the club instead of silently paying again.
+  let isReregistration = false;
+  if (!existing) {
+    const canceled = await db.query.tripRegistrations.findFirst({
+      where: and(
+        eq(tripRegistrations.tripId, tripId),
+        eq(tripRegistrations.userId, session.user.id),
+        eq(tripRegistrations.status, "canceled"),
+      ),
+      orderBy: (t, { desc }) => [desc(t.canceledAt)],
+    });
+    if (canceled) {
+      if (canceled.paymentStatus === "paid") {
+        return {
+          success: false,
+          error:
+            "Ju keni një regjistrim të anuluar pa rimbursim. Kontaktoni klubin.",
+        };
+      }
+      isReregistration = true;
+    }
+  }
+
   const price = Number(trip.priceEur ?? 0);
   return price > 0
-    ? registerPaid(session.user.id, trip, existing?.id ?? null)
-    : registerFree(session.user.id, trip);
+    ? registerPaid(session.user.id, trip, existing?.id ?? null, isReregistration)
+    : registerFree(session.user.id, trip, isReregistration);
 }
 
 /** Free trip: confirm (or waitlist), email, revalidate. */
 async function registerFree(
   userId: string,
   trip: typeof trips.$inferSelect,
+  isReregistration: boolean,
 ): Promise<RegisterResult> {
   const confirmed = await confirmedCountFor(trip.id);
   const isFull =
@@ -111,6 +138,7 @@ async function registerFree(
     userId,
     status,
     paymentStatus: "free",
+    isReregistration,
   });
 
   if (
@@ -145,6 +173,7 @@ async function registerPaid(
   userId: string,
   trip: typeof trips.$inferSelect,
   existingPendingId: string | null,
+  isReregistration: boolean,
 ): Promise<RegisterResult> {
   if (!isStripeConfigured()) {
     return { success: false, error: "Pagesat nuk janë konfiguruar ende." };
@@ -239,6 +268,7 @@ async function registerPaid(
         status: "pending",
         paymentStatus: "pending",
         stripePaymentIntentId: paymentIntentId,
+        isReregistration,
       });
     }
 
@@ -339,6 +369,13 @@ export async function cancelMyRegistration(
   if (!registration) return { success: false, error: "Nuk u gjet." };
   if (registration.status === "canceled") {
     return { success: false, error: "Ky regjistrim është anuluar tashmë." };
+  }
+  if (registration.isReregistration) {
+    return {
+      success: false,
+      error:
+        "Keni anuluar një herë këtë udhëtim. Për ndihmë kontaktoni klubin direkt.",
+    };
   }
 
   const trip = await db.query.trips.findFirst({

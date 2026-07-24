@@ -12,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -332,9 +333,18 @@ export const tripRegistrations = pgTable(
       .notNull()
       .defaultNow(),
     canceledAt: timestamp("canceled_at", { withTimezone: true }),
+    // True for a row created by re-registering after a canceled+refunded (or
+    // free) prior registration. Once true, the hiker can't self-cancel again —
+    // they must contact the club — so this can only ever go pending → true.
+    isReregistration: boolean("is_reregistration").notNull().default(false),
   },
   (t) => [
-    unique("trip_registrations_trip_user_unique").on(t.tripId, t.userId),
+    // Only one *active* (non-canceled) registration per trip+user — canceled
+    // rows are kept for history and re-registration creates a new row rather
+    // than reusing them, so the constraint can't be a plain table-wide unique.
+    uniqueIndex("trip_registrations_trip_user_active_unique")
+      .on(t.tripId, t.userId)
+      .where(sql`${t.status} != 'canceled'`),
     index("trip_registrations_trip_id_idx").on(t.tripId),
     index("trip_registrations_user_id_idx").on(t.userId),
     // Payment webhooks look registrations up by payment intent id.

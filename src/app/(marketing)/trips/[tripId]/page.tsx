@@ -229,6 +229,7 @@ export default async function PublicTripPage({
                     id: registration.id,
                     status: registration.status,
                     paymentStatus: registration.paymentStatus,
+                    isReregistration: registration.isReregistration,
                   }
                 : null
             }

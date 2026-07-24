@@ -7,6 +7,7 @@ import {
   gte,
   isNull,
   lte,
+  ne,
   type SQL,
   sql,
 } from "drizzle-orm";
@@ -277,13 +278,28 @@ export async function getUserRegistration(
   tripId: string,
   userId: string,
 ): Promise<TripRegistration | null> {
-  const row = await db.query.tripRegistrations.findFirst({
+  // A user can have at most one *active* (non-canceled) registration per trip
+  // — enforced by a partial unique index — plus any number of old canceled
+  // rows kept for history. The active one (if any) is what the trip page
+  // cares about; fall back to the most recently canceled row otherwise.
+  const active = await db.query.tripRegistrations.findFirst({
     where: and(
       eq(tripRegistrations.tripId, tripId),
       eq(tripRegistrations.userId, userId),
+      ne(tripRegistrations.status, "canceled"),
     ),
   });
-  return row ?? null;
+  if (active) return active;
+
+  const canceled = await db.query.tripRegistrations.findFirst({
+    where: and(
+      eq(tripRegistrations.tripId, tripId),
+      eq(tripRegistrations.userId, userId),
+      eq(tripRegistrations.status, "canceled"),
+    ),
+    orderBy: (t, { desc }) => [desc(t.canceledAt)],
+  });
+  return canceled ?? null;
 }
 
 export type TimeFilter = "upcoming" | "past" | "waitlisted";
