@@ -51,14 +51,17 @@ export const auth = betterAuth({
     enabled: true,
     storage: "database",
     modelName: "rateLimit",
-    window: 60,
-    max: 60,
+    // Baseline for every /api/auth/* endpoint: 10 attempts / 15 min per IP.
+    window: 15 * 60,
+    max: 10,
     customRules: {
-      "/sign-in/email": { window: 300, max: 8 },
-      "/sign-up/email": { window: 3600, max: 5 },
-      "/forget-password": { window: 3600, max: 5 },
-      "/reset-password": { window: 3600, max: 5 },
-      "/send-verification-email": { window: 3600, max: 5 },
+      // Credential and email-dispatch endpoints are the brute-force and abuse
+      // targets, so they stay tighter than the baseline.
+      "/sign-in/email": { window: 15 * 60, max: 10 },
+      "/sign-up/email": { window: 60 * 60, max: 5 },
+      "/forget-password": { window: 60 * 60, max: 5 },
+      "/reset-password": { window: 60 * 60, max: 5 },
+      "/send-verification-email": { window: 60 * 60, max: 5 },
     },
   },
 

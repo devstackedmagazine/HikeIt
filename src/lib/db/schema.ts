@@ -509,6 +509,19 @@ export const auditLogs = pgTable(
     index("audit_logs_user_id_idx").on(t.userId),
     index("audit_logs_action_idx").on(t.action),
     index("audit_logs_created_at_idx").on(t.createdAt),
+    // Rate-limit lookups filter on (action, actor, created_at). Without these
+    // composites the counts degrade to scans as audit_logs grows, on the hot
+    // path of every guarded action.
+    index("audit_logs_action_user_created_idx").on(
+      t.action,
+      t.userId,
+      t.createdAt,
+    ),
+    index("audit_logs_action_ip_created_idx").on(
+      t.action,
+      t.ipAddress,
+      t.createdAt,
+    ),
   ],
 );
 

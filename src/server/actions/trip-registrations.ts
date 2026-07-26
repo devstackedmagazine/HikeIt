@@ -20,6 +20,7 @@ import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
 import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError, trackEvent } from "@/lib/sentry";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
 import {
@@ -84,6 +85,11 @@ export async function registerForTrip(
         "Duhet të pranoni kushtet dhe rreziqet e aktivitetit para regjistrimit.",
     };
   }
+
+  const limited = await enforceRateLimit("ratelimit.trip.register", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
