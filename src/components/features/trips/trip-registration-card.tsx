@@ -57,6 +57,7 @@ export function TripRegistrationCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [acceptedWaiver, setAcceptedWaiver] = useState(false);
 
   const price = Number(priceEur);
   const free = price === 0;
@@ -103,7 +104,7 @@ export function TripRegistrationCard({
   async function register() {
     setLoading(true);
     setError(null);
-    const result = await registerForTrip(tripId);
+    const result = await registerForTrip(tripId, acceptedWaiver);
     if (!result.success) {
       setLoading(false);
       setError(result.error ?? "Diçka shkoi keq.");
@@ -229,19 +230,48 @@ export function TripRegistrationCard({
             </p>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={register}
-            disabled={loading}
-            className={cn(buttonClass, primaryClass, "disabled:opacity-50")}
-          >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-            {isFull
-              ? "Lista e pritjes →"
-              : free
-                ? "Regjistrohu falas →"
-                : `Regjistrohu — €${price}`}
-          </button>
+          <div className="space-y-3">
+            {/* Liability waiver — required before registering. Also enforced
+                server-side; the acceptance time is stored on the registration. */}
+            <label className="flex cursor-pointer gap-2.5 text-left">
+              <input
+                type="checkbox"
+                checked={acceptedWaiver}
+                onChange={(e) => setAcceptedWaiver(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 appearance-none border-2 border-summit/30 bg-transparent transition-colors checked:border-moss checked:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moss"
+              />
+              <span className="text-[10px] leading-[1.5] text-summit/45">
+                Kuptoj që hiking ka rreziqe të qenësishme. Lexova dhe pranoj{" "}
+                <Link
+                  href="/terms"
+                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                >
+                  Kushtet e Shërbimit
+                </Link>{" "}
+                dhe{" "}
+                <Link
+                  href="/privacy"
+                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                >
+                  Politikën e Privatësisë
+                </Link>
+                .
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={register}
+              disabled={loading || !acceptedWaiver}
+              className={cn(buttonClass, primaryClass, "disabled:opacity-50")}
+            >
+              {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+              {isFull
+                ? "Lista e pritjes →"
+                : free
+                  ? "Regjistrohu falas →"
+                  : `Regjistrohu — €${price}`}
+            </button>
+          </div>
         )}
       </div>
 

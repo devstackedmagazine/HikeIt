@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -597,6 +598,26 @@ export const verifications = pgTable(
   },
   (t) => [index("verifications_identifier_idx").on(t.identifier)],
 );
+
+/**
+ * Better Auth's rate-limit store (`rateLimit.storage: "database"`). Property
+ * names must match Better Auth's expected fields exactly (`key`, `count`,
+ * `lastRequest`). `lastRequest` is a bigint epoch-ms value, not a timestamp —
+ * Better Auth writes/compares it as a plain number.
+ *
+ * Backing this with the DB (rather than the default in-memory map) is what
+ * makes the limit real on Vercel, where each serverless instance would
+ * otherwise keep its own counter and the limit could be trivially bypassed.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
+export type RateLimit = typeof rateLimits.$inferSelect;
+export type NewRateLimit = typeof rateLimits.$inferInsert;
 
 export type WaitlistEntry = typeof waitlist.$inferSelect;
 export type NewWaitlistEntry = typeof waitlist.$inferInsert;

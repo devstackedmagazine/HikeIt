@@ -4,7 +4,13 @@ import { nextCookies } from "better-auth/next-js";
 
 import { env } from "@/config/env";
 import { db } from "@/lib/db";
-import { accounts, sessions, users, verifications } from "@/lib/db/schema";
+import {
+  accounts,
+  rateLimits,
+  sessions,
+  users,
+  verifications,
+} from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { ResetPassword } from "@/lib/email/templates/reset-password";
 import { VerifyEmail } from "@/lib/email/templates/verify-email";
@@ -31,8 +37,30 @@ export const auth = betterAuth({
       session: sessions,
       account: accounts,
       verification: verifications,
+      rateLimit: rateLimits,
     },
   }),
+
+  /**
+   * Rate limiting on every `/api/auth/*` endpoint, backed by the database so
+   * the counter is shared across Vercel's serverless instances (the default
+   * in-memory store gives each instance its own map, which is bypassable).
+   * Credential endpoints get tighter custom rules than the global default.
+   */
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    modelName: "rateLimit",
+    window: 60,
+    max: 60,
+    customRules: {
+      "/sign-in/email": { window: 300, max: 8 },
+      "/sign-up/email": { window: 3600, max: 5 },
+      "/forget-password": { window: 3600, max: 5 },
+      "/reset-password": { window: 3600, max: 5 },
+      "/send-verification-email": { window: 3600, max: 5 },
+    },
+  },
 
   advanced: {
     // Postgres generates the uuid primary keys via `defaultRandom()`.

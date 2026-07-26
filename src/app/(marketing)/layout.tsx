@@ -40,8 +40,8 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
     links: [
       { href: "/terms", label: "Kushtet" },
       { href: "/privacy", label: "Privatësia" },
-      { href: "#", label: "Siguria" },
-      { href: "#", label: "Cookies" },
+      { href: "/privacy#security", label: "Siguria" },
+      { href: "/privacy#cookies", label: "Cookies" },
     ],
   },
 ];

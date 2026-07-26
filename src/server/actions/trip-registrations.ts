@@ -67,9 +67,23 @@ async function isClubManager(
  *   to redirect to Stripe's hosted page. The webhook confirms it on success —
  *   the client never marks a registration confirmed on its own.
  */
-export async function registerForTrip(tripId: string): Promise<RegisterResult> {
+export async function registerForTrip(
+  tripId: string,
+  acceptedWaiver = false,
+): Promise<RegisterResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  // Liability waiver is a precondition, enforced server-side — the client
+  // checkbox is a UX affordance, not the control. The acceptance timestamp is
+  // recorded on the registration row (`waiverSignedAt`) as proof of consent.
+  if (!acceptedWaiver) {
+    return {
+      success: false,
+      error:
+        "Duhet të pranoni kushtet dhe rreziqet e aktivitetit para regjistrimit.",
+    };
+  }
 
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
@@ -140,6 +154,7 @@ async function registerFree(
     status,
     paymentStatus: "free",
     isReregistration,
+    waiverSignedAt: new Date(),
   });
 
   if (
@@ -253,13 +268,15 @@ async function registerPaid(
 
     if (existingPendingId) {
       // Resume an abandoned attempt — reuse the row (unique trip+user) and
-      // point it at the fresh session/intent.
+      // point it at the fresh session/intent. The waiver is re-accepted on
+      // every attempt, so refresh the timestamp too.
       await db
         .update(tripRegistrations)
         .set({
           status: "pending",
           paymentStatus: "pending",
           stripePaymentIntentId: paymentIntentId,
+          waiverSignedAt: new Date(),
         })
         .where(eq(tripRegistrations.id, existingPendingId));
     } else {
@@ -270,6 +287,7 @@ async function registerPaid(
         paymentStatus: "pending",
         stripePaymentIntentId: paymentIntentId,
         isReregistration,
+        waiverSignedAt: new Date(),
       });
     }
 
