@@ -182,7 +182,7 @@ export default async function PublicTripPage({
           {mapLat !== null && mapLng !== null ? (
             <div className="relative mb-5 h-[280px] w-full overflow-hidden border border-summit/10">
               <TrailMap trailName={trip.title} startLat={mapLat} startLng={mapLng} />
-              <div className="absolute bottom-0 left-0 z-[400] max-w-[calc(100%-1rem)] border-t border-r border-summit/15 bg-abyss px-4 py-2.5">
+              <div className="absolute bottom-0 left-0 z-20 max-w-[calc(100%-1rem)] border-t border-r border-summit/15 bg-abyss px-4 py-2.5">
                 <p className="mb-[3px] text-[8px] font-semibold tracking-[0.15em] text-summit/35 uppercase">
                   Pika e takimit
                 </p>

@@ -14,7 +14,7 @@ const HIKER_POINTS = [
   "Gjej shtigje",
   "Bashkohu me udhëtime",
   "Ndiq historinë",
-  "Merr alerts moti",
+  "Merr njoftime moti",
 ];
 const CLUB_POINTS = [
   "Menaxho anëtarët",
