@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
+import { commissionFeeCents, resolveCommission } from "@/lib/commission";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -27,9 +28,6 @@ import {
   formatTripDateTime,
   googleCalendarUrl,
 } from "@/lib/utils/datetime";
-
-/** HikeIt's platform commission on every paid trip registration. */
-const PLATFORM_FEE_RATE = 0.025;
 
 export interface RegisterResult {
   success: boolean;
@@ -203,7 +201,14 @@ async function registerPaid(
 
   const club = await db.query.organizations.findFirst({
     where: eq(organizations.id, trip.organizationId),
-    columns: { stripeConnectAccountId: true, stripeAccountStatus: true },
+    columns: {
+      stripeConnectAccountId: true,
+      stripeAccountStatus: true,
+      commissionRate: true,
+      commissionOverrideUntil: true,
+      commissionOverrideReason: true,
+      trialEndsAt: true,
+    },
   });
   if (
     !club?.stripeConnectAccountId ||
@@ -224,7 +229,9 @@ async function registerPaid(
 
   // All money math in integer cents — never float euros.
   const amountCents = Math.round(Number(trip.priceEur) * 100);
-  const feeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
+  // The club's resolved rate — 0 during a free trial or under a 0% grant.
+  const commission = resolveCommission(club);
+  const feeCents = commissionFeeCents(amountCents, commission.rate);
 
   try {
     const checkoutSession = await getStripe().checkout.sessions.create({
@@ -241,7 +248,12 @@ async function registerPaid(
         },
       ],
       payment_intent_data: {
-        application_fee_amount: feeCents,
+        // Omitted entirely at 0% rather than sent as a literal 0. Stripe types
+        // `application_fee_amount` as an optional positive amount ("the
+        // application fee (if any)"); omitting is the documented way to say
+        // "no fee", and it keeps the club receiving the full amount minus only
+        // Stripe's own processing fee.
+        ...(feeCents > 0 ? { application_fee_amount: feeCents } : {}),
         transfer_data: { destination: club.stripeConnectAccountId },
         metadata: {
           tripId: trip.id,
@@ -302,6 +314,8 @@ async function registerPaid(
       organizationId: trip.organizationId,
       amountCents,
       feeCents,
+      commissionRate: commission.rate,
+      commissionSource: commission.source,
     });
 
     return { success: true, type: "paid", checkoutUrl: checkoutSession.url };
@@ -313,6 +327,26 @@ async function registerPaid(
     });
     return { success: false, error: "Pagesa dështoi të nisë. Provoni sërish." };
   }
+}
+
+/**
+ * `refund_application_fee` for a refund, included only when the original
+ * charge actually carried a HikeIt fee.
+ *
+ * A payment taken during a 0% period has no application fee at all (we omit
+ * `application_fee_amount` rather than sending 0), so asking Stripe to refund
+ * one is meaningless. Stripe treats it as a no-op rather than an error, but
+ * sending the flag only when there's a fee to reverse keeps the request
+ * honest and removes the edge case entirely.
+ *
+ * `platformFeeEur` is the fee we recorded from the PaymentIntent, so it is the
+ * authoritative record of what was charged.
+ */
+function refundApplicationFeeParam(
+  platformFeeEur: string | null,
+): { refund_application_fee?: true } {
+  const fee = Number(platformFeeEur ?? 0);
+  return Number.isFinite(fee) && fee > 0 ? { refund_application_fee: true } : {};
 }
 
 /** Count of confirmed registrations for a trip. */
@@ -441,7 +475,7 @@ export async function cancelMyRegistration(
       await getStripe().refunds.create({
         payment_intent: registration.stripePaymentIntentId,
         reverse_transfer: true,
-        refund_application_fee: true,
+        ...refundApplicationFeeParam(registration.platformFeeEur),
       });
     } catch (error) {
       captureError(error, {
@@ -565,7 +599,7 @@ export async function removeRegistration(
       await getStripe().refunds.create({
         payment_intent: registration.stripePaymentIntentId,
         reverse_transfer: true,
-        refund_application_fee: true,
+        ...refundApplicationFeeParam(registration.platformFeeEur),
       });
     } catch (error) {
       captureError(error, {

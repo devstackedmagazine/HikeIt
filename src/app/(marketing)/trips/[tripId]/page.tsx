@@ -223,6 +223,7 @@ export default async function PublicTripPage({
             priceEur={trip.priceEur}
             confirmedCount={trip.confirmedCount}
             maxParticipants={trip.maxParticipants}
+            commissionRate={trip.commissionRate}
             registration={
               registration
                 ? {

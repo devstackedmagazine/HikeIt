@@ -34,6 +34,11 @@ export const RATE_LIMITS = {
   "ratelimit.profile.delete_account": { max: 5, windowMs: 60 * 60 * 1000 },
   "ratelimit.billing.checkout": { max: 10, windowMs: 60 * 60 * 1000 },
   "ratelimit.waitlist.join": { max: 5, windowMs: 60 * 60 * 1000 },
+  // Super-admin mutations. The role is already trusted and the routes are
+  // 404'd for everyone else, so these are abuse insurance (and a compromised
+  // super-admin session's blast radius), not a workflow constraint.
+  "ratelimit.admin.commission": { max: 20, windowMs: 60 * 60 * 1000 },
+  "ratelimit.admin.invite_code": { max: 20, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;

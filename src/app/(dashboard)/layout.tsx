@@ -25,6 +25,8 @@ export default async function DashboardLayout({
 
   const isAdmin = user.role === "club_admin";
   const adminClub = isAdmin ? await getUserAdminClub(user.id) : null;
+  // Nav visibility only — /dashboard/admin enforces the role itself.
+  const isSuperAdmin = user.role === "super_admin";
 
   const displayName = user.name ?? user.email;
   const variant = isAdmin ? "admin" : "hiker";
@@ -38,6 +40,7 @@ export default async function DashboardLayout({
         userName={displayName}
         secondaryLine={isAdmin ? (adminClub?.name ?? "") : user.email}
         adminClubSlug={adminClub?.slug ?? null}
+        showAdminPanel={isSuperAdmin}
       />
 
       <DashboardShell variant={variant} displayName={displayName}>
@@ -47,6 +50,7 @@ export default async function DashboardLayout({
       <DashboardMobileTabs
         variant={variant}
         adminClubSlug={adminClub?.slug ?? null}
+        showAdminPanel={isSuperAdmin}
       />
     </div>
   );

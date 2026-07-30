@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { formatRatePercent } from "@/lib/commission";
 import { cn } from "@/lib/utils/cn";
 import {
   cancelMyRegistration,
@@ -17,7 +18,6 @@ import { StripeRedirectOverlay } from "./stripe-redirect-overlay";
 /** How often we re-check the DB while a payment is confirming. */
 const POLL_INTERVAL_MS = 3000;
 
-const PLATFORM_FEE_RATE = 0.025;
 const STRIPE_PCT = 0.014;
 const STRIPE_FIXED = 0.25;
 
@@ -29,6 +29,12 @@ export interface TripRegistrationCardProps {
   priceEur: string;
   confirmedCount: number;
   maxParticipants: number | null;
+  /**
+   * The club's resolved HikeIt commission rate (0 during a free trial or a
+   * granted 0% period). Resolved server-side so this breakdown always matches
+   * what registration actually charges.
+   */
+  commissionRate: number;
   registration: {
     id: string;
     status: string;
@@ -50,6 +56,7 @@ export function TripRegistrationCard({
   priceEur,
   confirmedCount,
   maxParticipants,
+  commissionRate,
   registration,
   returnedFromCheckout = false,
 }: TripRegistrationCardProps) {
@@ -88,8 +95,10 @@ export function TripRegistrationCard({
       ? Math.min(100, Math.round((confirmedCount / maxParticipants) * 100))
       : 0;
 
-  // Rough hiker-facing breakdown of who takes what from the price.
-  const platformFee = price * PLATFORM_FEE_RATE;
+  // Rough hiker-facing breakdown of who takes what from the price. At a 0%
+  // rate there is no HikeIt fee to name — promising one that won't be charged
+  // would be simply untrue.
+  const platformFee = price * commissionRate;
   const stripeFee = price * STRIPE_PCT + STRIPE_FIXED;
 
   // While a payment is confirming, poll the DB every few seconds so the card
@@ -174,8 +183,10 @@ export function TripRegistrationCard({
       {/* Fee breakdown for paid trips (not while paying). */}
       {!free && !isRegistered && !isPast ? (
         <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words text-summit/25 uppercase">
-          Stripe merr ~€{stripeFee.toFixed(2)} · HikeIt €
-          {platformFee.toFixed(2)} (2.5%)
+          Stripe merr ~€{stripeFee.toFixed(2)}
+          {commissionRate > 0
+            ? ` · HikeIt €${platformFee.toFixed(2)} (${formatRatePercent(commissionRate)})`
+            : ""}
         </p>
       ) : null}
 

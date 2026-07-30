@@ -171,7 +171,27 @@ export const organizations = pgTable("organizations", {
     withTimezone: true,
   }),
   subscriptionStatus: text("subscription_status"),
+  // Commission-free trial: set to now() + 3 months at club creation. While this
+  // is in the future the club pays 0% on paid trips. See `resolveCommission`.
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+  // Explicit commission override. NULL means "not overridden" — the club falls
+  // through to the trial, then to the platform default. Never read these
+  // columns directly to price a payment; always go through `resolveCommission`.
+  commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }),
+  // NULL + a non-null `commissionRate` = a permanent grant.
+  commissionOverrideUntil: timestamp("commission_override_until", {
+    withTimezone: true,
+  }),
+  commissionOverrideReason: text(
+    "commission_override_reason",
+  ).$type<CommissionOverrideReason>(),
+  // Free text, super-admin only, for why the grant exists.
+  commissionOverrideNote: text("commission_override_note"),
+  inviteCodeUsed: text("invite_code_used"),
+  // Guards the "trial ends in 7 days" email against re-sends across cron runs.
+  trialEndingNotifiedAt: timestamp("trial_ending_notified_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -180,6 +200,48 @@ export const organizations = pgTable("organizations", {
     .defaultNow()
     .$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+/**
+ * Why an organization's `commissionRate` was set. Stored as text rather than a
+ * pg enum so adding a future grant type doesn't need a type migration.
+ */
+export type CommissionOverrideReason = "invite_code" | "super_admin";
+
+/**
+ * Partnership codes redeemed at club creation to grant a non-default
+ * commission rate for a period. Server-side access only — enable RLS with no
+ * policies so the Supabase anon/authenticated roles can never read them (the
+ * app connects as the owner role and bypasses RLS).
+ */
+export const inviteCodes = pgTable("invite_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Stored uppercase; redemption uppercases the input before comparing, so the
+  // unique constraint is what makes lookups case-insensitive in practice.
+  // `unique()` already creates the btree index redemption looks the code up by.
+  code: text("code").notNull().unique(),
+  commissionRate: numeric("commission_rate", {
+    precision: 5,
+    scale: 4,
+  }).notNull(),
+  /** NULL = the granted rate never expires. */
+  durationMonths: integer("duration_months"),
+  /** NULL = unlimited redemptions. */
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  /** After this the code itself stops being redeemable. NULL = no expiry. */
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: uuid("created_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const organizationMembers = pgTable(
@@ -652,6 +714,9 @@ export type NewOrganization = typeof organizations.$inferInsert;
 
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type NewOrganizationMember = typeof organizationMembers.$inferInsert;
+
+export type InviteCode = typeof inviteCodes.$inferSelect;
+export type NewInviteCode = typeof inviteCodes.$inferInsert;
 
 export type Trail = typeof trails.$inferSelect;
 export type NewTrail = typeof trails.$inferInsert;

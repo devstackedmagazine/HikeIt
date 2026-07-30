@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -41,6 +41,29 @@ export async function getRequiredUser(): Promise<User> {
   });
   if (!user) redirect("/login");
   return user;
+}
+
+/**
+ * The current user, but only if they're a super admin — otherwise `notFound()`.
+ *
+ * Deliberately a 404 and not a 403: a 403 confirms the admin route exists. An
+ * unauthenticated caller is redirected to `/login` by `getRequiredUser`.
+ */
+export async function requireSuperAdmin(): Promise<User> {
+  const user = await getRequiredUser();
+  if (user.role !== "super_admin") notFound();
+  return user;
+}
+
+/** True if the user is a super admin. For nav visibility, never for access. */
+export async function isSuperAdmin(): Promise<boolean> {
+  const session = await getOptionalSession();
+  if (!session) return false;
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { role: true },
+  });
+  return user?.role === "super_admin";
 }
 
 export type ClubAdminRole = "admin" | "organizer";
