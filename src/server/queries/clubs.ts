@@ -10,6 +10,7 @@ import {
   trips,
   users,
 } from "@/lib/db/schema";
+import { captureError } from "@/lib/sentry";
 
 export interface ClubWithStats extends Organization {
   memberCount: number;
@@ -80,29 +81,47 @@ export async function getClubs(
   if (params.city) filters.push(eq(organizations.city, params.city));
   const where = and(...filters);
 
-  const [rows, totalResult] = await Promise.all([
-    db
-      .select({
-        org: organizations,
-        memberCount: memberCountSql,
-        upcomingTripsCount: upcomingTripsSql,
-        completedTripsCount: completedTripsSql,
-        ownerName: users.name,
-        ownerAvatarUrl: users.avatarUrl,
-      })
-      .from(organizations)
-      .leftJoin(users, eq(organizations.ownerId, users.id))
-      .where(where)
-      .orderBy(asc(organizations.name))
-      .limit(limit)
-      .offset(offset),
-    db.select({ value: count() }).from(organizations).where(where),
-  ]);
+  try {
+    const [rows, totalResult] = await Promise.all([
+      db
+        .select({
+          org: organizations,
+          memberCount: memberCountSql,
+          upcomingTripsCount: upcomingTripsSql,
+          completedTripsCount: completedTripsSql,
+          ownerName: users.name,
+          ownerAvatarUrl: users.avatarUrl,
+        })
+        .from(organizations)
+        .leftJoin(users, eq(organizations.ownerId, users.id))
+        .where(where)
+        .orderBy(asc(organizations.name))
+        .limit(limit)
+        .offset(offset),
+      db.select({ value: count() }).from(organizations).where(where),
+    ]);
 
-  return {
-    clubs: rows.map(rowToClub),
-    total: totalResult[0]?.value ?? 0,
-  };
+    return {
+      clubs: rows.map(rowToClub),
+      total: totalResult[0]?.value ?? 0,
+    };
+  } catch (error) {
+    // The club directory degrades to an empty list rather than throwing the
+    // whole page. The canonical failure here is a schema drift: `select({ org:
+    // organizations })` asks for every column declared in `schema.ts`, so a
+    // deploy that lands ahead of its migration makes Postgres reject the query
+    // outright ("column organizations.X does not exist") and takes /clubs down
+    // for every visitor.
+    //
+    // An empty directory is a bad page; a 500 is a broken site. The error still
+    // goes to Sentry, so this hides the symptom from users without hiding the
+    // problem from us.
+    captureError(error, {
+      action: "getClubs",
+      extra: { search: params.search, city: params.city, page, limit },
+    });
+    return { clubs: [], total: 0 };
+  }
 }
 
 export async function getClubBySlug(

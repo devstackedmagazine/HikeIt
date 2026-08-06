@@ -37,11 +37,19 @@ if (process.env.NODE_ENV === "production") {
       return event;
     },
 
-    // Next.js's own control-flow signals — thrown internally by notFound()
-    // and redirect() and caught by Next's router, not real errors. This
-    // codebase calls redirect() constantly (auth gates, onboarding, etc.),
-    // so without this filter nearly every redirect would show up as a false
-    // Sentry issue.
-    ignoreErrors: ["NEXT_NOT_FOUND", "NEXT_REDIRECT"],
+    ignoreErrors: [
+      // Next.js's own control-flow signals — thrown internally by notFound()
+      // and redirect() and caught by Next's router, not real errors. This
+      // codebase calls redirect() constantly (auth gates, onboarding, etc.),
+      // so without this filter nearly every redirect would show up as a false
+      // Sentry issue.
+      "NEXT_NOT_FOUND",
+      "NEXT_REDIRECT",
+      // Browser-originated noise. These can't be thrown by server code, but
+      // the patterns are kept in sync across all three runtimes so a stray
+      // client error routed through the server SDK is still filtered.
+      "window.webkit.messageHandlers",
+      "updateFrom",
+    ],
   });
 }

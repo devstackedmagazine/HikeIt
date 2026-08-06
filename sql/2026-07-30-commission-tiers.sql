@@ -112,10 +112,12 @@ ALTER TABLE invite_codes ENABLE ROW LEVEL SECURITY;
 COMMIT;
 
 -- ─── Verification (run separately after COMMIT) ─────────────────────────────
+-- Expect 7 rows. The OR group must stay parenthesised — AND binds tighter, so
+-- without the parens this also returns trial_* columns from every other table.
 -- SELECT column_name, data_type, is_nullable
 --   FROM information_schema.columns
 --  WHERE table_name = 'organizations'
---    AND column_name LIKE 'commission%' OR column_name LIKE 'trial%';
+--    AND (column_name LIKE 'commission%' OR column_name LIKE 'trial%');
 --
 -- SELECT relname, relrowsecurity FROM pg_class WHERE relname = 'invite_codes';
 --

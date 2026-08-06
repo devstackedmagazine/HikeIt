@@ -64,6 +64,15 @@ Sentry.init({
     // User-initiated cancellations.
     "AbortError",
     "The user aborted a request",
+    // In-app browser bridges. The Instagram/Facebook iOS webview injects its
+    // own WebKit message-handler shim into our pages; when it runs against a
+    // page that never set it up, it throws in *its* code, not ours. A large
+    // share of HikeIt's traffic arrives from the Instagram bio link, so this
+    // would otherwise be a permanent top issue we can neither reproduce nor fix.
+    "window.webkit.messageHandlers",
+    // Sentry's own injected view script (sentry/scripts/views.js) — vendor
+    // internals, not application code.
+    "updateFrom",
   ],
 });
 
