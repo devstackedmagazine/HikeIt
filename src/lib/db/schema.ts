@@ -745,5 +745,51 @@ export type NewWeatherAlert = typeof weatherAlerts.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 
+export const trailFavorites = pgTable(
+  "trail_favorites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    trailId: uuid("trail_id")
+      .notNull()
+      .references(() => trails.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("trail_favorites_user_trail_unique").on(t.userId, t.trailId),
+    index("trail_favorites_user_id_idx").on(t.userId),
+  ],
+);
+
+export const tripFavorites = pgTable(
+  "trip_favorites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("trip_favorites_user_trip_unique").on(t.userId, t.tripId),
+    index("trip_favorites_user_id_idx").on(t.userId),
+  ],
+);
+
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type TrailFavorite = typeof trailFavorites.$inferSelect;
+export type NewTrailFavorite = typeof trailFavorites.$inferInsert;
+
+export type TripFavorite = typeof tripFavorites.$inferSelect;
+export type NewTripFavorite = typeof tripFavorites.$inferInsert;

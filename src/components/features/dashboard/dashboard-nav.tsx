@@ -2,6 +2,7 @@
 
 import {
   Calendar,
+  Heart,
   LayoutDashboard,
   type LucideIcon,
   Map,
@@ -59,6 +60,7 @@ function buildItems(
   return [
     { href: "/dashboard", label: "Paneli", icon: LayoutDashboard, exact: true },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
+    { href: "/dashboard/trails", label: "Të ruajtura", icon: Heart },
     { href: "/clubs", label: "Klubet", icon: Users },
     { href: "/trails", label: "Shtigjet", icon: Map },
     { href: "/dashboard/profile", label: "Profili", icon: User },

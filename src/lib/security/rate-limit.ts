@@ -39,6 +39,7 @@ export const RATE_LIMITS = {
   // super-admin session's blast radius), not a workflow constraint.
   "ratelimit.admin.commission": { max: 20, windowMs: 60 * 60 * 1000 },
   "ratelimit.admin.invite_code": { max: 20, windowMs: 60 * 60 * 1000 },
+  "ratelimit.favorite.toggle": { max: 60, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;

@@ -22,6 +22,7 @@ import { TripWeatherWidget } from "@/components/features/weather/trip-weather-wi
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
 import { getClubStats } from "@/server/queries/clubs";
+import { isTripFavorited } from "@/server/queries/favorites";
 import { getTripPhotos } from "@/server/queries/photos";
 import { getTripById, getUserRegistration } from "@/server/queries/trips";
 
@@ -105,9 +106,10 @@ export default async function PublicTripPage({
     getTripPhotos(trip.id),
     getClubStats(trip.club.id),
   ]);
-  const registration = session
-    ? await getUserRegistration(trip.id, session.user.id)
-    : null;
+  const [registration, isSaved] = await Promise.all([
+    session ? getUserRegistration(trip.id, session.user.id) : null,
+    session ? isTripFavorited(session.user.id, trip.id) : false,
+  ]);
 
   const isPast = trip.startDatetime < new Date();
   const trail = trip.trail;
@@ -210,7 +212,13 @@ export default async function PublicTripPage({
           ) : null}
 
           {/* Social actions */}
-          <TripSocialActions title={`${trip.title} — ${trip.club.name} · HikeIt`} />
+          <TripSocialActions
+            title={`${trip.title} — ${trip.club.name} · HikeIt`}
+            tripId={trip.id}
+            isSaved={isSaved}
+            isLoggedIn={!!session}
+            returnPath={`/trips/${trip.slug}`}
+          />
         </div>
 
         {/* Right sticky sidebar */}

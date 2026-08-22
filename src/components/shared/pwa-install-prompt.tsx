@@ -2,7 +2,7 @@
 
 import { Download, Share, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -35,40 +35,45 @@ function wasDismissedRecently(): boolean {
 
 export function PwaInstallPrompt() {
   const pathname = usePathname();
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIosHint, setShowIosHint] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [showIos, setShowIos] = useState(false);
+  const deferredRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const [hasDeferred, setHasDeferred] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const onPrompt = useCallback((e: Event) => {
+    e.preventDefault();
+    deferredRef.current = e as BeforeInstallPromptEvent;
+    setHasDeferred(true);
+  }, []);
 
   useEffect(() => {
-    if (isStandalone()) return;
-    if (wasDismissedRecently()) return;
+    if (isStandalone() || wasDismissedRecently()) return;
 
     if (isIos()) {
-      setShowIosHint(true);
-      setVisible(true);
-      return;
+      // Delay by one frame so the setState doesn't fire synchronously in the
+      // effect body (React strict-mode / compiler lint).
+      const id = requestAnimationFrame(() => setShowIos(true));
+      return () => cancelAnimationFrame(id);
     }
 
-    function onPrompt(e: Event) {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
-    }
     window.addEventListener("beforeinstallprompt", onPrompt);
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
+  }, [onPrompt]);
 
   function dismiss() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
-    setVisible(false);
+    setDismissed(true);
+    setShowIos(false);
+    setHasDeferred(false);
   }
 
   async function install() {
+    const deferred = deferredRef.current;
     if (!deferred) return;
     await deferred.prompt();
     await deferred.userChoice;
-    setVisible(false);
-    setDeferred(null);
+    deferredRef.current = null;
+    setHasDeferred(false);
   }
 
   const hidden =
@@ -79,13 +84,14 @@ export function PwaInstallPrompt() {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/verify-email");
 
-  if (!visible || hidden) return null;
+  const visible = !dismissed && !hidden && (showIos || hasDeferred);
+  if (!visible) return null;
 
   return (
     <div className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-center gap-3 border-2 border-moss/30 bg-abyss p-3 shadow-lg md:hidden">
       <Download className="size-5 shrink-0 text-moss" />
       <div className="flex-1">
-        {showIosHint ? (
+        {showIos ? (
           <p className="text-[11px] font-medium leading-[1.4] text-summit/70">
             <span className="font-bold tracking-[0.04em] text-summit uppercase">
               SHTO NË EKRAN KRYESOR
@@ -101,7 +107,7 @@ export function PwaInstallPrompt() {
           </p>
         )}
       </div>
-      {!showIosHint ? (
+      {hasDeferred ? (
         <Button
           size="sm"
           onClick={install}
