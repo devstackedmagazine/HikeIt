@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { AlertTriangle, Bookmark, Download, Share2, Star } from "lucide-react";
+import { AlertTriangle, Bookmark, Download, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +8,7 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewForm } from "@/components/features/trails/review-form";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
+import { ShareButton } from "@/components/shared/share-button";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
@@ -408,13 +409,10 @@ export default async function TrailDetailPage({
             >
               <Bookmark className="size-4" />
             </button>
-            <button
-              type="button"
-              aria-label="Ndaj shtegun"
-              className="flex size-[38px] items-center justify-center border border-summit/15 bg-summit/[0.05] text-summit/50 transition-colors hover:text-summit"
-            >
-              <Share2 className="size-4" />
-            </button>
+            <ShareButton
+              title={`${trail.name} — HikeIt`}
+              className="size-[38px]"
+            />
           </div>
         </aside>
       </div>

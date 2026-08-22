@@ -210,7 +210,7 @@ export default async function PublicTripPage({
           ) : null}
 
           {/* Social actions */}
-          <TripSocialActions />
+          <TripSocialActions title={`${trip.title} — ${trip.club.name} · HikeIt`} />
         </div>
 
         {/* Right sticky sidebar */}
