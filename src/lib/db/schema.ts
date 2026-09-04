@@ -368,6 +368,23 @@ export const trips = pgTable(
     index("trips_organization_id_idx").on(t.organizationId),
     index("trips_status_idx").on(t.status),
     index("trips_start_datetime_idx").on(t.startDatetime),
+    // Two partial indexes serving the hourly auto-completion cron
+    // (`runCompleteTrips`), one per branch of its OR. Neither of the plain
+    // indexes above works for it: `trips_status_idx` can't narrow by time, and
+    // `trips_start_datetime_idx` covers every trip in every status — including
+    // the completed ones that grow without bound and are exactly what the cron
+    // never needs to look at. Partial keeps both indexes to the live
+    // open/full set. Mirrors sql/2026-09-04-trip-autocomplete-indexes.sql.
+    index("trips_autocomplete_end_idx")
+      .on(t.endDatetime)
+      .where(
+        sql`${t.status} in ('open', 'full') and ${t.deletedAt} is null and ${t.endDatetime} is not null`,
+      ),
+    index("trips_autocomplete_start_idx")
+      .on(t.startDatetime)
+      .where(
+        sql`${t.status} in ('open', 'full') and ${t.deletedAt} is null and ${t.endDatetime} is null`,
+      ),
   ],
 );
 
