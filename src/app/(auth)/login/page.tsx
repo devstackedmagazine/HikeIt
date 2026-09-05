@@ -67,11 +67,19 @@ function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
-    await signIn.social({ provider: "google", callbackURL: redirectTo });
+    await signIn.social({
+      provider: "google",
+      callbackURL: redirectTo,
+      errorCallbackURL: "/social-login-error?provider=google",
+    });
   }
 
   async function handleFacebookSignIn() {
-    await signIn.social({ provider: "facebook", callbackURL: redirectTo });
+    await signIn.social({
+      provider: "facebook",
+      callbackURL: redirectTo,
+      errorCallbackURL: "/social-login-error?provider=facebook",
+    });
   }
 
   return (

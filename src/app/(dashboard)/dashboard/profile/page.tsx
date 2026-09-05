@@ -14,9 +14,11 @@ import { AlertSensitivityToggle } from "@/components/features/profile/alert-sens
 import { ChangePasswordRow } from "@/components/features/profile/change-password-row";
 import { DeleteAccountButton } from "@/components/features/profile/delete-account-button";
 import { LanguageToggle } from "@/components/features/profile/language-toggle";
+import { LinkedAccounts } from "@/components/features/profile/linked-accounts";
 import { ProfileForm } from "@/components/features/profile/profile-form";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { getRequiredUser } from "@/lib/auth/helpers";
+import { getSocialErrorCopy, providerLabel } from "@/lib/auth/social-errors";
 import { cn } from "@/lib/utils/cn";
 import { getUserProfile } from "@/server/queries/users";
 
@@ -77,10 +79,24 @@ function Stat({
   );
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ linked?: string; error?: string }>;
+}) {
   const user = await getRequiredUser();
   const profile = await getUserProfile(user.id);
   if (!profile) notFound();
+
+  const { linked, error } = await searchParams;
+  const linkNotice = error
+    ? { tone: "error" as const, message: getSocialErrorCopy(error).message }
+    : linked
+      ? {
+          tone: "success" as const,
+          message: `${providerLabel(linked) ?? linked} u lidh me sukses!`,
+        }
+      : null;
 
   const displayName = (profile.name ?? profile.email).toUpperCase();
   const clubsById = new Map(profile.clubs.map((c) => [c.id, c.name]));
@@ -258,6 +274,10 @@ export default async function ProfilePage() {
           </div>
 
           <ChangePasswordRow />
+          <LinkedAccounts
+            linkedProviders={profile.linkedProviders}
+            initialNotice={linkNotice}
+          />
           <AlertSensitivityToggle
             initial={profile.preferences?.alertSensitivity}
           />

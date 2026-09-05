@@ -77,13 +77,21 @@ export default function RegisterPage() {
   async function handleGoogleSignIn() {
     // New Google users go through onboarding to pick hiker vs club, same as
     // the email registration flow.
-    await signIn.social({ provider: "google", callbackURL: "/onboarding" });
+    await signIn.social({
+      provider: "google",
+      callbackURL: "/onboarding",
+      errorCallbackURL: "/social-login-error?provider=google",
+    });
   }
 
   async function handleFacebookSignIn() {
     // Same onboarding redirect as Google — new social users still need to
     // pick hiker vs club.
-    await signIn.social({ provider: "facebook", callbackURL: "/onboarding" });
+    await signIn.social({
+      provider: "facebook",
+      callbackURL: "/onboarding",
+      errorCallbackURL: "/social-login-error?provider=facebook",
+    });
   }
 
   return (
