@@ -45,7 +45,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [socialNote, setSocialNote] = useState<string | null>(null);
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -79,6 +78,12 @@ export default function RegisterPage() {
     // New Google users go through onboarding to pick hiker vs club, same as
     // the email registration flow.
     await signIn.social({ provider: "google", callbackURL: "/onboarding" });
+  }
+
+  async function handleFacebookSignIn() {
+    // Same onboarding redirect as Google — new social users still need to
+    // pick hiker vs club.
+    await signIn.social({ provider: "facebook", callbackURL: "/onboarding" });
   }
 
   return (
@@ -345,17 +350,12 @@ export default function RegisterPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSocialNote("Së shpejti disponueshëm.")}
+                    onClick={handleFacebookSignIn}
                     className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
-                    Apple
+                    Facebook
                   </button>
                 </div>
-                {socialNote ? (
-                  <p className="text-forest/40 mt-2 text-center text-[11px]">
-                    {socialNote}
-                  </p>
-                ) : null}
               </div>
             </>
           )}
