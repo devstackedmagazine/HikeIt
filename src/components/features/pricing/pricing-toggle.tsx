@@ -12,7 +12,7 @@ const FREE_FEATURES = {
     "Shfleto shtigjet",
     "Bashkohu udhëtime falas",
     "Profil personal",
-    "Alerts moti",
+    "Njoftime moti",
   ],
   excluded: ["Krijo udhëtime", "Menaxho klub"],
 };

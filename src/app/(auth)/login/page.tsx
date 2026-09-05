@@ -15,7 +15,7 @@ import { type LoginInput, loginSchema } from "@/lib/validations/auth";
 const LEFT_FEATURES = [
   "Gjej shtigje të verifikuara",
   "Bashkohu me udhëtime",
-  "Merr alerts moti",
+  "Merr njoftime moti",
 ];
 
 const LABEL =

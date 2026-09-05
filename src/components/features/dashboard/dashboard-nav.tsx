@@ -2,10 +2,12 @@
 
 import {
   Calendar,
+  Heart,
   LayoutDashboard,
   type LucideIcon,
   Map,
   Settings,
+  ShieldCheck,
   User,
   Users,
 } from "lucide-react";
@@ -32,12 +34,19 @@ export interface DashboardNavProps {
   /** Secondary line under the name: email for hikers, club name for admins. */
   secondaryLine: string;
   adminClubSlug: string | null;
+  /** Super admins only — adds the platform admin panel to the nav. */
+  showAdminPanel?: boolean;
 }
 
 function buildItems(
   variant: DashboardVariant,
   adminClubSlug: string | null,
+  showAdminPanel = false,
 ): NavItem[] {
+  const platformAdmin: NavItem[] = showAdminPanel
+    ? [{ href: "/dashboard/admin", label: "Admin", icon: ShieldCheck }]
+    : [];
+
   if (variant === "admin" && adminClubSlug) {
     const club = `/dashboard/club/${adminClubSlug}`;
     return [
@@ -45,14 +54,17 @@ function buildItems(
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
       { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
+      ...platformAdmin,
     ];
   }
   return [
     { href: "/dashboard", label: "Paneli", icon: LayoutDashboard, exact: true },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
+    { href: "/dashboard/trails", label: "Të ruajtura", icon: Heart },
     { href: "/clubs", label: "Klubet", icon: Users },
     { href: "/trails", label: "Shtigjet", icon: Map },
     { href: "/dashboard/profile", label: "Profili", icon: User },
+    ...platformAdmin,
   ];
 }
 
@@ -83,12 +95,13 @@ export function DashboardSidebar({
   userName,
   secondaryLine,
   adminClubSlug,
+  showAdminPanel = false,
 }: DashboardNavProps) {
   const pathname = usePathname();
   const currentTab = useSearchParams().get("tab");
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
-  const items = buildItems(variant, adminClubSlug);
+  const items = buildItems(variant, adminClubSlug, showAdminPanel);
   const isAdmin = variant === "admin";
 
   async function logout() {
@@ -194,13 +207,15 @@ export function DashboardSidebar({
 export function DashboardMobileTabs({
   variant,
   adminClubSlug,
+  showAdminPanel = false,
 }: {
   variant: DashboardVariant;
   adminClubSlug: string | null;
+  showAdminPanel?: boolean;
 }) {
   const pathname = usePathname();
   const currentTab = useSearchParams().get("tab");
-  const items = buildItems(variant, adminClubSlug).slice(0, 5);
+  const items = buildItems(variant, adminClubSlug, showAdminPanel).slice(0, 5);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-summit/[0.06] bg-abyss md:hidden">

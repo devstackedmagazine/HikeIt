@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
+import { trialEndsAtFrom } from "@/lib/commission";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -15,6 +16,11 @@ import {
 import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
 import { type CreateClubInput, createClubSchema } from "@/lib/validations/club";
+import {
+  inviteCodeErrorMessages,
+  type InviteCodeGrant,
+  redeemInviteCode,
+} from "@/server/services/invite-codes";
 
 export interface ActionResult {
   success: boolean;
@@ -33,11 +39,22 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
 
 export interface CreateClubResult extends ActionResult {
   slug?: string;
+  /**
+   * Set when an invite code was supplied but couldn't be redeemed. The club
+   * *was* created (on the standard trial) — this is a warning, not an error.
+   */
+  inviteWarning?: string;
+  /** Set when an invite code was redeemed successfully. */
+  inviteApplied?: boolean;
 }
 
 /**
  * Create a club. Requires an authenticated club_admin. Sets the creator as
  * owner + admin member, writes an audit log, and returns the slug to redirect.
+ *
+ * Every new club starts on a 3-month 0% commission trial. An optional invite
+ * code can override that with a partnership rate; an invalid code is reported
+ * as a warning and the club falls back to the standard trial.
  */
 export async function createClub(
   data: CreateClubInput,
@@ -67,38 +84,87 @@ export async function createClub(
     return { success: false, error: "Ky emër është i zënë, provo një tjetër" };
   }
 
-  const [club] = await db
-    .insert(organizations)
-    .values({
-      slug: input.slug,
-      name: input.name,
-      description: input.description,
-      city: input.city,
-      foundedYear: input.foundedYear,
-      website: input.website || null,
-      instagram: input.instagram || null,
-      facebook: input.facebook || null,
-      ownerId: session.user.id,
-    })
-    .returning({ id: organizations.id, slug: organizations.slug });
+  // Club creation, membership and any invite-code claim commit together: a
+  // consumed code must never outlive a club that failed to be created.
+  const outcome = await db.transaction(async (tx) => {
+    const now = new Date();
 
-  if (!club) return { success: false, error: "Diçka shkoi keq." };
+    // Redeem first, so the grant can go into the same INSERT. A failure here
+    // is collected, never thrown — the club is still created on the trial.
+    let grant: InviteCodeGrant | null = null;
+    let inviteWarning: string | undefined;
+    if (input.inviteCode) {
+      const redemption = await redeemInviteCode(input.inviteCode, tx, now);
+      if (redemption.ok) {
+        grant = redemption.grant;
+      } else {
+        inviteWarning = inviteCodeErrorMessages[redemption.error];
+      }
+    }
 
-  await db.insert(organizationMembers).values({
-    organizationId: club.id,
-    userId: session.user.id,
-    role: "admin",
-  });
+    const [club] = await tx
+      .insert(organizations)
+      .values({
+        slug: input.slug,
+        name: input.name,
+        description: input.description,
+        city: input.city,
+        foundedYear: input.foundedYear,
+        website: input.website || null,
+        instagram: input.instagram || null,
+        facebook: input.facebook || null,
+        ownerId: session.user.id,
+        // Every club gets the 3-month 0% trial. A redeemed code sits *above*
+        // the trial in `resolveCommission`, so both can be recorded and the
+        // better rate simply wins.
+        trialEndsAt: trialEndsAtFrom(now),
+        ...(grant
+          ? {
+              commissionRate: grant.rate.toFixed(4),
+              commissionOverrideUntil: grant.until,
+              commissionOverrideReason: "invite_code" as const,
+              inviteCodeUsed: grant.code,
+            }
+          : {}),
+      })
+      .returning({ id: organizations.id, slug: organizations.slug });
 
-  await db.insert(auditLogs).values({
-    userId: session.user.id,
-    action: "club.created",
-    entityType: "organization",
-    entityId: club.id,
+    if (!club) throw new Error("Club insert returned no row");
+
+    await tx.insert(organizationMembers).values({
+      organizationId: club.id,
+      userId: session.user.id,
+      role: "admin",
+    });
+
+    await tx.insert(auditLogs).values({
+      userId: session.user.id,
+      action: "club.created",
+      entityType: "organization",
+      entityId: club.id,
+      metadata: {
+        trialEndsAt: trialEndsAtFrom(now).toISOString(),
+        ...(grant
+          ? {
+              inviteCode: grant.code,
+              commissionRate: grant.rate,
+              commissionOverrideUntil: grant.until?.toISOString() ?? null,
+            }
+          : {}),
+        ...(inviteWarning ? { inviteCodeRejected: input.inviteCode } : {}),
+      },
+    });
+
+    return { slug: club.slug, inviteWarning, inviteApplied: grant !== null };
   });
 
   revalidatePath("/clubs");
-  return { success: true, slug: club.slug };
+  return {
+    success: true,
+    slug: outcome.slug,
+    inviteWarning: outcome.inviteWarning,
+    inviteApplied: outcome.inviteApplied,
+  };
 }
 
 /** Join a club as a member. Requires auth; idempotent for active members. */

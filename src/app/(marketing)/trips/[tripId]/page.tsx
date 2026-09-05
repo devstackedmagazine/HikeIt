@@ -2,13 +2,10 @@ import {
   Award,
   Car,
   Droplets,
-  Flag,
   Flashlight,
   Footprints,
-  Heart,
   type LucideIcon,
   Package,
-  Share2,
   Shield,
   Shirt,
 } from "lucide-react";
@@ -20,10 +17,12 @@ import { TripGallery } from "@/components/features/images/trip-gallery";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { TripOrganizerCard } from "@/components/features/trips/trip-organizer-card";
 import { TripRegistrationCard } from "@/components/features/trips/trip-registration-card";
+import { TripSocialActions } from "@/components/features/trips/trip-social-actions";
 import { TripWeatherWidget } from "@/components/features/weather/trip-weather-widget";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
 import { getClubStats } from "@/server/queries/clubs";
+import { isTripFavorited } from "@/server/queries/favorites";
 import { getTripPhotos } from "@/server/queries/photos";
 import { getTripById, getUserRegistration } from "@/server/queries/trips";
 
@@ -107,9 +106,10 @@ export default async function PublicTripPage({
     getTripPhotos(trip.id),
     getClubStats(trip.club.id),
   ]);
-  const registration = session
-    ? await getUserRegistration(trip.id, session.user.id)
-    : null;
+  const [registration, isSaved] = await Promise.all([
+    session ? getUserRegistration(trip.id, session.user.id) : null,
+    session ? isTripFavorited(session.user.id, trip.id) : false,
+  ]);
 
   const isPast = trip.startDatetime < new Date();
   const trail = trip.trail;
@@ -151,9 +151,9 @@ export default async function PublicTripPage({
       : null;
 
   return (
-    <div className="bg-abyss">
+    <div className="overflow-x-hidden bg-abyss">
       {/* Header */}
-      <div className="border-b border-summit/[0.08] px-6 pt-5 pb-4">
+      <div className="border-b border-summit/[0.08] px-4 pt-5 pb-4 md:px-6">
         <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-moss uppercase">
           {trip.club.name}
         </p>
@@ -178,17 +178,17 @@ export default async function PublicTripPage({
       </div>
 
       {/* Two-column */}
-      <div className="grid items-start gap-6 px-6 py-5 lg:grid-cols-[1fr_260px]">
+      <div className="grid items-start gap-6 px-4 py-5 md:px-6 lg:grid-cols-[1fr_260px]">
         {/* Left */}
-        <div>
+        <div className="min-w-0">
           {mapLat !== null && mapLng !== null ? (
-            <div className="relative mb-5 h-[280px] overflow-hidden border border-summit/10">
+            <div className="relative mb-5 h-[280px] w-full overflow-hidden border border-summit/10">
               <TrailMap trailName={trip.title} startLat={mapLat} startLng={mapLng} />
-              <div className="absolute bottom-0 left-0 z-[400] border-t border-r border-summit/15 bg-abyss px-4 py-2.5">
+              <div className="absolute bottom-0 left-0 z-20 max-w-[calc(100%-1rem)] border-t border-r border-summit/15 bg-abyss px-4 py-2.5">
                 <p className="mb-[3px] text-[8px] font-semibold tracking-[0.15em] text-summit/35 uppercase">
                   Pika e takimit
                 </p>
-                <p className="font-heading text-[14px] font-extrabold tracking-[-0.01em] text-summit uppercase">
+                <p className="font-heading truncate text-[14px] font-extrabold tracking-[-0.01em] text-summit uppercase">
                   {trip.meetingPoint ?? location}
                 </p>
               </div>
@@ -200,7 +200,10 @@ export default async function PublicTripPage({
               <AccentHeader>Përshkrimi</AccentHeader>
               <div className="space-y-3">
                 {paragraphs.map((p, i) => (
-                  <p key={i} className="text-[13px] leading-[1.7] text-summit/60">
+                  <p
+                    key={i}
+                    className="text-[13px] leading-[1.7] break-words text-summit/60"
+                  >
                     {p}
                   </p>
                 ))}
@@ -209,20 +212,17 @@ export default async function PublicTripPage({
           ) : null}
 
           {/* Social actions */}
-          <div className="flex items-center gap-3 border-t border-summit/[0.06] pt-4">
-            {[Share2, Heart, Flag].map((Icon, i) => (
-              <span
-                key={i}
-                className="flex size-8 items-center justify-center border border-summit/15 text-summit/40"
-              >
-                <Icon className="size-3.5" />
-              </span>
-            ))}
-          </div>
+          <TripSocialActions
+            title={`${trip.title} — ${trip.club.name} · HikeIt`}
+            tripId={trip.id}
+            isSaved={isSaved}
+            isLoggedIn={!!session}
+            returnPath={`/trips/${trip.slug}`}
+          />
         </div>
 
         {/* Right sticky sidebar */}
-        <aside className="flex flex-col gap-3 lg:sticky lg:top-[72px]">
+        <aside className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[72px]">
           <TripRegistrationCard
             tripId={trip.id}
             slug={trip.slug}
@@ -231,12 +231,14 @@ export default async function PublicTripPage({
             priceEur={trip.priceEur}
             confirmedCount={trip.confirmedCount}
             maxParticipants={trip.maxParticipants}
+            commissionRate={trip.commissionRate}
             registration={
               registration
                 ? {
                     id: registration.id,
                     status: registration.status,
                     paymentStatus: registration.paymentStatus,
+                    isReregistration: registration.isReregistration,
                   }
                 : null
             }
@@ -253,7 +255,7 @@ export default async function PublicTripPage({
 
       {/* Trail info card */}
       {trail ? (
-        <div className="mx-6 mb-6 flex flex-wrap items-center justify-between gap-4 border border-moss/15 bg-moss/[0.05] px-5 py-4">
+        <div className="mx-4 mb-6 flex flex-wrap items-center justify-between gap-4 border border-moss/15 bg-moss/[0.05] px-5 py-4 md:mx-6">
           <div>
             <p className="mb-1.5 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
               Shtegu i aktivitetit
@@ -284,7 +286,7 @@ export default async function PublicTripPage({
 
       {/* Equipment + included */}
       {equipment.length > 0 || included.length > 0 ? (
-        <div className="mx-6 mb-6 grid gap-10 sm:grid-cols-2">
+        <div className="mx-4 mb-6 grid gap-10 sm:grid-cols-2 md:mx-6">
           {equipment.length > 0 ? (
             <div>
               <AccentHeader>Pajisjet e nevojshme</AccentHeader>
@@ -301,7 +303,7 @@ export default async function PublicTripPage({
       ) : null}
 
       {/* Weather */}
-      <div className="mx-6 mb-6">
+      <div className="mx-4 mb-6 md:mx-6">
         <TripWeatherWidget
           lat={mapLat}
           lng={mapLng}
@@ -311,7 +313,7 @@ export default async function PublicTripPage({
       </div>
 
       {/* Gallery */}
-      <div className="px-6 pb-8">
+      <div className="px-4 pb-8 md:px-6">
         <div className="mb-3.5 flex items-center justify-between">
           <AccentHeader>Galeria</AccentHeader>
           {photos.length > 0 ? (

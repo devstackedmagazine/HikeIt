@@ -7,5 +7,14 @@ if (process.env.NODE_ENV === "production") {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0.05,
+
+    // Kept in sync with the server and client configs. The proxy runs here and
+    // calls redirect(), so the Next.js control-flow signals matter most.
+    ignoreErrors: [
+      "NEXT_NOT_FOUND",
+      "NEXT_REDIRECT",
+      "window.webkit.messageHandlers",
+      "updateFrom",
+    ],
   });
 }

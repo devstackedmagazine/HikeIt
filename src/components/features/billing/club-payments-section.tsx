@@ -9,7 +9,13 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import {
+  DEFAULT_COMMISSION_RATE,
+  formatRatePercent,
+  type ResolvedCommission,
+} from "@/lib/commission";
 import type { StripeAccountStatus } from "@/lib/stripe/connect-status";
+import { formatTripDate } from "@/lib/utils/datetime";
 import {
   createOnboardingLink,
   getConnectAccountStatus,
@@ -20,9 +26,12 @@ const STRIPE_DASHBOARD_URL = "https://dashboard.stripe.com";
 export function ClubPaymentsSection({
   organizationId,
   status: initialStatus,
+  commission,
 }: {
   organizationId: string;
   status: StripeAccountStatus;
+  /** Resolved server-side — the same value that prices real payments. */
+  commission: ResolvedCommission;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -75,7 +84,7 @@ export function ClubPaymentsSection({
         ) : null}
 
         {status === "active" ? (
-          <ActiveState />
+          <ActiveState commission={commission} />
         ) : status === "restricted" ? (
           <RestrictedState onFix={startOnboarding} loading={loading} />
         ) : status === "pending" ? (
@@ -137,16 +146,18 @@ function PendingState({
 }
 
 /** State C — active. */
-function ActiveState() {
+function ActiveState({ commission }: { commission: ResolvedCommission }) {
   return (
     <>
       <div className="flex items-center gap-2">
         <CheckCircle2 className="size-5 shrink-0 text-moss" />
         <StatusLabel tone="moss">Stripe aktiv</StatusLabel>
       </div>
+
+      <CommissionState commission={commission} />
+
       <p className="text-[13px] leading-relaxed text-forest/70">
-        Komisioni i platformës: <strong>2.5%</strong> për çdo pagesë. Paratë
-        shkojnë drejtpërdrejt në llogarinë tuaj Stripe.
+        Paratë shkojnë drejtpërdrejt në llogarinë tuaj Stripe.
       </p>
       <a
         href={STRIPE_DASHBOARD_URL}
@@ -158,6 +169,45 @@ function ActiveState() {
         <ExternalLink className="size-3.5" />
       </a>
     </>
+  );
+}
+
+/**
+ * What this club currently pays HikeIt, and until when.
+ *
+ * Three shapes: the free trial, a special rate (invite code or a HikeIt-set
+ * grant), and the plain default. The default keeps its original one-line copy.
+ */
+function CommissionState({ commission }: { commission: ResolvedCommission }) {
+  const { rate, source, endsAt } = commission;
+
+  if (source === "default") {
+    return (
+      <p className="text-[13px] leading-relaxed text-forest/70">
+        Komisioni i platformës:{" "}
+        <strong>{formatRatePercent(DEFAULT_COMMISSION_RATE)}</strong> për çdo
+        pagesë.
+      </p>
+    );
+  }
+
+  const isTrial = source === "trial";
+
+  return (
+    <div className="border-2 border-moss bg-moss/10 p-4">
+      <p className="text-[10px] font-bold tracking-[0.12em] text-moss uppercase">
+        {isTrial ? "Provë falas" : "Komision i veçantë"}
+      </p>
+      <p className="font-heading mt-1.5 text-[15px] font-black tracking-tight text-forest">
+        Komisioni: {formatRatePercent(rate)}
+        {endsAt ? ` deri më ${formatTripDate(endsAt)}` : ""}
+      </p>
+      <p className="mt-1 text-[12px] leading-relaxed text-forest/60">
+        {endsAt
+          ? `Pas kësaj date: ${formatRatePercent(DEFAULT_COMMISSION_RATE)}`
+          : "Pa afat"}
+      </p>
+    </div>
   );
 }
 

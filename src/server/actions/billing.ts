@@ -6,6 +6,7 @@ import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { organizationMembers, organizations } from "@/lib/db/schema";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import {
   type BillingInterval,
   getPriceId,
@@ -53,6 +54,11 @@ export async function createCheckoutSession(data: {
 
   const org = await requireOrgAdmin(session.user.id, data.organizationId);
   if (!org) return { error: "Nuk keni qasje." };
+
+  const limited = await enforceRateLimit("ratelimit.billing.checkout", {
+    userId: session.user.id,
+  });
+  if (limited) return { error: limited };
 
   const priceId = getPriceId(data.tier, data.interval);
   if (!priceId) return { error: "Plani nuk është i disponueshëm." };

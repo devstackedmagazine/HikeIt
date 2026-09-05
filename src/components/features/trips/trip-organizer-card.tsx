@@ -24,7 +24,7 @@ export function TripOrganizerCard({
   tripCount: number;
 }) {
   return (
-    <div className="border border-summit/[0.08] bg-summit/[0.02] p-4">
+    <div className="min-w-0 border border-summit/[0.08] bg-summit/[0.02] p-4">
       <p className="mb-3 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
         Organizatori
       </p>

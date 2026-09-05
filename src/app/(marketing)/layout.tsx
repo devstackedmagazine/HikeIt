@@ -40,8 +40,8 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
     links: [
       { href: "/terms", label: "Kushtet" },
       { href: "/privacy", label: "Privatësia" },
-      { href: "#", label: "Siguria" },
-      { href: "#", label: "Cookies" },
+      { href: "/privacy#security", label: "Siguria" },
+      { href: "/privacy#cookies", label: "Cookies" },
     ],
   },
 ];
@@ -49,7 +49,7 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
 const SOCIAL_LINKS: { href: string; label: string; icon: string }[] = [
   { href: "https://www.instagram.com/hikeit.app", label: "Instagram", icon: "IG" },
   { href: "https://www.facebook.com/hikeit.app", label: "Facebook", icon: "FB" },
-  { href: "#", label: "X", icon: "X" },
+  { href: "https://www.tiktok.com/@hikeit.app", label: "TT", icon: "TT" },
 ];
 
 export default async function MarketingLayout({

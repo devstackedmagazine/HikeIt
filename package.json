@@ -27,6 +27,7 @@
     "@sentry/nextjs": "^10.65.0",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tmcw/togeojson": "^7.1.2",
+    "@vercel/analytics": "^2.0.1",
     "better-auth": "^1.6.18",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.10.0",

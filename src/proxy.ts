@@ -11,6 +11,14 @@ import { type NextRequest, NextResponse } from "next/server";
  * pages, so `/api/auth/*` and all public routes (`/`, `/trails`, … ) are never
  * touched.
  */
+/**
+ * `/dashboard/admin` is covered by the `/dashboard` prefix, so an
+ * unauthenticated request is bounced here. The *role* check (super_admin) is
+ * deliberately not done at the edge: reading `users.role` needs a DB round-trip
+ * that this proxy exists to avoid. `/dashboard/admin` calls
+ * `requireSuperAdmin()`, which `notFound()`s — and each admin server action
+ * re-checks the role independently.
+ */
 const PROTECTED_PREFIXES = ["/dashboard", "/onboarding"];
 const AUTH_PAGES = ["/login", "/register"];
 

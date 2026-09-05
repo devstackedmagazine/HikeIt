@@ -170,10 +170,10 @@ export function TripForm({
         </Field>
         <div className="grid grid-cols-[1fr_auto] gap-3">
           <Field label="Shtegu (kërko)">
-            <div className="flex h-10 items-center gap-2 border border-summit/15 bg-summit/[0.05] px-3.5">
-              <Search className="size-3.5 shrink-0 text-summit/30" />
+            <div className="relative h-10 border border-summit/15 bg-summit/[0.05]">
+              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-summit/30" />
               <select
-                className="flex-1 appearance-none bg-transparent text-[13px] text-summit focus:outline-none"
+                className="h-full w-full appearance-none bg-transparent pr-9 pl-9 text-[13px] text-summit focus:outline-none"
                 {...register("trailId")}
               >
                 <option value="" className="text-abyss">
@@ -185,7 +185,7 @@ export function TripForm({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="size-3.5 shrink-0 text-summit/30" />
+              <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-3.5 -translate-y-1/2 text-summit/30" />
             </div>
           </Field>
           <Field label="Vështirësia" error={errors.difficulty?.message}>

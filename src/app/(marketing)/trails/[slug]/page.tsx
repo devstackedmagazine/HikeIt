@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { AlertTriangle, Bookmark, Download, Share2, Star } from "lucide-react";
+import { AlertTriangle, Download, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,14 +7,17 @@ import { notFound } from "next/navigation";
 import { CloudImage } from "@/components/features/images/cloud-image";
 import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewForm } from "@/components/features/trails/review-form";
+import { TrailFavoriteButton } from "@/components/features/trails/trail-favorite-button";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
+import { ShareButton } from "@/components/shared/share-button";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import type { Trail } from "@/lib/db/schema";
 import { trails } from "@/lib/db/schema";
 import { featureLabels, seasonLabels, trailTypeLabels } from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
+import { isTrailFavorited } from "@/server/queries/favorites";
 import { getTrailReviews, type TrailReview } from "@/server/queries/reviews";
 import { getTrailBySlug, getTrailsByRegion } from "@/server/queries/trails";
 import { getUpcomingTripsByTrail } from "@/server/queries/trips";
@@ -176,6 +179,9 @@ export default async function TrailDetailPage({
   ]);
 
   const isLoggedIn = !!session;
+  const isSaved = session
+    ? await isTrailFavorited(session.user.id, trail.id)
+    : false;
   const nearbyTrails = regionTrails.filter((t) => t.id !== trail.id).slice(0, 3);
   const badge = DIFFICULTY_BADGE[trail.difficulty];
   const region = (trail.region ?? "").toUpperCase();
@@ -401,20 +407,17 @@ export default async function TrailDetailPage({
                 GPX — Së shpejti
               </span>
             )}
-            <button
-              type="button"
-              aria-label="Ruaj shtegun"
-              className="flex size-[38px] items-center justify-center border border-summit/15 bg-summit/[0.05] text-summit/50 transition-colors hover:text-summit"
-            >
-              <Bookmark className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Ndaj shtegun"
-              className="flex size-[38px] items-center justify-center border border-summit/15 bg-summit/[0.05] text-summit/50 transition-colors hover:text-summit"
-            >
-              <Share2 className="size-4" />
-            </button>
+            <TrailFavoriteButton
+              trailId={trail.id}
+              isSaved={isSaved}
+              isLoggedIn={isLoggedIn}
+              returnPath={`/trails/${trail.slug}`}
+              className="size-[38px]"
+            />
+            <ShareButton
+              title={`${trail.name} — HikeIt`}
+              className="size-[38px]"
+            />
           </div>
         </aside>
       </div>

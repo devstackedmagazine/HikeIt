@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { isR2Configured, uploadFile } from "@/lib/storage/r2";
 
 export interface ActionResult {
@@ -120,6 +121,13 @@ export async function changePassword(data: {
     return { success: false, error: "Fjalëkalimi duhet të ketë 10+ karaktere." };
   }
 
+  // This action verifies `currentPassword`, so it's an online guessing target
+  // even though the caller is authenticated — throttle before the check.
+  const limited = await enforceRateLimit("ratelimit.profile.change_password", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   try {
     await auth.api.changePassword({
       body: {
@@ -137,6 +145,14 @@ export async function changePassword(data: {
 export async function deleteAccount(confirmation: string): Promise<void> {
   const session = await getOptionalSession();
   if (!session) redirect("/login");
+
+  // Throttled before the confirmation check. This action returns void, so —
+  // like a failed confirmation — a throttled call just returns without
+  // deleting; there's no channel to report the reason.
+  const limited = await enforceRateLimit("ratelimit.profile.delete_account", {
+    userId: session.user.id,
+  });
+  if (limited) return;
 
   if (confirmation.trim().toLowerCase() !== session.user.email.toLowerCase()) {
     return;

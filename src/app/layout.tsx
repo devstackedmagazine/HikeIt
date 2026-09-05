@@ -1,5 +1,6 @@
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -106,6 +107,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  themeColor: "#0D1F14",
 };
 
 export default function RootLayout({
@@ -126,6 +128,7 @@ export default function RootLayout({
         <NuqsAdapter>{children}</NuqsAdapter>
         <CookieConsent />
         <PwaInstallPrompt />
+        <Analytics />
       </body>
     </html>
   );

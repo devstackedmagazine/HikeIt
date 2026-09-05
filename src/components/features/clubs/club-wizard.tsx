@@ -34,7 +34,7 @@ import { checkSlugAvailability, createClub } from "@/server/actions/clubs";
 
 const STEP_FIELDS: Record<number, (keyof CreateClubInput)[]> = {
   1: ["name", "slug", "description", "city", "foundedYear"],
-  2: ["website", "instagram", "facebook"],
+  2: ["website", "instagram", "facebook", "inviteCode"],
 };
 
 export function ClubWizard() {
@@ -45,6 +45,11 @@ export function ClubWizard() {
   >("idle");
   const [slugEdited, setSlugEdited] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Set when the club was created but its invite code was rejected. The club
+  // exists — we hold the redirect so the message is actually seen, rather than
+  // flashing it and navigating away.
+  const [inviteWarning, setInviteWarning] = useState<string | null>(null);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   const form = useForm<CreateClubInput>({
     resolver: zodResolver(createClubSchema),
@@ -56,6 +61,7 @@ export function ClubWizard() {
       website: "",
       instagram: "",
       facebook: "",
+      inviteCode: "",
     },
   });
 
@@ -78,10 +84,16 @@ export function ClubWizard() {
 
   async function onSubmit(data: CreateClubInput) {
     setFormError(null);
+    setInviteWarning(null);
     const result = await createClub(data);
     if (!result.success || !result.slug) {
       setFormError(result.error ?? "Diçka shkoi keq.");
       setStep(1);
+      return;
+    }
+    if (result.inviteWarning) {
+      setInviteWarning(result.inviteWarning);
+      setCreatedSlug(result.slug);
       return;
     }
     router.push(`/dashboard/club/${result.slug}`);
@@ -295,6 +307,36 @@ export function ClubWizard() {
                     </FormItem>
                   )}
                 />
+                {/* Partnership code. Validity is decided server-side at
+                    creation — an invalid code warns but still creates the
+                    club, so there's no blocking check here. */}
+                <FormField
+                  control={form.control}
+                  name="inviteCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="tracking-[0.06em] uppercase">
+                        Kod ftese (opsionale)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          className="h-9 uppercase"
+                          placeholder="Nëse keni një kod partneriteti"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.toUpperCase())
+                          }
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Çdo klub i ri fillon me 3 muaj pa komision. Një kod
+                        partneriteti mund të ofrojë kushte të veçanta.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
           ) : null}
@@ -321,6 +363,15 @@ export function ClubWizard() {
                 {values.instagram ? (
                   <Row label="Instagram" value={`@${values.instagram}`} />
                 ) : null}
+                {values.inviteCode ? (
+                  <Row label="Kod ftese" value={values.inviteCode} />
+                ) : null}
+                {inviteWarning ? (
+                  <p className="border-2 border-alert bg-alert/10 px-3 py-2 text-sm font-medium text-forest">
+                    {inviteWarning} — klubi u krijua me provën standarde 3-mujore
+                    pa komision.
+                  </p>
+                ) : null}
                 {formError ? (
                   <p className="text-sm text-destructive">{formError}</p>
                 ) : null}
@@ -333,11 +384,19 @@ export function ClubWizard() {
               type="button"
               variant="ghost"
               onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1}
+              disabled={step === 1 || createdSlug !== null}
             >
               Kthehu
             </Button>
-            {step < 3 ? (
+            {createdSlug ? (
+              // Club already exists — the only thing left is to go to it.
+              <Button
+                type="button"
+                onClick={() => router.push(`/dashboard/club/${createdSlug}`)}
+              >
+                Vazhdo te klubi →
+              </Button>
+            ) : step < 3 ? (
               <Button type="button" onClick={next}>
                 Vazhdo
               </Button>

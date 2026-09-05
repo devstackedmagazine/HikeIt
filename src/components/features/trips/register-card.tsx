@@ -36,6 +36,7 @@ export function RegisterCard({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [acceptedWaiver, setAcceptedWaiver] = useState(false);
 
   const free = Number(priceEur) === 0;
   const isRegistered =
@@ -44,7 +45,7 @@ export function RegisterCard({
   async function register() {
     setLoading(true);
     setError(null);
-    const result = await registerForTrip(tripId);
+    const result = await registerForTrip(tripId, acceptedWaiver);
     setLoading(false);
     if (!result.success) {
       setError(result.error ?? "Diçka shkoi keq.");
@@ -101,10 +102,35 @@ export function RegisterCard({
             </Button>
           </div>
         ) : (
-          <Button className="w-full" onClick={register} disabled={loading}>
-            {loading ? <Loader2 className="animate-spin" /> : null}
-            {isFull ? "Lista e pritjes" : "Regjistrohu"}
-          </Button>
+          <div className="space-y-3">
+            <label className="flex cursor-pointer gap-2 text-left">
+              <input
+                type="checkbox"
+                checked={acceptedWaiver}
+                onChange={(e) => setAcceptedWaiver(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <span className="text-xs leading-snug text-muted-foreground">
+                Kuptoj që hiking ka rreziqe të qenësishme. Lexova dhe pranoj{" "}
+                <Link href="/terms" className="font-medium underline">
+                  Kushtet e Shërbimit
+                </Link>{" "}
+                dhe{" "}
+                <Link href="/privacy" className="font-medium underline">
+                  Politikën e Privatësisë
+                </Link>
+                .
+              </span>
+            </label>
+            <Button
+              className="w-full"
+              onClick={register}
+              disabled={loading || !acceptedWaiver}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : null}
+              {isFull ? "Lista e pritjes" : "Regjistrohu"}
+            </Button>
+          </div>
         )}
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

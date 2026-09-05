@@ -7,7 +7,9 @@ import {
   organizations,
   reviews,
   sessions,
+  trailFavorites,
   trails,
+  tripFavorites,
   tripPhotos,
   tripRegistrations,
   trips,
@@ -24,6 +26,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   notifications: many(notifications),
   sessions: many(sessions),
   accounts: many(accounts),
+  trailFavorites: many(trailFavorites),
+  tripFavorites: many(tripFavorites),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -69,6 +73,7 @@ export const organizationMembersRelations = relations(
 export const trailsRelations = relations(trails, ({ many }) => ({
   trips: many(trips),
   reviews: many(reviews),
+  favorites: many(trailFavorites),
 }));
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
@@ -132,5 +137,30 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
     references: [users.id],
+  }),
+}));
+
+export const trailFavoritesRelations = relations(
+  trailFavorites,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [trailFavorites.userId],
+      references: [users.id],
+    }),
+    trail: one(trails, {
+      fields: [trailFavorites.trailId],
+      references: [trails.id],
+    }),
+  }),
+);
+
+export const tripFavoritesRelations = relations(tripFavorites, ({ one }) => ({
+  user: one(users, {
+    fields: [tripFavorites.userId],
+    references: [users.id],
+  }),
+  trip: one(trips, {
+    fields: [tripFavorites.tripId],
+    references: [trips.id],
   }),
 }));

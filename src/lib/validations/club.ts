@@ -42,9 +42,21 @@ export const clubContactSchema = z.object({
   facebook: z.url("URL e pavlefshme").optional().or(z.literal("")),
 });
 
-export const createClubSchema = clubBasicInfoSchema.extend(
-  clubContactSchema.shape,
-);
+/**
+ * Optional partnership code redeemed at club creation. Shape only — whether
+ * the code actually exists (and is still redeemable) is decided server-side,
+ * and an invalid one warns rather than blocking creation.
+ */
+export const inviteCodeFieldSchema = z
+  .string()
+  .trim()
+  .max(50, "Maksimumi 50 karaktere")
+  .optional()
+  .or(z.literal(""));
+
+export const createClubSchema = clubBasicInfoSchema
+  .extend(clubContactSchema.shape)
+  .extend({ inviteCode: inviteCodeFieldSchema });
 
 export type ClubBasicInfo = z.infer<typeof clubBasicInfoSchema>;
 export type ClubContact = z.infer<typeof clubContactSchema>;

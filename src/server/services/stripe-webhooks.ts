@@ -16,7 +16,7 @@ import { PaymentFailed } from "@/lib/email/templates/payment-failed";
 import { SubscriptionActivated } from "@/lib/email/templates/subscription-activated";
 import { SubscriptionCanceled } from "@/lib/email/templates/subscription-canceled";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
-import { captureMessage } from "@/lib/sentry";
+import { captureError } from "@/lib/sentry";
 import { mapAccountStatus } from "@/lib/stripe/connect-status";
 import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
 
@@ -242,22 +242,25 @@ export async function handleTripPaymentSucceeded(
       : undefined;
   const registration = byIntent ?? byMetadata;
 
-  // Diagnostic: make the lookup outcome visible in Sentry while we stabilize
-  // the async-PaymentIntent correlation.
-  captureMessage(
-    "trip.payment.succeeded lookup",
-    registration ? "info" : "warning",
-    {
-      intentId: intent.id,
-      metadataTripId: intent.metadata?.tripId ?? null,
-      metadataUserId: intent.metadata?.userId ?? null,
-      matchedBy: byIntent ? "intentId" : byMetadata ? "metadata" : "none",
-      registrationId: registration?.id ?? null,
-      registrationPaymentStatus: registration?.paymentStatus ?? null,
-    },
-  );
-
-  if (!registration) return;
+  if (!registration) {
+    // Not noise: we only get here for intents carrying `metadata.tripId`, so a
+    // miss means a hiker was charged for a trip with no registration row to
+    // confirm — money taken, nobody registered. Neither lookup path found it,
+    // so this needs a human, not a retry.
+    captureError(
+      new Error("Trip payment succeeded with no matching registration"),
+      {
+        action: "handleTripPaymentSucceeded",
+        extra: {
+          intentId: intent.id,
+          tripId: intent.metadata?.tripId ?? null,
+          userId: intent.metadata?.userId ?? null,
+          amount: intent.amount_received || intent.amount,
+        },
+      },
+    );
+    return;
+  }
   // Idempotency: Stripe can deliver the same event more than once.
   if (registration.paymentStatus === "paid") return;
 

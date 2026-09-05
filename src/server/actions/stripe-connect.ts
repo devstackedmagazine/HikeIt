@@ -7,6 +7,7 @@ import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { organizationMembers, organizations } from "@/lib/db/schema";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
 import {
@@ -64,6 +65,13 @@ export async function createConnectAccount(
     return { accountId: org.stripeConnectAccountId };
   }
 
+  // Checked after the admin gate so a non-admin can't burn an admin's quota,
+  // and before the Stripe call so retries of a failing create are throttled.
+  const limited = await enforceRateLimit("ratelimit.stripe.connect_account", {
+    userId: session.user.id,
+  });
+  if (limited) return { error: limited };
+
   try {
     const account = await getStripe().accounts.create({
       type: "express",
@@ -102,6 +110,11 @@ export async function createOnboardingLink(
 
   const org = await requireOrgAdmin(session.user.id, organizationId);
   if (!org) return { error: "Nuk keni qasje." };
+
+  const limited = await enforceRateLimit("ratelimit.stripe.onboarding_link", {
+    userId: session.user.id,
+  });
+  if (limited) return { error: limited };
 
   let accountId = org.stripeConnectAccountId ?? undefined;
   if (!accountId) {

@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
+import { commissionFeeCents, resolveCommission } from "@/lib/commission";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -20,15 +21,13 @@ import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
 import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError, trackEvent } from "@/lib/sentry";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
 import {
   formatTripDateTime,
   googleCalendarUrl,
 } from "@/lib/utils/datetime";
-
-/** HikeIt's platform commission on every paid trip registration. */
-const PLATFORM_FEE_RATE = 0.025;
 
 export interface RegisterResult {
   success: boolean;
@@ -67,9 +66,28 @@ async function isClubManager(
  *   to redirect to Stripe's hosted page. The webhook confirms it on success —
  *   the client never marks a registration confirmed on its own.
  */
-export async function registerForTrip(tripId: string): Promise<RegisterResult> {
+export async function registerForTrip(
+  tripId: string,
+  acceptedWaiver = false,
+): Promise<RegisterResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  // Liability waiver is a precondition, enforced server-side — the client
+  // checkbox is a UX affordance, not the control. The acceptance timestamp is
+  // recorded on the registration row (`waiverSignedAt`) as proof of consent.
+  if (!acceptedWaiver) {
+    return {
+      success: false,
+      error:
+        "Duhet të pranoni kushtet dhe rreziqet e aktivitetit para regjistrimit.",
+    };
+  }
+
+  const limited = await enforceRateLimit("ratelimit.trip.register", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
@@ -83,6 +101,7 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
       eq(tripRegistrations.userId, session.user.id),
       ne(tripRegistrations.status, "canceled"),
     ),
+    orderBy: (t, { desc }) => [desc(t.registeredAt)],
   });
   // A prior *pending payment* attempt is allowed to resume (see paid path);
   // any other non-canceled registration means they're already in.
@@ -90,16 +109,43 @@ export async function registerForTrip(tripId: string): Promise<RegisterResult> {
     return { success: false, error: "Jeni tashmë i regjistruar." };
   }
 
+  // No active registration — check for a prior canceled one. A hiker who was
+  // refunded (or never paid) may re-register with a brand-new row; one whose
+  // cancellation wasn't refunded (an edge case — cancellation normally always
+  // refunds) must contact the club instead of silently paying again.
+  let isReregistration = false;
+  if (!existing) {
+    const canceled = await db.query.tripRegistrations.findFirst({
+      where: and(
+        eq(tripRegistrations.tripId, tripId),
+        eq(tripRegistrations.userId, session.user.id),
+        eq(tripRegistrations.status, "canceled"),
+      ),
+      orderBy: (t, { desc }) => [desc(t.canceledAt)],
+    });
+    if (canceled) {
+      if (canceled.paymentStatus === "paid") {
+        return {
+          success: false,
+          error:
+            "Ju keni një regjistrim të anuluar pa rimbursim. Kontaktoni klubin.",
+        };
+      }
+      isReregistration = true;
+    }
+  }
+
   const price = Number(trip.priceEur ?? 0);
   return price > 0
-    ? registerPaid(session.user.id, trip, existing?.id ?? null)
-    : registerFree(session.user.id, trip);
+    ? registerPaid(session.user.id, trip, existing?.id ?? null, isReregistration)
+    : registerFree(session.user.id, trip, isReregistration);
 }
 
 /** Free trip: confirm (or waitlist), email, revalidate. */
 async function registerFree(
   userId: string,
   trip: typeof trips.$inferSelect,
+  isReregistration: boolean,
 ): Promise<RegisterResult> {
   const confirmed = await confirmedCountFor(trip.id);
   const isFull =
@@ -111,6 +157,8 @@ async function registerFree(
     userId,
     status,
     paymentStatus: "free",
+    isReregistration,
+    waiverSignedAt: new Date(),
   });
 
   if (
@@ -145,6 +193,7 @@ async function registerPaid(
   userId: string,
   trip: typeof trips.$inferSelect,
   existingPendingId: string | null,
+  isReregistration: boolean,
 ): Promise<RegisterResult> {
   if (!isStripeConfigured()) {
     return { success: false, error: "Pagesat nuk janë konfiguruar ende." };
@@ -152,7 +201,14 @@ async function registerPaid(
 
   const club = await db.query.organizations.findFirst({
     where: eq(organizations.id, trip.organizationId),
-    columns: { stripeConnectAccountId: true, stripeAccountStatus: true },
+    columns: {
+      stripeConnectAccountId: true,
+      stripeAccountStatus: true,
+      commissionRate: true,
+      commissionOverrideUntil: true,
+      commissionOverrideReason: true,
+      trialEndsAt: true,
+    },
   });
   if (
     !club?.stripeConnectAccountId ||
@@ -173,7 +229,9 @@ async function registerPaid(
 
   // All money math in integer cents — never float euros.
   const amountCents = Math.round(Number(trip.priceEur) * 100);
-  const feeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
+  // The club's resolved rate — 0 during a free trial or under a 0% grant.
+  const commission = resolveCommission(club);
+  const feeCents = commissionFeeCents(amountCents, commission.rate);
 
   try {
     const checkoutSession = await getStripe().checkout.sessions.create({
@@ -190,7 +248,12 @@ async function registerPaid(
         },
       ],
       payment_intent_data: {
-        application_fee_amount: feeCents,
+        // Omitted entirely at 0% rather than sent as a literal 0. Stripe types
+        // `application_fee_amount` as an optional positive amount ("the
+        // application fee (if any)"); omitting is the documented way to say
+        // "no fee", and it keeps the club receiving the full amount minus only
+        // Stripe's own processing fee.
+        ...(feeCents > 0 ? { application_fee_amount: feeCents } : {}),
         transfer_data: { destination: club.stripeConnectAccountId },
         metadata: {
           tripId: trip.id,
@@ -223,13 +286,15 @@ async function registerPaid(
 
     if (existingPendingId) {
       // Resume an abandoned attempt — reuse the row (unique trip+user) and
-      // point it at the fresh session/intent.
+      // point it at the fresh session/intent. The waiver is re-accepted on
+      // every attempt, so refresh the timestamp too.
       await db
         .update(tripRegistrations)
         .set({
           status: "pending",
           paymentStatus: "pending",
           stripePaymentIntentId: paymentIntentId,
+          waiverSignedAt: new Date(),
         })
         .where(eq(tripRegistrations.id, existingPendingId));
     } else {
@@ -239,6 +304,8 @@ async function registerPaid(
         status: "pending",
         paymentStatus: "pending",
         stripePaymentIntentId: paymentIntentId,
+        isReregistration,
+        waiverSignedAt: new Date(),
       });
     }
 
@@ -247,6 +314,8 @@ async function registerPaid(
       organizationId: trip.organizationId,
       amountCents,
       feeCents,
+      commissionRate: commission.rate,
+      commissionSource: commission.source,
     });
 
     return { success: true, type: "paid", checkoutUrl: checkoutSession.url };
@@ -258,6 +327,26 @@ async function registerPaid(
     });
     return { success: false, error: "Pagesa dështoi të nisë. Provoni sërish." };
   }
+}
+
+/**
+ * `refund_application_fee` for a refund, included only when the original
+ * charge actually carried a HikeIt fee.
+ *
+ * A payment taken during a 0% period has no application fee at all (we omit
+ * `application_fee_amount` rather than sending 0), so asking Stripe to refund
+ * one is meaningless. Stripe treats it as a no-op rather than an error, but
+ * sending the flag only when there's a fee to reverse keeps the request
+ * honest and removes the edge case entirely.
+ *
+ * `platformFeeEur` is the fee we recorded from the PaymentIntent, so it is the
+ * authoritative record of what was charged.
+ */
+function refundApplicationFeeParam(
+  platformFeeEur: string | null,
+): { refund_application_fee?: true } {
+  const fee = Number(platformFeeEur ?? 0);
+  return Number.isFinite(fee) && fee > 0 ? { refund_application_fee: true } : {};
 }
 
 /** Count of confirmed registrations for a trip. */
@@ -340,6 +429,13 @@ export async function cancelMyRegistration(
   if (registration.status === "canceled") {
     return { success: false, error: "Ky regjistrim është anuluar tashmë." };
   }
+  if (registration.isReregistration) {
+    return {
+      success: false,
+      error:
+        "Keni anuluar një herë këtë udhëtim. Për ndihmë kontaktoni klubin direkt.",
+    };
+  }
 
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, registration.tripId),
@@ -379,7 +475,7 @@ export async function cancelMyRegistration(
       await getStripe().refunds.create({
         payment_intent: registration.stripePaymentIntentId,
         reverse_transfer: true,
-        refund_application_fee: true,
+        ...refundApplicationFeeParam(registration.platformFeeEur),
       });
     } catch (error) {
       captureError(error, {
@@ -503,7 +599,7 @@ export async function removeRegistration(
       await getStripe().refunds.create({
         payment_intent: registration.stripePaymentIntentId,
         reverse_transfer: true,
-        refund_application_fee: true,
+        ...refundApplicationFeeParam(registration.platformFeeEur),
       });
     } catch (error) {
       captureError(error, {

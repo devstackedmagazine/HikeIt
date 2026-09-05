@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Loader2, MapPin } from "lucide-react";
+import { CalendarDays, Heart, Loader2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils/cn";
 import { formatTripDate } from "@/lib/utils/datetime";
 import { cancelMyRegistration } from "@/server/actions/trip-registrations";
+import type { FavoriteTrip } from "@/server/queries/favorites";
 import type { RegisteredTrip } from "@/server/queries/trips";
 
 function daysUntil(date: Date): number {
@@ -22,10 +23,12 @@ export function MyTripsView({
   upcoming,
   past,
   waitlisted,
+  saved,
 }: {
   upcoming: RegisteredTrip[];
   past: RegisteredTrip[];
   waitlisted: RegisteredTrip[];
+  saved: FavoriteTrip[];
 }) {
   return (
     <Tabs defaultValue="upcoming" className="flex flex-col">
@@ -39,6 +42,10 @@ export function MyTripsView({
         <TabsTrigger value="waitlisted" className="flex-none shrink-0 whitespace-nowrap">
           Lista e pritjes
         </TabsTrigger>
+        <TabsTrigger value="saved" className="flex-none shrink-0 whitespace-nowrap">
+          <Heart className="mr-1.5 size-3.5" />
+          Të ruajtura
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="upcoming" className="space-y-3 pt-6">
@@ -49,6 +56,9 @@ export function MyTripsView({
       </TabsContent>
       <TabsContent value="waitlisted" className="space-y-3 pt-6">
         <List items={waitlisted} variant="waitlisted" />
+      </TabsContent>
+      <TabsContent value="saved" className="space-y-3 pt-6">
+        <SavedList items={saved} />
       </TabsContent>
     </Tabs>
   );
@@ -76,6 +86,53 @@ function List({
     <>
       {items.map((item) => (
         <TripRow key={item.registrationId} item={item} variant={variant} />
+      ))}
+    </>
+  );
+}
+
+function SavedList({ items }: { items: FavoriteTrip[] }) {
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed px-6 py-10 text-center">
+        <p className="text-muted-foreground text-sm">
+          Asnjë udhëtim i ruajtur.
+        </p>
+        <Link
+          href="/trips"
+          className="text-primary mt-3 inline-block text-sm font-medium hover:underline"
+        >
+          Zbulo udhëtime →
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <>
+      {items.map((item) => (
+        <Card key={item.trip.id}>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <div>
+              <Link
+                href={`/trips/${item.trip.slug}`}
+                className="font-medium hover:underline"
+              >
+                {item.trip.title}
+              </Link>
+              <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 text-sm">
+                <span>{item.clubName}</span>
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="size-3.5" />
+                  {formatTripDate(item.trip.startDatetime)}
+                </span>
+              </p>
+            </div>
+            <span className="bg-primary/10 text-primary flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium">
+              <Heart className="size-3 fill-current" />
+              E ruajtur
+            </span>
+          </CardContent>
+        </Card>
       ))}
     </>
   );
