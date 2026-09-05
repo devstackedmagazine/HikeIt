@@ -32,7 +32,6 @@ function LoginForm() {
     tone: "error" | "warning";
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [socialNote, setSocialNote] = useState<string | null>(null);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -69,6 +68,10 @@ function LoginForm() {
 
   async function handleGoogleSignIn() {
     await signIn.social({ provider: "google", callbackURL: redirectTo });
+  }
+
+  async function handleFacebookSignIn() {
+    await signIn.social({ provider: "facebook", callbackURL: redirectTo });
   }
 
   return (
@@ -247,17 +250,12 @@ function LoginForm() {
             </button>
             <button
               type="button"
-              onClick={() => setSocialNote("Së shpejti disponueshëm.")}
+              onClick={handleFacebookSignIn}
               className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
-              Apple
+              Facebook
             </button>
           </div>
-          {socialNote ? (
-            <p className="text-forest/40 -mt-3 mb-5 text-center text-[11px]">
-              {socialNote}
-            </p>
-          ) : null}
 
           <p className="text-forest/50 text-center text-[13px]">
             Nuk keni llogari?{" "}

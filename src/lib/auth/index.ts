@@ -85,6 +85,13 @@ export const auth = betterAuth({
 
   emailVerification: {
     sendOnSignUp: true,
+    // Also re-send on a (correct-password) sign-in attempt by an unverified
+    // user. Without this, anyone whose signup email failed to send — a bad
+    // Resend key, a bounce, a spam folder — is stuck forever: sign-in returns
+    // EMAIL_NOT_VERIFIED and there's no way to ask for another link. The send
+    // happens only after the password is verified, so it can't be used to mail
+    // arbitrary addresses.
+    sendOnSignIn: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, token }) => {
       // Point at our own page (which calls `verifyEmail` client-side and shows
@@ -109,6 +116,16 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
+    // Optional until the Meta app exists — social sign-in just omits the
+    // provider (no runtime error) when these aren't set yet.
+    ...(env.FACEBOOK_CLIENT_ID && env.FACEBOOK_CLIENT_SECRET
+      ? {
+          facebook: {
+            clientId: env.FACEBOOK_CLIENT_ID,
+            clientSecret: env.FACEBOOK_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
 
   user: {
