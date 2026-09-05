@@ -148,10 +148,26 @@ export const auth = betterAuth({
     },
   },
 
+  // Explicit, hardcoded origins — deliberately not a `*.vercel.app` (or even
+  // a `*-fatlums-projects-686676d4.vercel.app`) wildcard. Better Auth matches
+  // wildcards against the whole host with no path-segment boundary (see
+  // `wildcardMatch` in better-auth/dist/utils/wildcard.mjs), and Vercel
+  // project names are arbitrary, globally-unique strings anyone can register
+  // for free — nothing stops an attacker who's seen one of our preview links
+  // (the team slug is right there in the URL) from naming their own project
+  // `evil-fatlums-projects-686676d4` and getting a real, valid
+  // `evil-fatlums-projects-686676d4.vercel.app` that would pass that
+  // wildcard. A trusted origin can receive verification-link and OAuth
+  // callback redirects, so that's a real phishing/token-leak vector, not a
+  // theoretical one. The new dev-branch workflow keeps this list short in
+  // practice: only `dev`'s stable URL needs adding here, since that's the
+  // one shared, standing test environment — individual `feat/*` preview
+  // links aren't used for auth-flow testing and don't need an entry.
   trustedOrigins: [
     "https://hikeit.app",
     "https://www.hikeit.app",
     "https://hikeitapp.vercel.app",
+    "https://hikeitapp-git-dev-fatlums-projects-686676d4.vercel.app",
     "http://localhost:3000",
   ],
 
