@@ -179,6 +179,13 @@ export default function RegisterPage() {
                 </span>
                 . Kliko lidhjen për të aktivizuar llogarinë.
               </p>
+              <p className="text-forest/45 mt-3 text-xs leading-[1.6]">
+                Nuk erdhi? Kontrollo dosjen e spam-it, ose{" "}
+                <Link href="/login" className="text-forest underline">
+                  provo të kyçesh
+                </Link>{" "}
+                — do të të dërgojmë një lidhje të re.
+              </p>
             </div>
           ) : (
             <>

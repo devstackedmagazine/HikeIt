@@ -38,8 +38,8 @@ function pinIcon(color: string): L.DivIcon {
   });
 }
 
-const startIcon = pinIcon("#2D5F3F");
-const endIcon = pinIcon("#E11D48");
+const startIcon = pinIcon("#4CAF7D");
+const endIcon = pinIcon("#E87A30");
 
 export function TrailMap({
   startLat,
@@ -74,7 +74,7 @@ export function TrailMap({
         url={`https://tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=${env.NEXT_PUBLIC_THUNDERFOREST_API_KEY}`}
       />
       {hasRoute ? (
-        <Polyline positions={route} pathOptions={{ color: "#2D5F3F", weight: 4 }} />
+        <Polyline positions={route} pathOptions={{ color: "#4CAF7D", weight: 4 }} />
       ) : null}
       <Marker position={start} icon={startIcon}>
         <Popup>Start: {trailName}</Popup>

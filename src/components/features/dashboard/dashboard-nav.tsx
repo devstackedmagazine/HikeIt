@@ -112,30 +112,29 @@ export function DashboardSidebar({
   }
 
   return (
-    <aside className="fixed top-0 left-0 z-50 hidden h-screen w-28 flex-col border-r border-summit/[0.06] bg-abyss md:flex">
+    <aside className="border-summit/[0.06] bg-abyss fixed top-0 left-0 z-50 hidden h-screen w-28 flex-col border-r md:flex">
       {/* Logo */}
-      <div className="flex flex-col items-center border-b border-summit/[0.06] px-2.5 py-3.5 text-center">
+      <div className="border-summit/[0.06] flex flex-col items-center border-b px-2.5 py-3.5 text-center">
         {isAdmin ? (
           <>
-            <Image
-              src="/logos/Hikeit-pfp.png"
-              alt=""
-              width={28}
-              height={28}
-              className="mb-1.5 size-7"
-            />
-            <p className="font-heading text-[11px] font-extrabold tracking-[0.02em] text-summit uppercase">
+            <Link href={"/"}>
+              <Image
+                src="/logos/Hikeit-pfp.png"
+                alt=""
+                width={28}
+                height={28}
+                className="mb-1.5 size-7"
+              />
+            </Link>
+            <p className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
               Balkan Clubs
             </p>
-            <p className="mt-0.5 text-[8px] tracking-[0.04em] text-summit/30">
+            <p className="text-summit/30 mt-0.5 text-[8px] tracking-[0.04em]">
               Peak Control v1.2
             </p>
           </>
         ) : (
-          <Link
-            href="/dashboard"
-            className="flex flex-col items-center gap-1"
-          >
+          <Link href="/dashboard" className="flex flex-col items-center gap-1">
             <Image
               src="/logos/Hikeit-pfp.png"
               alt=""
@@ -143,7 +142,7 @@ export function DashboardSidebar({
               height={28}
               className="size-7"
             />
-            <span className="font-heading text-sm font-extrabold tracking-[-0.01em] text-moss uppercase">
+            <span className="font-heading text-moss text-sm font-extrabold tracking-[-0.01em] uppercase">
               HikeIt
             </span>
           </Link>
@@ -175,26 +174,26 @@ export function DashboardSidebar({
       </nav>
 
       {/* User */}
-      <div className="flex flex-col items-center gap-1.5 border-t border-summit/[0.06] p-3">
+      <div className="border-summit/[0.06] flex flex-col items-center gap-1.5 border-t p-3">
         <span
           className={cn(
-            "flex size-8 items-center justify-center border border-moss/30 text-xs font-bold text-moss",
+            "border-moss/30 text-moss flex size-8 items-center justify-center border text-xs font-bold",
             isAdmin ? "bg-pine" : "bg-forest",
           )}
         >
           {userName.charAt(0).toUpperCase()}
         </span>
-        <p className="text-center text-[9px] font-semibold tracking-[0.04em] text-summit/60 uppercase">
+        <p className="text-summit/60 text-center text-[9px] font-semibold tracking-[0.04em] uppercase">
           {isAdmin ? "Admin" : userName}
         </p>
-        <p className="w-full truncate text-center text-[8px] tracking-[0.04em] text-summit/30 uppercase">
+        <p className="text-summit/30 w-full truncate text-center text-[8px] tracking-[0.04em] uppercase">
           {secondaryLine}
         </p>
         <button
           type="button"
           onClick={logout}
           disabled={loggingOut}
-          className="text-[9px] font-semibold tracking-[0.06em] text-danger uppercase transition-opacity hover:opacity-80 disabled:opacity-50"
+          className="text-danger text-[9px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-80 disabled:opacity-50"
         >
           ← Çkyçu
         </button>
@@ -218,7 +217,7 @@ export function DashboardMobileTabs({
   const items = buildItems(variant, adminClubSlug, showAdminPanel).slice(0, 5);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-summit/[0.06] bg-abyss md:hidden">
+    <nav className="border-summit/[0.06] bg-abyss fixed inset-x-0 bottom-0 z-40 flex border-t md:hidden">
       {items.map((item) => {
         const active = isActive(pathname, currentTab, item);
         return (

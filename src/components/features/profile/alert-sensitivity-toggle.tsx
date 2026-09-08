@@ -31,7 +31,7 @@ export function AlertSensitivityToggle({
   return (
     <div>
       <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-summit/40 uppercase">
-        Ndjeshmëria e alerteve
+        Ndjeshmëria e njoftimeve
       </p>
       <div className="flex gap-1">
         {OPTIONS.map((o) => {

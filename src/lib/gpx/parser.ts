@@ -17,6 +17,8 @@ export interface ParsedGpx {
   points: GpxPoint[];
   totalDistanceKm: number;
   totalElevationGainM: number;
+  totalElevationLossM: number;
+  pointCount: number;
   startLat: number;
   startLng: number;
   endLat: number;
@@ -33,6 +35,9 @@ export class GpxError extends Error {
 }
 
 const EARTH_RADIUS_M = 6_371_000;
+const MAX_GPX_BYTES = 5 * 1024 * 1024;
+const MAX_POINTS = 50_000;
+const DOWNSAMPLE_TARGET = 5_000;
 
 /** Great-circle distance between two coordinates, in meters. */
 function haversine(a: GpxPoint, b: GpxPoint): number {
@@ -47,15 +52,33 @@ function haversine(a: GpxPoint, b: GpxPoint): number {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
 }
 
+/**
+ * Strip DOCTYPE declarations and reject ENTITY definitions to prevent
+ * XXE and billion-laughs attacks. xml2js 0.6.2 has no built-in protection.
+ */
+function sanitizeXml(content: string): string {
+  const stripped = content.replace(/<!DOCTYPE[^>]*>/gi, "");
+  if (/<!ENTITY/i.test(stripped)) {
+    throw new GpxError("Skedari GPX përmban entitete të palejuara.");
+  }
+  return stripped;
+}
+
 interface RawTrkpt {
   $: { lat: string; lon: string };
   ele?: string[];
 }
 
 export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
+  if (gpxContent.length > MAX_GPX_BYTES) {
+    throw new GpxError("Skedari GPX tejkalon 5MB.");
+  }
+
+  const sanitized = sanitizeXml(gpxContent);
+
   let parsed: Record<string, unknown>;
   try {
-    parsed = await parseStringPromise(gpxContent);
+    parsed = await parseStringPromise(sanitized);
   } catch {
     throw new GpxError("Skedari GPX nuk është i vlefshëm.");
   }
@@ -87,9 +110,15 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
     throw new GpxError("Skedari GPX duhet të ketë të paktën 2 pika.");
   }
 
-  // Distance, elevation gain, elevation profile (sampled every ~200m).
+  if (points.length > MAX_POINTS) {
+    throw new GpxError(
+      `Skedari GPX ka ${points.length.toLocaleString()} pika — maksimumi është ${MAX_POINTS.toLocaleString()}.`,
+    );
+  }
+
   let cumulative = 0;
   let elevationGain = 0;
+  let elevationLoss = 0;
   let maxDistFromStart = 0;
   const profile: ElevationSample[] = [];
   let lastSample = -1;
@@ -100,8 +129,10 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
     if (i > 0) {
       cumulative += haversine(points[i - 1]!, p);
       const prevEle = points[i - 1]!.elevation;
-      if (p.elevation != null && prevEle != null && p.elevation > prevEle) {
-        elevationGain += p.elevation - prevEle;
+      if (p.elevation != null && prevEle != null) {
+        const delta = p.elevation - prevEle;
+        if (delta > 0) elevationGain += delta;
+        else elevationLoss += Math.abs(delta);
       }
     }
     maxDistFromStart = Math.max(maxDistFromStart, haversine(start, p));
@@ -117,7 +148,6 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
   const end = points[points.length - 1]!;
   const endToStart = haversine(start, end);
 
-  // Classify: ends near start → loop or out-and-back; else point-to-point.
   let trackType: ParsedGpx["trackType"] = "point_to_point";
   if (endToStart < 150) {
     trackType =
@@ -132,6 +162,8 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
     points,
     totalDistanceKm: Math.round((cumulative / 1000) * 100) / 100,
     totalElevationGainM: Math.round(elevationGain),
+    totalElevationLossM: Math.round(elevationLoss),
+    pointCount: points.length,
     startLat: start.lat,
     startLng: start.lng,
     endLat: end.lat,
@@ -139,6 +171,27 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
     trackType,
     elevationProfile: profile,
   };
+}
+
+/**
+ * Downsample a point array to at most `max` entries for map rendering.
+ * Uniform sampling, always keeping first and last point.
+ */
+export function downsampleTrack(
+  points: GpxPoint[],
+  max = DOWNSAMPLE_TARGET,
+): [number, number][] {
+  if (points.length <= max) {
+    return points.map((p) => [p.lat, p.lng]);
+  }
+  const step = (points.length - 1) / (max - 1);
+  const result: [number, number][] = [];
+  for (let i = 0; i < max; i++) {
+    const idx = Math.round(i * step);
+    const p = points[idx]!;
+    result.push([p.lat, p.lng]);
+  }
+  return result;
 }
 
 export async function parseGpxFile(file: File): Promise<ParsedGpx> {

@@ -49,8 +49,13 @@ function LoginForm() {
 
     if (error) {
       if (error.code === "EMAIL_NOT_VERIFIED") {
+        // `emailVerification.sendOnSignIn` has just dispatched a fresh link, so
+        // say so — this is the recovery path for anyone whose signup email
+        // never arrived.
         setFormError({
-          message: "Ju lutem verifikoni emailin tuaj para se të kyçeni.",
+          message:
+            "Llogaria jote nuk është verifikuar ende. Sapo të dërguam një " +
+            "lidhje të re verifikimi — kontrollo inboxin dhe dosjen e spam-it.",
           tone: "warning",
         });
       } else {

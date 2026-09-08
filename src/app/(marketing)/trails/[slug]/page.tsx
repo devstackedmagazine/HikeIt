@@ -8,13 +8,14 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewForm } from "@/components/features/trails/review-form";
 import { TrailFavoriteButton } from "@/components/features/trails/trail-favorite-button";
+import { TrailGpxSection } from "@/components/features/trails/trail-gpx-section";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { ShareButton } from "@/components/shared/share-button";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import type { Trail } from "@/lib/db/schema";
-import { trails } from "@/lib/db/schema";
+import { trails, users } from "@/lib/db/schema";
 import { featureLabels, seasonLabels, trailTypeLabels } from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
 import { isTrailFavorited } from "@/server/queries/favorites";
@@ -182,6 +183,18 @@ export default async function TrailDetailPage({
   const isSaved = session
     ? await isTrailFavorited(session.user.id, trail.id)
     : false;
+
+  let canUploadGpx = false;
+  if (session) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: { role: true },
+    });
+    canUploadGpx =
+      user?.role === "super_admin" ||
+      trail.submittedBy === session.user.id;
+  }
+
   const nearbyTrails = regionTrails.filter((t) => t.id !== trail.id).slice(0, 3);
   const badge = DIFFICULTY_BADGE[trail.difficulty];
   const region = (trail.region ?? "").toUpperCase();
@@ -328,6 +341,7 @@ export default async function TrailDetailPage({
               startLng={Number(trail.startLng)}
               endLat={trail.endLat ? Number(trail.endLat) : null}
               endLng={trail.endLng ? Number(trail.endLng) : null}
+              route={trail.gpxTrack ?? undefined}
             />
             {trail.elevationGainM != null ? (
               <span className="pointer-events-none absolute top-2.5 right-2.5 z-[400] bg-[rgba(13,31,20,0.7)] px-2 py-[3px] text-[9px] font-semibold tracking-[0.08em] text-summit/60 uppercase">
@@ -401,12 +415,7 @@ export default async function TrailDetailPage({
                 <Download className="size-3.5" />
                 Shkarko GPX
               </a>
-            ) : (
-              <span className="flex flex-1 items-center justify-center gap-1.5 border border-moss/30 bg-moss/[0.12] px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] text-moss uppercase opacity-40">
-                <Download className="size-3.5" />
-                GPX — Së shpejti
-              </span>
-            )}
+            ) : null}
             <TrailFavoriteButton
               trailId={trail.id}
               isSaved={isSaved}
@@ -419,6 +428,12 @@ export default async function TrailDetailPage({
               className="size-[38px]"
             />
           </div>
+
+          {canUploadGpx ? (
+            <div className="mt-3">
+              <TrailGpxSection trailId={trail.id} />
+            </div>
+          ) : null}
         </aside>
       </div>
 
