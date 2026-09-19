@@ -22,17 +22,17 @@ export default async function SocialLoginErrorPage({
           <Ban className="text-danger size-5" />
         </span>
 
-        <h1 className="font-heading text-forest mb-3 text-[clamp(20px,3vw,28px)] leading-none font-extrabold tracking-[-0.02em] uppercase">
+        <h1 className="font-heading text-forest mb-3 text-[clamp(20px,3vw,28px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
           {title}
         </h1>
 
         {provider_ ? (
-          <p className="text-forest/40 mb-2 text-[11px] font-bold tracking-[0.08em] uppercase">
+          <p className="text-forest/70 mb-2 text-[11px] font-bold tracking-[0.08em] uppercase">
             Përpjekje me {provider_}
           </p>
         ) : null}
 
-        <p className="text-forest/60 mb-7 text-[14px] leading-[1.6]">
+        <p className="text-forest/70 mb-7 text-[14px] leading-[1.6]">
           {message}
         </p>
 

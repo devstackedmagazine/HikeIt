@@ -243,7 +243,7 @@ function CodeRow({ code }: { code: InviteCodeRow }) {
         </span>
       </Td>
       <Td align="right">
-        <span className="font-heading text-[15px] font-black text-moss">
+        <span className="font-heading text-[15px] font-black text-sage">
           {formatRatePercent(Number(code.commissionRate))}
         </span>
       </Td>

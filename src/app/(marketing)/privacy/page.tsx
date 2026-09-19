@@ -167,13 +167,13 @@ export default function PrivacyPage() {
             <table className="w-full min-w-[480px] border-collapse text-left text-sm">
               <thead>
                 <tr className="bg-forest">
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-moss uppercase">
+                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
                     Shërbimi
                   </th>
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-moss uppercase">
+                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
                     Qëllimi
                   </th>
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-moss uppercase">
+                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
                     Rajoni
                   </th>
                 </tr>
@@ -190,7 +190,7 @@ export default function PrivacyPage() {
                     <td className="px-3 py-2.5 text-summit/70">{p.purpose}</td>
                     <td className="px-3 py-2.5 text-summit/70">
                       {p.eu ? (
-                        <span className="text-moss">{p.region}</span>
+                        <span className="text-sage">{p.region}</span>
                       ) : (
                         p.region
                       )}

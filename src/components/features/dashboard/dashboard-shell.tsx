@@ -48,12 +48,9 @@ export function DashboardShell({
         )}
       >
         <NotificationsBell light={isLight} />
-        <span
-          className={cn(
-            "flex size-8 items-center justify-center text-xs font-bold text-moss",
-            isLight ? "bg-forest" : "bg-pine",
-          )}
-        >
+        {/* Abyss chip, not Forest/Pine: Moss only clears AA on Abyss (6.32:1;
+            4.43 on Forest, 2.74 on Pine). */}
+        <span className="bg-abyss text-moss flex size-8 items-center justify-center text-xs font-bold">
           {displayName.charAt(0).toUpperCase()}
         </span>
       </header>

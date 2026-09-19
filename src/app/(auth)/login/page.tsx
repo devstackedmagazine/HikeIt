@@ -19,9 +19,9 @@ const LEFT_FEATURES = [
 ];
 
 const LABEL =
-  "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase";
+  "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/70 uppercase";
 const INPUT =
-  "h-10 w-full border-[1.5px] border-forest/20 bg-summit px-3.5 text-[13px] text-forest placeholder:text-forest/25 placeholder:italic focus:border-forest focus:outline-none";
+  "h-10 w-full border-[1.5px] border-forest/60 bg-summit px-3.5 text-[13px] text-forest placeholder:text-forest/70 placeholder:italic focus:border-forest focus:outline-none";
 
 function LoginForm() {
   const router = useRouter();
@@ -124,7 +124,7 @@ function LoginForm() {
         </Link>
 
         <div className="relative z-10">
-          <h2 className="font-heading text-summit mb-5 text-[clamp(24px,4vw,44px)] leading-[1.0] font-extrabold tracking-[-0.03em] uppercase">
+          <h2 className="font-heading text-summit mb-5 text-[clamp(24px,4vw,44px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
             Mirë se vini përsëri
           </h2>
           <ul className="space-y-3">
@@ -156,10 +156,10 @@ function LoginForm() {
         </p>
 
         <div className="w-full max-w-[440px]">
-          <h1 className="font-heading text-forest text-[clamp(32px,5vw,56px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
+          <h1 className="font-heading text-forest text-[clamp(32px,5vw,56px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
             Kyçu
           </h1>
-          <p className="text-forest/50 mt-1.5 mb-7 text-[14px] leading-[1.5]">
+          <p className="text-forest/70 mt-1.5 mb-7 text-[14px] leading-[1.5]">
             Mirë se vini përsëri në HikeIt
           </p>
 
@@ -187,7 +187,7 @@ function LoginForm() {
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-forest/50 hover:text-forest text-[10px] font-semibold tracking-[0.06em] uppercase transition-colors"
+                  className="text-forest/70 hover:text-forest text-[10px] font-semibold tracking-[0.06em] uppercase transition-colors"
                 >
                   Harruat fjalëkalimin?
                 </Link>
@@ -204,7 +204,7 @@ function LoginForm() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label="Shfaq fjalëkalimin"
-                  className="text-forest/35 hover:text-forest/60 absolute top-1/2 right-3 -translate-y-1/2"
+                  className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                 >
                   {showPassword ? (
                     <EyeOff className="size-4" />
@@ -248,7 +248,7 @@ function LoginForm() {
 
           <div className="relative mb-4 text-center">
             <span className="bg-forest/12 absolute inset-x-0 top-1/2 h-px -translate-y-1/2" />
-            <span className="bg-summit text-forest/35 relative px-3 text-[11px] font-medium tracking-[0.1em] uppercase">
+            <span className="bg-summit text-forest/70 relative px-3 text-[11px] font-medium tracking-[0.1em] uppercase">
               Ose
             </span>
           </div>
@@ -257,24 +257,24 @@ function LoginForm() {
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+              className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Google
             </button>
             <button
               type="button"
               onClick={handleFacebookSignIn}
-              className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+              className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Facebook
             </button>
           </div>
 
-          <p className="text-forest/50 text-center text-[13px]">
+          <p className="text-forest/70 text-center text-[13px]">
             Nuk keni llogari?{" "}
             <Link
               href="/register"
-              className="text-forest hover:text-moss font-bold uppercase transition-colors"
+              className="text-forest hover:text-pine font-bold uppercase transition-colors"
             >
               Regjistrohu
             </Link>

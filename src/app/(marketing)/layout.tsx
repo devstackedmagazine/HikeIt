@@ -47,8 +47,16 @@ const FOOTER_COLUMNS: { heading: string; links: NavLink[] }[] = [
 ];
 
 const SOCIAL_LINKS: { href: string; label: string; icon: string }[] = [
-  { href: "https://www.instagram.com/hikeit.app", label: "Instagram", icon: "IG" },
-  { href: "https://www.facebook.com/hikeit.app", label: "Facebook", icon: "FB" },
+  {
+    href: "https://www.instagram.com/hikeit.app",
+    label: "Instagram",
+    icon: "IG",
+  },
+  {
+    href: "https://www.facebook.com/hikeit.app",
+    label: "Facebook",
+    icon: "FB",
+  },
   { href: "https://www.tiktok.com/@hikeit.app", label: "TT", icon: "TT" },
 ];
 
@@ -128,7 +136,7 @@ export default async function MarketingLayout({
               />
               HIKEIT
             </p>
-            <p className="text-summit/45 mt-3.5 max-w-[260px] text-[13px] leading-[1.65]">
+            <p className="text-summit/60 mt-3.5 max-w-[260px] text-[13px] leading-[1.65]">
               Eksploroni egërsinë. Mbroni malet. Zhvilloni komunitetin.
             </p>
             <div className="mt-6 flex gap-2.5">
@@ -139,7 +147,7 @@ export default async function MarketingLayout({
                   target={social.href === "#" ? undefined : "_blank"}
                   rel={social.href === "#" ? undefined : "noopener noreferrer"}
                   aria-label={social.label}
-                  className="border-summit/12 bg-summit/[0.06] text-summit/50 hover:border-sage/40 hover:text-sage flex size-9 items-center justify-center border text-[11px] font-bold transition-colors"
+                  className="border-summit/12 bg-summit/[0.06] text-summit/60 hover:border-sage/40 hover:text-sage flex size-9 items-center justify-center border text-[11px] font-bold transition-colors"
                 >
                   {social.icon}
                 </a>
@@ -149,7 +157,7 @@ export default async function MarketingLayout({
 
           {FOOTER_COLUMNS.map((column) => (
             <div key={column.heading}>
-              <h3 className="text-summit/35 mb-5 text-[11px] font-bold tracking-[0.12em] uppercase">
+              <h3 className="text-summit/55 mb-5 text-[11px] font-bold tracking-[0.12em] uppercase">
                 {column.heading}
               </h3>
               <ul className="space-y-3">
@@ -157,7 +165,7 @@ export default async function MarketingLayout({
                   <li key={`${column.heading}-${link.label}`}>
                     <Link
                       href={link.href}
-                      className="text-summit/55 hover:text-sage text-[13px] transition-colors"
+                      className="text-summit/70 hover:text-sage text-[13px] transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -169,12 +177,12 @@ export default async function MarketingLayout({
         </div>
 
         <div className="border-summit/[0.08] mt-12 flex flex-col items-center justify-between gap-2 border-t py-5 sm:flex-row">
-          <span className="text-summit/30 text-[11px] font-medium tracking-[0.1em] whitespace-nowrap uppercase">
-            © 2024 HIKEIT. EXPLORE THE WILD.
+          <span className="text-summit/55 text-[11px] font-medium tracking-[0.1em] whitespace-nowrap uppercase">
+            © 2026 HIKEIT. EXPLORE THE WILD.
           </span>
           <Link
             href="/register"
-            className="text-summit/30 hover:text-sage text-[11px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-colors"
+            className="text-summit/55 hover:text-sage text-[11px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-colors"
           >
             DREJT MAJAVE →
           </Link>

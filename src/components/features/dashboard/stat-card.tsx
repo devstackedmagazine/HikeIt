@@ -26,14 +26,14 @@ export function StatCard({
       >
         {value}
       </p>
-      <p className="mt-1 text-[9px] font-semibold tracking-[0.12em] text-forest/40 uppercase">
+      <p className="mt-1 text-[9px] font-semibold tracking-[0.12em] text-forest/70 uppercase">
         {label}
       </p>
       {hint ? (
         <p
           className={cn(
             "mt-0.5 text-[9px] font-semibold uppercase",
-            accent === "sunset" ? "text-sunset/70" : "text-moss",
+            accent === "sunset" ? "text-sunset" : "text-pine",
           )}
         >
           {hint}

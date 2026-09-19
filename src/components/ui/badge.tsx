@@ -19,7 +19,7 @@ const badgeVariants = cva(
         moderate: "bg-alert text-abyss border-alert",
         hard: "bg-sunset text-summit border-sunset",
         expert: "bg-danger text-summit border-danger",
-        verified: "bg-forest text-moss border-forest",
+        verified: "bg-forest text-sage border-forest",
         warning: "bg-alert text-abyss border-alert",
         danger: "bg-danger text-summit border-danger",
       },

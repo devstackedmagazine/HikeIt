@@ -28,7 +28,7 @@ export default async function SavedTrailsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="font-heading text-xl font-extrabold tracking-[-0.01em] text-summit uppercase">
+      <h1 className="font-heading text-forest text-xl font-extrabold tracking-[-0.01em] uppercase">
         Shtigjet e Ruajtura
       </h1>
 
@@ -49,7 +49,7 @@ export default async function SavedTrailsPage() {
             return (
               <div
                 key={trail.id}
-                className="group relative overflow-hidden border border-summit/[0.08]"
+                className="group border-forest/12 bg-summit relative overflow-hidden border"
               >
                 <Link href={`/trails/${trail.slug}`}>
                   <div className="relative h-[140px] overflow-hidden">
@@ -69,11 +69,11 @@ export default async function SavedTrailsPage() {
                       {badge.letter}
                     </span>
                   </div>
-                  <div className="bg-summit/[0.02] p-3">
-                    <h3 className="font-heading text-[13px] font-extrabold text-summit uppercase">
+                  <div className="p-3">
+                    <h3 className="font-heading text-forest text-[13px] font-extrabold uppercase">
                       {trail.name}
                     </h3>
-                    <p className="mt-1 text-[10px] font-medium text-summit/45">
+                    <p className="text-forest/70 mt-1 text-[10px] font-medium">
                       {dist ? `${dist} KM` : "—"}
                       {trail.elevationGainM != null
                         ? ` · ${trail.elevationGainM}M NGJITJE`

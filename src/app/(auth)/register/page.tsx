@@ -35,9 +35,9 @@ function strengthColor(score: number): string {
 }
 
 const LABEL =
-  "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase";
+  "mb-1.5 block text-[10px] font-bold tracking-[0.12em] text-forest/70 uppercase";
 const INPUT =
-  "h-12 md:h-10 w-full border-[1.5px] border-forest/20 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/25 placeholder:italic focus:border-forest focus:outline-none";
+  "h-12 md:h-10 w-full border-[1.5px] border-forest/60 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/70 placeholder:italic focus:border-forest focus:outline-none";
 
 export default function RegisterPage() {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
@@ -131,7 +131,7 @@ export default function RegisterPage() {
         </Link>
 
         <div className="relative z-10">
-          <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[0.92] font-extrabold tracking-[-0.04em] uppercase">
+          <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[1.2] font-extrabold tracking-[-0.04em] uppercase">
             Fillo
             <br />
             Udhëtimin
@@ -172,14 +172,14 @@ export default function RegisterPage() {
               <p className="font-heading text-forest mb-2 text-lg font-extrabold uppercase">
                 Llogaria u krijua!
               </p>
-              <p className="text-forest/60 text-sm leading-[1.6]">
+              <p className="text-forest/70 text-sm leading-[1.6]">
                 Kemi dërguar email verifikimi në{" "}
                 <span className="text-forest font-semibold">
                   {submittedEmail}
                 </span>
                 . Kliko lidhjen për të aktivizuar llogarinë.
               </p>
-              <p className="text-forest/45 mt-3 text-xs leading-[1.6]">
+              <p className="text-forest/70 mt-3 text-xs leading-[1.6]">
                 Nuk erdhi? Kontrollo dosjen e spam-it, ose{" "}
                 <Link href="/login" className="text-forest underline">
                   provo të kyçesh
@@ -189,10 +189,10 @@ export default function RegisterPage() {
             </div>
           ) : (
             <>
-              <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
+              <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
                 Regjistrohu
               </h1>
-              <p className="text-forest/55 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
+              <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
                 Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
                 Ballkan.
               </p>
@@ -245,7 +245,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label="Shfaq fjalëkalimin"
-                      className="text-forest/40 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
+                      className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showPassword ? (
                         <EyeOff className="size-4" />
@@ -289,7 +289,7 @@ export default function RegisterPage() {
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
                       aria-label="Shfaq konfirmimin"
-                      className="text-forest/40 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
+                      className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showConfirm ? (
                         <EyeOff className="size-4" />
@@ -349,7 +349,7 @@ export default function RegisterPage() {
               </form>
 
               <div className="border-forest/10 mt-6 border-t pt-5 md:mt-3 md:pt-4">
-                <p className="text-forest/55 text-center text-[13px]">
+                <p className="text-forest/70 text-center text-[13px]">
                   Keni llogari?{" "}
                   <Link href="/login" className="text-forest font-bold">
                     KYÇU
@@ -359,14 +359,14 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={handleGoogleSignIn}
-                    className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+                    className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Google
                   </button>
                   <button
                     type="button"
                     onClick={handleFacebookSignIn}
-                    className="border-forest/20 text-forest/60 hover:border-forest/40 hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
+                    className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Facebook
                   </button>

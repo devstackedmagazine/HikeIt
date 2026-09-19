@@ -10,7 +10,11 @@ interface FavoriteButtonProps {
   isSaved: boolean;
   isLoggedIn: boolean;
   returnPath: string;
-  onToggle: () => Promise<{ success: boolean; saved?: boolean; error?: string }>;
+  onToggle: () => Promise<{
+    success: boolean;
+    saved?: boolean;
+    error?: string;
+  }>;
   className?: string;
 }
 
@@ -50,13 +54,11 @@ export function FavoriteButton({
         "flex items-center justify-center border transition-colors",
         optimisticSaved
           ? "border-moss/50 bg-moss/15 text-moss"
-          : "border-summit/15 bg-summit/[0.05] text-summit/50 hover:text-summit",
+          : "border-summit/40 bg-summit/[0.05] text-summit/50 hover:text-summit",
         className,
       )}
     >
-      <Heart
-        className={cn("size-4", optimisticSaved && "fill-moss")}
-      />
+      <Heart className={cn("size-4", optimisticSaved && "fill-moss")} />
     </button>
   );
 }

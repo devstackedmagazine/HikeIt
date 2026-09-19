@@ -20,7 +20,10 @@ import {
   DifficultySelector,
 } from "@/components/features/trips/difficulty-selector";
 import { cn } from "@/lib/utils/cn";
-import { type CreateTripInput, createTripSchema } from "@/lib/validations/trips";
+import {
+  type CreateTripInput,
+  createTripSchema,
+} from "@/lib/validations/trips";
 import { createTrip, updateTrip } from "@/server/actions/trips";
 import type { TrailOption } from "@/server/queries/trails";
 
@@ -33,7 +36,7 @@ const ClickableMap = dynamic(
 );
 
 const INPUT =
-  "h-10 w-full border border-summit/15 bg-summit/[0.05] px-3.5 text-[13px] font-medium text-summit placeholder:text-summit/20 placeholder:italic focus:border-moss/50 focus:outline-none";
+  "h-10 w-full border border-summit/40 bg-summit/[0.05] px-3.5 text-[13px] font-medium text-summit placeholder:text-summit/50 placeholder:italic focus:border-moss focus:outline-none";
 
 const EMPTY_VALUES: CreateTripInput = {
   title: "",
@@ -60,8 +63,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-summit/10 bg-summit/[0.04] p-5">
-      <p className="mb-4 border-b border-summit/[0.06] pb-2.5 text-[9px] font-bold tracking-[0.15em] text-summit/30 uppercase">
+    <div className="border-summit/10 bg-summit/[0.04] border p-5">
+      <p className="border-summit/[0.06] text-summit/30 mb-4 border-b pb-2.5 text-[9px] font-bold tracking-[0.15em] uppercase">
         {number}. {title}
       </p>
       <div className="space-y-3">{children}</div>
@@ -80,11 +83,11 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[10px] font-bold tracking-[0.1em] text-summit/50 uppercase">
+      <label className="text-summit/50 mb-1.5 block text-[10px] font-bold tracking-[0.1em] uppercase">
         {label}
       </label>
       {children}
-      {error ? <p className="mt-1 text-[10px] text-danger">{error}</p> : null}
+      {error ? <p className="text-danger mt-1 text-[10px]">{error}</p> : null}
     </div>
   );
 }
@@ -161,7 +164,10 @@ export function TripForm({
             {...register("title")}
           />
         </Field>
-        <Field label="Përshkrimi i detajuar" error={errors.description?.message}>
+        <Field
+          label="Përshkrimi i detajuar"
+          error={errors.description?.message}
+        >
           <textarea
             className={cn(INPUT, "h-25 py-2.5")}
             placeholder="Përshkruani eksperiencën, çfarë të prisni..."
@@ -170,10 +176,10 @@ export function TripForm({
         </Field>
         <div className="grid grid-cols-[1fr_auto] gap-3">
           <Field label="Shtegu (kërko)">
-            <div className="relative h-10 border border-summit/15 bg-summit/[0.05]">
-              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-summit/30" />
+            <div className="border-summit/15 bg-summit/[0.05] relative h-10 border">
+              <Search className="text-summit/30 pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2" />
               <select
-                className="h-full w-full appearance-none bg-transparent pr-9 pl-9 text-[13px] text-summit focus:outline-none"
+                className="text-summit h-full w-full appearance-none bg-transparent pr-9 pl-9 text-[13px] focus:outline-none"
                 {...register("trailId")}
               >
                 <option value="" className="text-abyss">
@@ -185,7 +191,7 @@ export function TripForm({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 size-3.5 -translate-y-1/2 text-summit/30" />
+              <ChevronDown className="text-summit/30 pointer-events-none absolute top-1/2 right-3.5 size-3.5 -translate-y-1/2" />
             </div>
           </Field>
           <Field label="Vështirësia" error={errors.difficulty?.message}>
@@ -228,7 +234,7 @@ export function TripForm({
           />
         </Field>
         <Field label="Harta e takimit">
-          <div className="relative h-45 overflow-hidden border border-summit/10 bg-[#0F2818]">
+          <div className="border-summit/10 relative h-45 overflow-hidden border bg-[#0F2818]">
             <ClickableMap
               initial={initialLatLng}
               onSelect={(lat, lng) => {
@@ -236,7 +242,7 @@ export function TripForm({
                 setValue("meetingLng", lng);
               }}
             />
-            <span className="pointer-events-none absolute bottom-2 left-2 z-[400] border border-summit/20 bg-[rgba(13,31,20,0.85)] px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] text-summit/60 uppercase">
+            <span className="border-summit/20 text-summit/60 pointer-events-none absolute bottom-2 left-2 z-[400] border bg-[rgba(13,31,20,0.85)] px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase">
               Klikoni për të vendosur pikën
             </span>
           </div>
@@ -246,7 +252,10 @@ export function TripForm({
       {/* 03 — Participants */}
       <Section number="03" title="Pjesëmarrësit">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Min. pjesëmarrës" error={errors.minParticipants?.message}>
+          <Field
+            label="Min. pjesëmarrës"
+            error={errors.minParticipants?.message}
+          >
             <input
               type="number"
               min={1}
@@ -254,7 +263,10 @@ export function TripForm({
               {...register("minParticipants", { valueAsNumber: true })}
             />
           </Field>
-          <Field label="Max. pjesëmarrës" error={errors.maxParticipants?.message}>
+          <Field
+            label="Max. pjesëmarrës"
+            error={errors.maxParticipants?.message}
+          >
             <input
               type="number"
               min={1}
@@ -287,11 +299,11 @@ export function TripForm({
 
       {/* 04 — Price */}
       <Section number="04" title="Çmimi">
-        <p className="font-heading text-sm font-extrabold text-summit/60 uppercase">
+        <p className="font-heading text-summit/60 text-sm font-extrabold uppercase">
           Kostoja për person
         </p>
-        <div className="flex h-11 items-center border border-summit/15 bg-summit/[0.05]">
-          <span className="font-heading border-r border-summit/10 px-3 text-base font-bold text-summit/30">
+        <div className="border-summit/15 bg-summit/[0.05] flex h-11 items-center border">
+          <span className="font-heading border-summit/10 text-summit/30 border-r px-3 text-base font-bold">
             €
           </span>
           <input
@@ -299,20 +311,20 @@ export function TripForm({
             min={0}
             step="0.01"
             placeholder="0.00"
-            className="font-heading h-full flex-1 bg-transparent px-3.5 text-base font-bold text-summit placeholder:text-summit/15 focus:outline-none"
+            className="font-heading text-summit placeholder:text-summit/15 h-full flex-1 bg-transparent px-3.5 text-base font-bold focus:outline-none"
             {...register("priceEur", {
               setValueAs: (v) => (v === "" || v == null ? 0 : Number(v)),
             })}
           />
         </div>
         {stripeActive ? (
-          <div className="flex items-start gap-2.5 border border-moss/15 bg-moss/5 px-3.5 py-3">
-            <CreditCard className="mt-0.5 size-4 shrink-0 text-moss" />
+          <div className="border-moss/15 bg-moss/5 flex items-start gap-2.5 border px-3.5 py-3">
+            <CreditCard className="text-moss mt-0.5 size-4 shrink-0" />
             <div>
-              <p className="mb-1 text-[10px] font-bold tracking-[0.08em] text-moss uppercase">
+              <p className="text-moss mb-1 text-[10px] font-bold tracking-[0.08em] uppercase">
                 Stripe Connect e aktivizuar
               </p>
-              <p className="text-[11px] leading-[1.55] text-summit/40">
+              <p className="text-summit/40 text-[11px] leading-[1.55]">
                 Pagesat do të procesohen automatikisht dhe do të transferohen në
                 llogarinë tuaj bankare pas zbritjes së komisionit të platformës
                 (2.5%).
@@ -320,9 +332,9 @@ export function TripForm({
             </div>
           </div>
         ) : (
-          <div className="flex items-start gap-2.5 border border-alert/30 bg-alert/10 px-3.5 py-3">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-alert" />
-            <p className="text-[11px] leading-[1.55] text-alert">
+          <div className="border-alert/30 bg-alert/10 flex items-start gap-2.5 border px-3.5 py-3">
+            <AlertTriangle className="text-alert mt-0.5 size-4 shrink-0" />
+            <p className="text-alert text-[11px] leading-[1.55]">
               <span className="font-bold tracking-[0.06em] uppercase">
                 Stripe nuk është aktiv
               </span>{" "}
@@ -339,7 +351,7 @@ export function TripForm({
         )}
       </Section>
 
-      {formError ? <p className="text-sm text-danger">{formError}</p> : null}
+      {formError ? <p className="text-danger text-sm">{formError}</p> : null}
 
       {/* Submit */}
       <div className="flex justify-end gap-3">
@@ -348,7 +360,7 @@ export function TripForm({
             type="button"
             disabled={submitting}
             onClick={() => submit(initialValues?.publish ?? true)}
-            className="flex items-center gap-2 border border-moss/40 bg-moss/20 px-6 py-3 text-xs font-extrabold tracking-[0.08em] text-moss uppercase transition-colors hover:bg-moss/30 disabled:opacity-50"
+            className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/30 flex items-center gap-2 border px-6 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
           >
             {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
             Ruaj ndryshimet
@@ -359,7 +371,7 @@ export function TripForm({
               type="button"
               disabled={submitting}
               onClick={() => submit(false)}
-              className="border border-summit/25 px-6 py-3 text-xs font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:border-summit/40 hover:text-summit/80 disabled:opacity-50"
+              className="border-summit/40 text-summit/60 hover:border-summit/60 hover:text-summit/80 border px-6 py-3 text-xs font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
             >
               Ruaj si draft
             </button>
@@ -367,7 +379,7 @@ export function TripForm({
               type="button"
               disabled={submitting}
               onClick={() => submit(true)}
-              className="flex items-center gap-2 border border-moss/40 bg-moss/20 px-6 py-3 text-xs font-extrabold tracking-[0.08em] text-moss uppercase transition-colors hover:bg-moss/30 disabled:opacity-50"
+              className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/30 flex items-center gap-2 border px-6 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
             >
               {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
               Publiko tani →

@@ -73,7 +73,7 @@ export function LinkedAccounts({
                   disabled={pending !== null}
                   onClick={() => link(id as LinkableProvider)}
                   className={cn(
-                    "border-summit/20 text-summit/50 hover:border-summit/40 hover:text-summit/80 flex items-center gap-1 border px-2 py-0.5 text-[9px] font-bold tracking-[0.06em] uppercase transition-colors disabled:opacity-40",
+                    "border-summit/40 text-summit/50 hover:border-summit/60 hover:text-summit/80 flex items-center gap-1 border px-2 py-0.5 text-[9px] font-bold tracking-[0.06em] uppercase transition-colors disabled:opacity-40",
                   )}
                 >
                   {pending === id ? (

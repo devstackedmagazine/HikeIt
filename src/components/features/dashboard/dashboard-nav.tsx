@@ -129,7 +129,7 @@ export function DashboardSidebar({
             <p className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
               Balkan Clubs
             </p>
-            <p className="text-summit/30 mt-0.5 text-[8px] tracking-[0.04em]">
+            <p className="text-summit/50 mt-0.5 text-[8px] tracking-[0.04em]">
               Peak Control v1.2
             </p>
           </>
@@ -161,7 +161,7 @@ export function DashboardSidebar({
                 "flex flex-col items-center gap-1.5 px-3 py-2.5 text-center transition-colors",
                 active
                   ? "bg-moss text-abyss"
-                  : "text-summit/35 hover:bg-summit/[0.04] hover:text-summit/70",
+                  : "text-summit/50 hover:bg-summit/[0.04] hover:text-summit/70",
               )}
             >
               <item.icon className="size-[18px]" />
@@ -175,18 +175,14 @@ export function DashboardSidebar({
 
       {/* User */}
       <div className="border-summit/[0.06] flex flex-col items-center gap-1.5 border-t p-3">
-        <span
-          className={cn(
-            "border-moss/30 text-moss flex size-8 items-center justify-center border text-xs font-bold",
-            isAdmin ? "bg-pine" : "bg-forest",
-          )}
-        >
+        {/* Abyss chip, not Forest/Pine: Moss only clears AA on Abyss. */}
+        <span className="border-moss/30 text-moss bg-abyss flex size-8 items-center justify-center border text-xs font-bold">
           {userName.charAt(0).toUpperCase()}
         </span>
         <p className="text-summit/60 text-center text-[9px] font-semibold tracking-[0.04em] uppercase">
           {isAdmin ? "Admin" : userName}
         </p>
-        <p className="text-summit/30 w-full truncate text-center text-[8px] tracking-[0.04em] uppercase">
+        <p className="text-summit/50 w-full truncate text-center text-[8px] tracking-[0.04em] uppercase">
           {secondaryLine}
         </p>
         <button
@@ -226,7 +222,7 @@ export function DashboardMobileTabs({
             href={item.href}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-semibold uppercase",
-              active ? "text-moss" : "text-summit/35",
+              active ? "text-moss" : "text-summit/50",
             )}
           >
             <item.icon className="size-5" />

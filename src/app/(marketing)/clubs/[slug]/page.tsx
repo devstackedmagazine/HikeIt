@@ -142,7 +142,9 @@ export default async function ClubProfilePage({
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="mt-14 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{club.name}</h1>
+            <h1 className="text-summit text-3xl font-bold tracking-tight">
+              {club.name}
+            </h1>
             <p className="text-muted-foreground mt-1 flex items-center gap-1">
               <MapPin className="size-4" />
               {club.city ?? "Kosovë"}
@@ -176,7 +178,7 @@ export default async function ClubProfilePage({
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-primary text-2xl font-bold">{stat.value}</p>
-              <p className="text-muted-foreground text-xs">{stat.label}</p>
+              <p className="text-abyss text-xs">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -184,7 +186,7 @@ export default async function ClubProfilePage({
         {/* About */}
         {club.description ? (
           <section className="mt-10">
-            <h2 className="text-xl font-bold">Rreth klubit</h2>
+            <h2 className="text-summit text-xl font-bold">Rreth klubit</h2>
             <p className="text-muted-foreground mt-2 leading-relaxed">
               {club.description}
             </p>
@@ -199,10 +201,12 @@ export default async function ClubProfilePage({
         {/* Upcoming trips */}
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold">Udhëtime të ardhshme</h2>
+            <h2 className="text-summit text-xl font-bold">
+              Udhëtime të ardhshme
+            </h2>
             <Link
               href={`/trips?club=${club.slug}`}
-              className="text-primary text-sm underline-offset-4 hover:underline"
+              className="text-moss text-sm underline-offset-4 hover:underline"
             >
               Shiko të gjitha
             </Link>
@@ -224,7 +228,7 @@ export default async function ClubProfilePage({
 
         {clubPhotos.length > 0 ? (
           <section className="mt-10">
-            <h2 className="mb-4 text-xl font-bold">Galeria</h2>
+            <h2 className="text-summit mb-4 text-xl font-bold">Galeria</h2>
             <PhotoGallery
               photos={clubPhotos.map((p) => ({
                 id: p.id,

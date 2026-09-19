@@ -22,7 +22,7 @@ export function CoverPhotoUploader() {
 
   return (
     <div>
-      <p className="mb-2.5 text-[10px] font-bold tracking-[0.12em] text-summit/40 uppercase">
+      <p className="text-summit/40 mb-2.5 text-[10px] font-bold tracking-[0.12em] uppercase">
         Fotoja kryesore
       </p>
       <button
@@ -42,7 +42,7 @@ export function CoverPhotoUploader() {
           "flex h-40 w-full flex-col items-center justify-center gap-2 overflow-hidden border border-dashed transition-colors",
           dragging
             ? "border-moss bg-moss/5"
-            : "border-summit/15 bg-summit/[0.02] hover:border-moss/30",
+            : "border-summit/40 bg-summit/[0.02] hover:border-moss",
         )}
       >
         {preview ? (
@@ -52,11 +52,11 @@ export function CoverPhotoUploader() {
           />
         ) : (
           <>
-            <ImagePlus className="size-8 text-summit/20" />
-            <span className="text-[11px] font-semibold tracking-[0.08em] text-summit/40 uppercase">
+            <ImagePlus className="text-summit/20 size-8" />
+            <span className="text-summit/40 text-[11px] font-semibold tracking-[0.08em] uppercase">
               Zvarrit dhe lësho foton këtu
             </span>
-            <span className="text-[10px] text-summit/20">
+            <span className="text-summit/20 text-[10px]">
               JPG, PNG deri në 10MB
             </span>
           </>

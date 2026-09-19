@@ -40,7 +40,7 @@ export default async function ClubsPage({
         <p className="text-pine mb-2.5 text-[10px] font-bold tracking-[0.15em] uppercase">
           Komuniteti
         </p>
-        <h1 className="font-heading text-abyss mb-3.5 text-[clamp(28px,4vw,44px)] leading-none font-extrabold tracking-[-0.03em] uppercase">
+        <h1 className="font-heading text-abyss mb-3.5 text-[clamp(28px,4vw,44px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
           Klubet e Alpinizmit
         </h1>
         <p className="mb-5 max-w-[440px] text-[13px] leading-[1.65] text-[#3D5A47] sm:mb-7">
@@ -82,7 +82,7 @@ export default async function ClubsPage({
         </h2>
         <p className="text-summit/60 mx-auto mb-7 max-w-[420px] text-sm leading-[1.65]">
           Regjistroni klubin tuaj në platformën{" "}
-          <span className="text-moss">HikeIt</span> dhe rritni komunitetin tuaj
+          <span className="text-sage">HikeIt</span> dhe rritni komunitetin tuaj
           të alpinizmit sot.
         </p>
         <Link
