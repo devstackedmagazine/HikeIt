@@ -4,22 +4,26 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { requireSuperAdmin } from "@/lib/auth/helpers";
-import { resolveCommission } from "@/lib/commission";
 import { db } from "@/lib/db";
 import { auditLogs, inviteCodes, organizations } from "@/lib/db/schema";
+import { addMonths, resolveEntitlement } from "@/lib/entitlements";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import {
   type CreateInviteCodeInput,
   createInviteCodeSchema,
-  percentToRate,
-  type SetCommissionInput,
-  setCommissionSchema,
+  type ExtendTrialInput,
+  extendTrialSchema,
 } from "@/lib/validations/admin";
 import { normalizeInviteCode } from "@/server/services/invite-codes";
 
 /**
- * Super-admin commission and invite-code management.
+ * Super-admin trial and invite-code management.
+ *
+ * Replaces the commission-override panel. HikeIt no longer charges a rate on
+ * anything, so the lever a super admin has over a club is how much free Pro
+ * runway it gets — a write to `trialEndsAt`, resolved by `resolveEntitlement`
+ * like any other trial.
  *
  * Every action re-checks the role server-side via `requireSuperAdmin()` — the
  * route guard protects the page, not the action, and a server action is a
@@ -33,19 +37,29 @@ export interface AdminActionResult {
 
 const ADMIN_PATH = "/dashboard/admin";
 
-/** Set (or replace) a club's commission override. */
-export async function setClubCommission(
-  input: SetCommissionInput,
+/**
+ * Extend (or set) a club's free trial.
+ *
+ * Measured in months from *today*, not from the club's existing end date, so
+ * "3 months" always means what an admin reading the dialog expects. Extending
+ * a club whose trial already lapsed restarts it from now.
+ *
+ * The reason lives only in `audit_logs` — deliberately no column for it, since
+ * nothing in the product reads it and a grant's justification belongs with the
+ * record of who made it.
+ */
+export async function extendClubTrial(
+  input: ExtendTrialInput,
 ): Promise<AdminActionResult> {
   const admin = await requireSuperAdmin();
 
-  const parsed = setCommissionSchema.safeParse(input);
+  const parsed = extendTrialSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: "Të dhëna të pavlefshme." };
   }
-  const { organizationId, ratePercent, until, note } = parsed.data;
+  const { organizationId, months, note } = parsed.data;
 
-  const limited = await enforceRateLimit("ratelimit.admin.commission", {
+  const limited = await enforceRateLimit("ratelimit.admin.trial", {
     userId: admin.id,
   });
   if (limited) return { success: false, error: limited };
@@ -53,40 +67,41 @@ export async function setClubCommission(
   try {
     const club = await db.query.organizations.findFirst({
       where: eq(organizations.id, organizationId),
-      columns: {
-        slug: true,
-        commissionRate: true,
-        commissionOverrideUntil: true,
-        commissionOverrideReason: true,
-        trialEndsAt: true,
-      },
+      columns: { slug: true, subscriptionTier: true, trialEndsAt: true },
     });
     if (!club) return { success: false, error: "Klubi nuk u gjet." };
 
-    const previous = resolveCommission(club);
-    const rate = percentToRate(ratePercent);
-    const untilDate = until ? new Date(until) : null;
+    const previous = resolveEntitlement(club);
+    const now = new Date();
+    // Extend from whichever is later: today, or the trial already running.
+    // Shortening a club's runway by "extending" it would be a nasty surprise.
+    const base =
+      club.trialEndsAt && club.trialEndsAt.getTime() > now.getTime()
+        ? club.trialEndsAt
+        : now;
+    const trialEndsAt = addMonths(base, months);
 
     await db
       .update(organizations)
       .set({
-        commissionRate: rate.toFixed(4),
-        commissionOverrideUntil: untilDate,
-        commissionOverrideReason: "super_admin",
-        commissionOverrideNote: note?.trim() ? note.trim() : null,
+        trialEndsAt,
+        // Re-arm the 7-day notice so the club is warned about the *new* end
+        // date rather than staying silent because it was warned about the old.
+        trialEndingNotifiedAt: null,
       })
       .where(eq(organizations.id, organizationId));
 
     await db.insert(auditLogs).values({
       userId: admin.id,
-      action: "admin.commission.updated",
+      action: "admin.trial.extended",
       entityType: "organization",
       entityId: organizationId,
       metadata: {
-        oldRate: previous.rate,
-        oldSource: previous.source,
-        newRate: rate,
-        until: untilDate?.toISOString() ?? null,
+        previousTier: previous.tier,
+        previousSource: previous.source,
+        previousTrialEndsAt: club.trialEndsAt?.toISOString() ?? null,
+        months,
+        trialEndsAt: trialEndsAt.toISOString(),
         note: note?.trim() || null,
       },
     });
@@ -96,24 +111,24 @@ export async function setClubCommission(
     return { success: true };
   } catch (error) {
     captureError(error, {
-      action: "setClubCommission",
+      action: "extendClubTrial",
       userId: admin.id,
-      extra: { organizationId, ratePercent },
+      extra: { organizationId, months },
     });
     return { success: false, error: "Ndryshimi dështoi. Provoni sërish." };
   }
 }
 
 /**
- * Clear a club's override, returning it to normal resolution (trial if still
- * running, otherwise the 2.5% default).
+ * End a club's trial immediately, returning it to whatever it actually pays
+ * for. Used to undo a grant made in error.
  */
-export async function clearClubCommission(
+export async function endClubTrial(
   organizationId: string,
 ): Promise<AdminActionResult> {
   const admin = await requireSuperAdmin();
 
-  const limited = await enforceRateLimit("ratelimit.admin.commission", {
+  const limited = await enforceRateLimit("ratelimit.admin.trial", {
     userId: admin.id,
   });
   if (limited) return { success: false, error: limited };
@@ -121,41 +136,28 @@ export async function clearClubCommission(
   try {
     const club = await db.query.organizations.findFirst({
       where: eq(organizations.id, organizationId),
-      columns: {
-        slug: true,
-        commissionRate: true,
-        commissionOverrideUntil: true,
-        commissionOverrideReason: true,
-        trialEndsAt: true,
-      },
+      columns: { slug: true, subscriptionTier: true, trialEndsAt: true },
     });
     if (!club) return { success: false, error: "Klubi nuk u gjet." };
 
-    const previous = resolveCommission(club);
+    const previous = resolveEntitlement(club);
 
     // `inviteCodeUsed` is deliberately kept — it's a historical record of how
-    // the club signed up, not part of the active override.
+    // the club signed up, not part of the active grant.
     await db
       .update(organizations)
-      .set({
-        commissionRate: null,
-        commissionOverrideUntil: null,
-        commissionOverrideReason: null,
-        commissionOverrideNote: null,
-      })
+      .set({ trialEndsAt: null, trialEndingNotifiedAt: null })
       .where(eq(organizations.id, organizationId));
 
     await db.insert(auditLogs).values({
       userId: admin.id,
-      action: "admin.commission.updated",
+      action: "admin.trial.ended",
       entityType: "organization",
       entityId: organizationId,
       metadata: {
-        oldRate: previous.rate,
-        oldSource: previous.source,
-        // Null new rate = the override was removed, not set to zero.
-        newRate: null,
-        cleared: true,
+        previousTier: previous.tier,
+        previousSource: previous.source,
+        previousTrialEndsAt: club.trialEndsAt?.toISOString() ?? null,
       },
     });
 
@@ -164,7 +166,7 @@ export async function clearClubCommission(
     return { success: true };
   } catch (error) {
     captureError(error, {
-      action: "clearClubCommission",
+      action: "endClubTrial",
       userId: admin.id,
       extra: { organizationId },
     });
@@ -185,7 +187,8 @@ export async function createInviteCode(
       error: parsed.error.issues[0]?.message ?? "Të dhëna të pavlefshme.",
     };
   }
-  const { code, ratePercent, durationMonths, maxUses, expiresAt } = parsed.data;
+  const { code, trialMonths, paddleDiscountId, maxUses, expiresAt } =
+    parsed.data;
 
   const limited = await enforceRateLimit("ratelimit.admin.invite_code", {
     userId: admin.id,
@@ -193,7 +196,6 @@ export async function createInviteCode(
   if (limited) return { success: false, error: limited };
 
   const normalized = normalizeInviteCode(code);
-  const rate = percentToRate(ratePercent);
 
   try {
     const existing = await db.query.inviteCodes.findFirst({
@@ -208,8 +210,8 @@ export async function createInviteCode(
       .insert(inviteCodes)
       .values({
         code: normalized,
-        commissionRate: rate.toFixed(4),
-        durationMonths: durationMonths ?? null,
+        trialMonths,
+        paddleDiscountId: paddleDiscountId?.trim() || null,
         maxUses: maxUses ?? null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         createdBy: admin.id,
@@ -223,8 +225,8 @@ export async function createInviteCode(
       entityId: created?.id ?? null,
       metadata: {
         code: normalized,
-        rate,
-        durationMonths: durationMonths ?? null,
+        trialMonths,
+        paddleDiscountId: paddleDiscountId?.trim() || null,
         maxUses: maxUses ?? null,
         expiresAt: expiresAt ?? null,
       },

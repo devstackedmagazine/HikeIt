@@ -150,12 +150,13 @@ export interface ClubStats {
   membersThisMonth: number;
   activeTrips: number;
   completedTrips: number;
-  /** Net collected (sum of paid amounts). */
-  revenue: number;
-  /** Total HikeIt platform fee taken from this club's payments, for audit. */
-  platformFees: number;
-  /** Count of paid registrations in the current calendar month. */
-  paidThisMonth: number;
+  /**
+   * What confirmed registrations are worth at listed trip prices. Expected,
+   * not collected — HikeIt does not process trip money.
+   */
+  expectedRevenue: number;
+  /** Count of confirmed registrations in the current calendar month. */
+  registrationsThisMonth: number;
 }
 
 /** Aggregate stat counters for a club admin dashboard. */
@@ -205,19 +206,22 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
             isNull(trips.deletedAt),
           ),
         ),
-      // Only *paid* registrations count as revenue — a pending/failed one has
-      // an amount recorded on its intent but no money actually collected.
+      // Expected, not collected. HikeIt does not process trip money, so this
+      // is what the club's confirmed roster is worth at the trip's listed
+      // price — a figure to collect against on the day, never a record of
+      // money received. Labelled "TË PRITURA" in the UI for exactly that
+      // reason.
       db
         .select({
-          revenue: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
-          fees: sql<number>`coalesce(sum(${tripRegistrations.platformFeeEur}), 0)`,
+          expected: sql<number>`coalesce(sum(${trips.priceEur}), 0)`,
         })
         .from(tripRegistrations)
         .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(tripRegistrations.paymentStatus, "paid"),
+            eq(tripRegistrations.status, "confirmed"),
+            isNull(trips.deletedAt),
           ),
         ),
       db
@@ -227,7 +231,8 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(tripRegistrations.paymentStatus, "paid"),
+            eq(tripRegistrations.status, "confirmed"),
+            isNull(trips.deletedAt),
             sql`${tripRegistrations.registeredAt} >= ${startOfMonth.toISOString()}`,
           ),
         ),
@@ -238,9 +243,8 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
     membersThisMonth: monthMembers[0]?.value ?? 0,
     activeTrips: active[0]?.value ?? 0,
     completedTrips: completed[0]?.value ?? 0,
-    revenue: Number(revenue[0]?.revenue ?? 0),
-    platformFees: Number(revenue[0]?.fees ?? 0),
-    paidThisMonth: monthPaid[0]?.value ?? 0,
+    expectedRevenue: Number(revenue[0]?.expected ?? 0),
+    registrationsThisMonth: monthPaid[0]?.value ?? 0,
   };
 }
 
@@ -304,15 +308,28 @@ export async function getClubMembers(
   return { members: rows, total: totalResult[0]?.value ?? 0 };
 }
 
-/** Total collected revenue (sum of paid amounts) for a club. */
-export async function getClubRevenue(organizationId: string): Promise<number> {
+/**
+ * What a club's confirmed registrations are worth at listed trip prices.
+ *
+ * Expected, not collected — HikeIt never touches trip money. Callers must
+ * label it as such.
+ */
+export async function getClubExpectedRevenue(
+  organizationId: string,
+): Promise<number> {
   const [row] = await db
     .select({
-      value: sql<number>`coalesce(sum(${tripRegistrations.amountPaidEur}), 0)`,
+      value: sql<number>`coalesce(sum(${trips.priceEur}), 0)`,
     })
     .from(tripRegistrations)
     .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
-    .where(eq(trips.organizationId, organizationId));
+    .where(
+      and(
+        eq(trips.organizationId, organizationId),
+        eq(tripRegistrations.status, "confirmed"),
+        isNull(trips.deletedAt),
+      ),
+    );
   return Number(row?.value ?? 0);
 }
 

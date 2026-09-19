@@ -6,21 +6,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
-  type CommissionSource,
-  commissionSourceLabels,
-  formatRatePercent,
-} from "@/lib/commission";
+  type EntitlementSource,
+  entitlementSourceLabels,
+  type EntitlementTier,
+} from "@/lib/entitlements";
 import { cn } from "@/lib/utils/cn";
 import { formatTripDate } from "@/lib/utils/datetime";
-import {
-  clearClubCommission,
-  setClubCommission,
-} from "@/server/actions/admin-commission";
+import { endClubTrial, extendClubTrial } from "@/server/actions/admin-trial";
 import type { AdminClubRow } from "@/server/queries/admin";
 
-/** Moss for anything discounted, plain Forest for the standard rate. */
-function sourceTone(source: CommissionSource): string {
-  return source === "default" ? "text-forest/60" : "text-moss";
+const TIER_LABEL: Record<EntitlementTier, string> = {
+  free: "Falas",
+  pro: "Pro",
+  team: "Team",
+};
+
+/** Moss for anything above the free tier, plain Forest for free. */
+function sourceTone(source: EntitlementSource): string {
+  return source === "free" ? "text-forest/60" : "text-moss";
 }
 
 export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
@@ -43,7 +46,7 @@ export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
               <Th>Klubi</Th>
               <Th>Qyteti</Th>
               <Th align="right">Anëtarë</Th>
-              <Th align="right">Komisioni</Th>
+              <Th align="right">Plani</Th>
               <Th>Burimi</Th>
               <Th>Deri më</Th>
               <Th align="right">Veprim</Th>
@@ -68,11 +71,11 @@ export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
                 <Td align="right">
                   <span
                     className={cn(
-                      "font-heading text-[15px] font-black",
+                      "font-heading text-[15px] font-black uppercase",
                       sourceTone(club.source),
                     )}
                   >
-                    {formatRatePercent(club.rate)}
+                    {TIER_LABEL[club.tier]}
                   </span>
                 </Td>
                 <Td>
@@ -82,7 +85,7 @@ export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
                       sourceTone(club.source),
                     )}
                   >
-                    {commissionSourceLabels[club.source]}
+                    {entitlementSourceLabels[club.source]}
                   </span>
                 </Td>
                 <Td>
@@ -94,7 +97,7 @@ export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
                     onClick={() => setEditing(club)}
                     className="border-2 border-forest bg-summit px-3 py-1.5 text-[10px] font-bold tracking-[0.08em] text-forest uppercase transition-colors hover:bg-forest hover:text-summit"
                   >
-                    Menaxho komisionin
+                    Zgjat provën
                   </button>
                 </Td>
               </tr>
@@ -104,23 +107,22 @@ export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {
       </div>
 
       {editing ? (
-        <CommissionDialog
-          club={editing}
-          onClose={() => setEditing(null)}
-        />
+        <TrialDialog club={editing} onClose={() => setEditing(null)} />
       ) : null}
     </>
   );
 }
 
 /**
- * Set / clear a club's commission override.
+ * Extend or end a club's free trial.
  *
- * The rate is entered as a percentage and converted to a decimal server-side;
- * "PËRGJITHMONË" sends a null expiry, which the resolver reads as a permanent
- * grant.
+ * Months are counted from whichever is later — today, or the trial already
+ * running — so "3 months" always adds runway and never removes it. The note is
+ * recorded in `audit_logs` only; there is no column for it, because nothing in
+ * the product reads it and a grant's justification belongs with the record of
+ * who made it.
  */
-function CommissionDialog({
+function TrialDialog({
   club,
   onClose,
 }: {
@@ -128,43 +130,25 @@ function CommissionDialog({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [ratePercent, setRatePercent] = useState(
-    club.commissionRate !== null
-      ? String(Number(club.commissionRate) * 100)
-      : "0",
-  );
-  const [permanent, setPermanent] = useState(
-    club.commissionOverrideUntil === null,
-  );
-  const [until, setUntil] = useState(
-    club.commissionOverrideUntil
-      ? toDateInputValue(club.commissionOverrideUntil)
-      : "",
-  );
-  const [note, setNote] = useState(club.commissionOverrideNote ?? "");
+  const [months, setMonths] = useState("3");
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasOverride = club.commissionRate !== null;
+  const hasTrial = club.source === "trial";
 
   async function save() {
     setError(null);
-    const parsedRate = Number(ratePercent);
-    if (!Number.isFinite(parsedRate)) {
-      setError("Shkruani një numër të vlefshëm.");
-      return;
-    }
-    if (!permanent && !until) {
-      setError("Zgjidhni një datë ose caktoni 'Përgjithmonë'.");
+    const parsedMonths = Number(months);
+    if (!Number.isInteger(parsedMonths) || parsedMonths < 1) {
+      setError("Shkruani një numër të plotë muajsh.");
       return;
     }
 
     setSaving(true);
-    const result = await setClubCommission({
+    const result = await extendClubTrial({
       organizationId: club.id,
-      ratePercent: parsedRate,
-      // End of the chosen day, so a grant "until the 30th" covers the 30th.
-      until: permanent ? null : new Date(`${until}T23:59:59`).toISOString(),
+      months: parsedMonths,
       note,
     });
     setSaving(false);
@@ -176,10 +160,10 @@ function CommissionDialog({
     router.refresh();
   }
 
-  async function clear() {
+  async function end() {
     setError(null);
     setSaving(true);
-    const result = await clearClubCommission(club.id);
+    const result = await endClubTrial(club.id);
     setSaving(false);
     if (!result.success) {
       setError(result.error ?? "Diçka shkoi keq.");
@@ -201,65 +185,32 @@ function CommissionDialog({
         <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 max-h-[90svh] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto border-2 border-forest bg-summit outline-none sm:max-w-md">
           <div className="border-b-2 border-forest p-5">
             <Dialog.Title className="font-heading text-[16px] font-black tracking-tight text-forest uppercase">
-              Menaxho komisionin
+              Zgjat provën
             </Dialog.Title>
             <Dialog.Description className="mt-1 text-[13px] text-forest/60">
-              {club.name} — aktualisht {formatRatePercent(club.rate)} (
-              {commissionSourceLabels[club.source].toLowerCase()})
+              {club.name} — aktualisht {TIER_LABEL[club.tier]} (
+              {entitlementSourceLabels[club.source].toLowerCase()})
+              {club.trialEndsAt
+                ? `, deri më ${formatTripDate(club.trialEndsAt)}`
+                : ""}
             </Dialog.Description>
           </div>
 
           <div className="space-y-4 p-5">
-            <Field label="Norma e komisionit (%)">
+            <Field label="Muaj shtesë">
               <input
                 type="number"
-                min={0}
-                max={2.5}
-                step={0.1}
-                value={ratePercent}
-                onChange={(e) => setRatePercent(e.target.value)}
+                min={1}
+                max={120}
+                step={1}
+                value={months}
+                onChange={(e) => setMonths(e.target.value)}
                 className="w-full border-2 border-forest bg-summit px-3 py-2.5 text-[14px] font-bold text-forest outline-none focus-visible:border-moss"
               />
               <p className="mt-1.5 text-[11px] text-forest/50">
-                0 = pa komision. Maksimumi 2.5% (norma standarde).
+                Numërohen nga sot, ose nga fundi i provës aktuale nëse është
+                ende në vazhdim. Prova jep qasje të plotë Pro.
               </p>
-            </Field>
-
-            <Field label="Kohëzgjatja">
-              <div className="flex border-2 border-forest">
-                <button
-                  type="button"
-                  onClick={() => setPermanent(true)}
-                  className={cn(
-                    "flex-1 px-3 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors",
-                    permanent
-                      ? "bg-forest text-summit"
-                      : "bg-summit text-forest hover:bg-mist",
-                  )}
-                >
-                  Përgjithmonë
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPermanent(false)}
-                  className={cn(
-                    "flex-1 border-l-2 border-forest px-3 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors",
-                    !permanent
-                      ? "bg-forest text-summit"
-                      : "bg-summit text-forest hover:bg-mist",
-                  )}
-                >
-                  Deri në datë
-                </button>
-              </div>
-              {!permanent ? (
-                <input
-                  type="date"
-                  value={until}
-                  onChange={(e) => setUntil(e.target.value)}
-                  className="mt-2 w-full border-2 border-forest bg-summit px-3 py-2.5 text-[14px] font-bold text-forest outline-none focus-visible:border-moss"
-                />
-              ) : null}
             </Field>
 
             <Field label="Shënim (opsional)">
@@ -270,6 +221,9 @@ function CommissionDialog({
                 placeholder="P.sh. partneritet me Federatën e Alpinizmit"
                 className="w-full resize-none border-2 border-forest bg-summit px-3 py-2.5 text-[13px] text-forest outline-none focus-visible:border-moss"
               />
+              <p className="mt-1.5 text-[11px] text-forest/50">
+                Ruhet vetëm në regjistrin e veprimeve.
+              </p>
             </Field>
 
             {error ? (
@@ -280,14 +234,14 @@ function CommissionDialog({
           </div>
 
           <div className="flex flex-wrap justify-between gap-2 border-t-2 border-forest p-5">
-            {hasOverride ? (
+            {hasTrial ? (
               <button
                 type="button"
-                onClick={clear}
+                onClick={end}
                 disabled={saving}
                 className="border-2 border-danger bg-summit px-4 py-2.5 text-[11px] font-bold tracking-[0.06em] text-danger uppercase transition-colors hover:bg-danger hover:text-summit disabled:opacity-50"
               >
-                Hiq mbivendosjen
+                Përfundo provën
               </button>
             ) : (
               <span />
@@ -374,10 +328,4 @@ function Td({
       {children}
     </td>
   );
-}
-
-/** `Date` → the `yyyy-mm-dd` a native date input expects, in local time. */
-function toDateInputValue(date: Date): string {
-  const offset = date.getTimezoneOffset() * 60 * 1000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
 }

@@ -85,13 +85,10 @@ function IconList({ items, icons }: { items: string[]; icons: LucideIcon[] }) {
 
 export default async function PublicTripPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ payment?: string }>;
 }) {
   const { tripId } = await params;
-  const { payment } = await searchParams;
   const trip = await getTripById(tripId);
   if (!trip) notFound();
 
@@ -232,18 +229,11 @@ export default async function PublicTripPage({
             priceEur={trip.priceEur}
             confirmedCount={trip.confirmedCount}
             maxParticipants={trip.maxParticipants}
-            commissionRate={trip.commissionRate}
             registration={
               registration
-                ? {
-                    id: registration.id,
-                    status: registration.status,
-                    paymentStatus: registration.paymentStatus,
-                    isReregistration: registration.isReregistration,
-                  }
+                ? { id: registration.id, status: registration.status }
                 : null
             }
-            returnedFromCheckout={payment === "success"}
           />
           <TripOrganizerCard
             clubName={trip.club.name}

@@ -7,7 +7,7 @@ import { requireSuperAdmin } from "@/lib/auth/helpers";
 import { cn } from "@/lib/utils/cn";
 import {
   getAdminClubs,
-  getCommissionSummary,
+  getEntitlementSummary,
   getInviteCodes,
 } from "@/server/queries/admin";
 
@@ -21,7 +21,7 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 /**
- * Super-admin panel: commission overrides per club, and invite-code
+ * Super-admin panel: trial extensions per club, and invite-code
  * management.
  *
  * `requireSuperAdmin()` 404s anyone else — the route must not confirm its own
@@ -43,7 +43,7 @@ export default async function AdminPage({
   const [clubs, codes, summary] = await Promise.all([
     getAdminClubs(),
     getInviteCodes(),
-    getCommissionSummary(),
+    getEntitlementSummary(),
   ]);
 
   return (
@@ -61,8 +61,12 @@ export default async function AdminPage({
       <div className="grid grid-cols-2 border-2 border-forest lg:grid-cols-4">
         <SummaryBox label="Klube gjithsej" value={summary.totalClubs} />
         <SummaryBox label="Në provë falas" value={summary.onTrial} accent />
-        <SummaryBox label="Me komision special" value={summary.onGrant} accent />
-        <SummaryBox label="Me 2.5% standard" value={summary.onDefault} last />
+        <SummaryBox
+          label="Me abonim"
+          value={summary.onSubscription}
+          accent
+        />
+        <SummaryBox label="Në plan falas" value={summary.onFree} last />
       </div>
 
       {/* Tabs as links so the whole panel stays a Server Component. */}

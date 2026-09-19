@@ -3,19 +3,20 @@ import { Button, Heading, Text } from "@react-email/components";
 import { EmailLayout } from "@/lib/email/templates/email-layout";
 
 /**
- * Sent 7 days before a club's free-commission trial ends.
+ * Sent 7 days before a club's free Pro trial ends.
  *
- * Warm and factual: nothing is being taken away, nothing needs to be done, and
- * there's no re-acceptance step. It's a heads-up, not a sales pitch.
+ * Warm and factual. Something *is* being taken away this time — the club drops
+ * to the free tier's limits — so the copy says exactly which limits return and
+ * offers the upgrade, without manufacturing urgency.
  */
 export function TrialEnding({
   clubName,
   endDateLabel,
-  settingsUrl,
+  billingUrl,
 }: {
   clubName: string;
   endDateLabel: string;
-  settingsUrl: string;
+  billingUrl: string;
 }) {
   return (
     <EmailLayout preview={`Prova falas e ${clubName} mbaron pas 7 ditësh`}>
@@ -28,18 +29,18 @@ export function TrialEnding({
       </Text>
 
       <Text style={box}>
-        Prej asaj date, për çdo udhëtim me pagesë aplikohet një komision
-        platforme prej <strong>2.5%</strong>. Udhëtimet falas mbeten falas —
-        pa asnjë komision.
+        Prej asaj date klubi kalon në planin falas: deri në{" "}
+        <strong>3 udhëtime në muaj</strong> dhe <strong>50 anëtarë</strong>.
+        Udhëtimet dhe anëtarët që keni tashmë nuk preken.
       </Text>
 
       <Text style={text}>
-        Nuk keni nevojë të bëni asgjë. Kalimi bëhet automatikisht dhe klubi juaj
-        vazhdon të funksionojë normalisht.
+        Nuk keni nevojë të bëni asgjë — kalimi bëhet automatikisht. Nëse doni
+        të vazhdoni pa kufij, mund të kaloni në Pro në çdo moment.
       </Text>
 
-      <Button href={settingsUrl} style={button}>
-        Shiko cilësimet e klubit
+      <Button href={billingUrl} style={button}>
+        Shiko planet
       </Button>
 
       <Text style={footer}>

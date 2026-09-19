@@ -50,14 +50,13 @@ export function TripRegistrationsPanel({
   }
 
   function exportCsv() {
-    const header = "Name,Email,Status,Payment,Registered\n";
+    const header = "Name,Email,Status,Registered\n";
     const rows = registrations
       .map((r) =>
         [
           r.userName ?? "",
           r.userEmail,
           r.status,
-          r.paymentStatus,
           r.registeredAt.toISOString(),
         ].join(","),
       )
@@ -155,10 +154,6 @@ function RegistrationActions({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  const amountLabel = r.amountPaidEur
-    ? `€${Number(r.amountPaidEur).toFixed(2)}`
-    : "€0";
-
   async function remove() {
     setError(null);
     const result = await removeRegistration(r.id);
@@ -169,24 +164,12 @@ function RegistrationActions({
     router.refresh();
   }
 
-  // Terminal states: nothing to do.
-  if (r.status === "canceled" || r.paymentStatus === "refunded") {
+  // Terminal state: nothing to do.
+  if (r.status === "canceled") {
     return (
       <Badge className="border-2 border-summit/20 bg-summit/10 text-summit/50">
         I HEQUR
       </Badge>
-    );
-  }
-
-  // Pending payment: block any action until it resolves.
-  if (r.status === "pending" && r.paymentStatus === "pending") {
-    return (
-      <span
-        title="Prisni që pagesa të konfirmohet ose të dështojë."
-        className="inline-flex cursor-help items-center border-2 border-alert/50 bg-alert/15 px-2.5 py-1 text-[11px] font-bold tracking-[0.04em] text-alert uppercase"
-      >
-        Në pritje pagese
-      </span>
     );
   }
 
@@ -213,18 +196,15 @@ function RegistrationActions({
     );
   }
 
-  // confirmed (or attended/no_show) — remove path, with refund if paid.
-  const isPaid = r.paymentStatus === "paid";
+  // confirmed (or attended/no_show) — plain removal. Any money for this trip
+  // was arranged between the hiker and the club, so there is nothing here to
+  // refund and nothing to promise the hiker about one.
   return (
     <div className="space-y-1">
       <ConfirmRemoveDialog
-        triggerLabel={isPaid ? "Hiq me rimbursim" : "Hiq"}
-        title={isPaid ? "Hiq me rimbursim" : "Hiq nga udhëtimi"}
-        description={
-          isPaid
-            ? `A jeni i sigurt? Pagesa e ${amountLabel} do t'i kthehet hikerit automatikisht.`
-            : "A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
-        }
+        triggerLabel="Hiq"
+        title="Hiq nga udhëtimi"
+        description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi dhe do të njoftohet me email."
         onConfirm={remove}
       />
       {error ? <ActionError message={error} /> : null}

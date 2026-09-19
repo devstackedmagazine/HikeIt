@@ -1,26 +1,22 @@
 import { z } from "zod";
 
-import { DEFAULT_COMMISSION_RATE } from "@/lib/commission";
-
-/** The rate is entered as a percentage in the UI and stored as a decimal. */
-const MAX_PERCENT = DEFAULT_COMMISSION_RATE * 100;
-
-const percentField = z
+/** Months of trial, shared by the extend-trial dialog and invite codes. */
+const trialMonthsField = z
   .number({ error: "Shkruani një numër" })
-  .min(0, "Nuk mund të jetë negativ")
-  .max(MAX_PERCENT, `Maksimumi ${String(MAX_PERCENT)}%`);
+  .int("Vetëm numra të plotë")
+  .min(1, "Të paktën 1 muaj")
+  .max(120, "Maksimumi 120 muaj");
 
-/** Super admin: set a club's commission override. */
-export const setCommissionSchema = z.object({
+/** Super admin: extend a club's free trial. */
+export const extendTrialSchema = z.object({
   organizationId: z.uuid(),
-  /** 0–2.5, converted to a 0–0.025 decimal server-side. */
-  ratePercent: percentField,
-  /** ISO date string; null/omitted = permanent grant. */
-  until: z.iso.datetime({ offset: true }).nullish(),
+  /** Months added on top of the trial already running (or from today). */
+  months: trialMonthsField,
+  /** Why the grant exists. Recorded in `audit_logs` only. */
   note: z.string().trim().max(500, "Maksimumi 500 karaktere").optional(),
 });
 
-export type SetCommissionInput = z.infer<typeof setCommissionSchema>;
+export type ExtendTrialInput = z.infer<typeof extendTrialSchema>;
 
 /** Super admin: create an invite code. */
 export const createInviteCodeSchema = z.object({
@@ -30,14 +26,19 @@ export const createInviteCodeSchema = z.object({
     .min(4, "Të paktën 4 karaktere")
     .max(50, "Maksimumi 50 karaktere")
     .regex(/^[A-Za-z0-9-]+$/, "Vetëm shkronja, numra dhe viza"),
-  ratePercent: percentField,
-  /** null = the granted rate is permanent. */
-  durationMonths: z
-    .number()
-    .int("Vetëm numra të plotë")
-    .min(1, "Të paktën 1 muaj")
-    .max(120, "Maksimumi 120 muaj")
-    .nullish(),
+  /** Months of Pro access the code grants, replacing the standard trial. */
+  trialMonths: trialMonthsField,
+  /**
+   * Paddle discount applied if the club later subscribes. Optional — a code
+   * may grant free runway only. Not validated against Paddle here: a typo
+   * surfaces at checkout, and blocking code creation on a live API call would
+   * make the admin panel depend on Paddle being reachable.
+   */
+  paddleDiscountId: z
+    .string()
+    .trim()
+    .max(100, "Maksimumi 100 karaktere")
+    .optional(),
   /** null = unlimited redemptions. */
   maxUses: z
     .number()
@@ -50,8 +51,3 @@ export const createInviteCodeSchema = z.object({
 });
 
 export type CreateInviteCodeInput = z.infer<typeof createInviteCodeSchema>;
-
-/** Percentage (0–2.5) → decimal rate (0–0.025), rounded to 4 dp. */
-export function percentToRate(percent: number): number {
-  return Math.round((percent / 100) * 10000) / 10000;
-}

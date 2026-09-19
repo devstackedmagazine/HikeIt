@@ -10,7 +10,6 @@ import { StatCard } from "@/components/features/dashboard/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
-import { resolveCommission } from "@/lib/commission";
 import { tripStatusLabels } from "@/lib/i18n/labels";
 import { formatTripDate } from "@/lib/utils/datetime";
 import {
@@ -103,12 +102,12 @@ export default async function ClubAdminPage({
             />
             <StatCard
               icon={TrendingUp}
-              label="Të ardhura"
-              value={`€${stats.revenue.toFixed(2)}`}
+              label="Të pritura"
+              value={`€${stats.expectedRevenue.toFixed(2)}`}
               accent="sunset"
               hint={
-                stats.revenue > 0
-                  ? `${stats.paidThisMonth} pagesa këtë muaj · HikeIt €${stats.platformFees.toFixed(2)}`
+                stats.expectedRevenue > 0
+                  ? `${stats.registrationsThisMonth} regjistrime këtë muaj · arkëtoni vetë`
                   : undefined
               }
             />
@@ -175,11 +174,7 @@ export default async function ClubAdminPage({
         </TabsContent>
 
         <TabsContent value="settings" className="pt-6">
-          <ClubSettings
-            club={club}
-            canDelete={access.role === "admin"}
-            commission={resolveCommission(club)}
-          />
+          <ClubSettings club={club} canDelete={access.role === "admin"} />
         </TabsContent>
       </Tabs>
     </div>

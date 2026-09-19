@@ -62,7 +62,6 @@ export default async function EditTripPage({
         tripId={trip.id}
         tripSlug={trip.slug}
         trailOptions={trailOptions}
-        stripeActive={access.organization.stripeAccountStatus === "active"}
         initialValues={{
           title: trip.title,
           description: trip.description ?? "",

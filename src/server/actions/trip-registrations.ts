@@ -6,13 +6,11 @@ import type { ReactElement } from "react";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
-import { commissionFeeCents, resolveCommission } from "@/lib/commission";
 import { db } from "@/lib/db";
 import {
   auditLogs,
   notifications,
   organizationMembers,
-  organizations,
   tripRegistrations,
   trips,
   users,
@@ -22,8 +20,7 @@ import { GenericMessage } from "@/lib/email/templates/generic-message";
 import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
-import { captureError, trackEvent } from "@/lib/sentry";
-import { getStripe, isStripeConfigured } from "@/lib/stripe/client";
+import { trackEvent } from "@/lib/sentry";
 import {
   formatTripDateTime,
   googleCalendarUrl,
@@ -31,11 +28,7 @@ import {
 
 export interface RegisterResult {
   success: boolean;
-  /** "free" → confirmed/waitlisted directly; "paid" → redirect to Checkout. */
-  type?: "free" | "paid";
   status?: "confirmed" | "waitlisted";
-  /** Present when `type === "paid"`: full-page redirect to Stripe Checkout. */
-  checkoutUrl?: string;
   error?: string;
 }
 
@@ -58,13 +51,11 @@ async function isClubManager(
 /**
  * Register the current user for a trip.
  *
- * - Free trip (priceEur ≤ 0): confirmed immediately (or waitlisted if full),
- *   returns `{ type: "free" }`.
- * - Paid trip: creates a Stripe Checkout Session routed to the club's Connect
- *   account with HikeIt's 2.5% application fee, records a `pending`
- *   registration, and returns `{ type: "paid", checkoutUrl }` for the client
- *   to redirect to Stripe's hosted page. The webhook confirms it on success —
- *   the client never marks a registration confirmed on its own.
+ * Registration is always free at the platform level — HikeIt does not process
+ * trip money. A trip's `priceEur` is what the club collects from the hiker
+ * directly, however the two of them arrange it; it is displayed for
+ * information and never gates registration. The hiker is confirmed
+ * immediately, or waitlisted if the trip is already full.
  */
 export async function registerForTrip(
   tripId: string,
@@ -103,46 +94,26 @@ export async function registerForTrip(
     ),
     orderBy: (t, { desc }) => [desc(t.registeredAt)],
   });
-  // A prior *pending payment* attempt is allowed to resume (see paid path);
-  // any other non-canceled registration means they're already in.
-  if (existing && existing.paymentStatus !== "pending") {
-    return { success: false, error: "Jeni tashmë i regjistruar." };
-  }
+  if (existing) return { success: false, error: "Jeni tashmë i regjistruar." };
 
-  // No active registration — check for a prior canceled one. A hiker who was
-  // refunded (or never paid) may re-register with a brand-new row; one whose
-  // cancellation wasn't refunded (an edge case — cancellation normally always
-  // refunds) must contact the club instead of silently paying again.
-  let isReregistration = false;
-  if (!existing) {
-    const canceled = await db.query.tripRegistrations.findFirst({
-      where: and(
-        eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.userId, session.user.id),
-        eq(tripRegistrations.status, "canceled"),
-      ),
-      orderBy: (t, { desc }) => [desc(t.canceledAt)],
-    });
-    if (canceled) {
-      if (canceled.paymentStatus === "paid") {
-        return {
-          success: false,
-          error:
-            "Ju keni një regjistrim të anuluar pa rimbursim. Kontaktoni klubin.",
-        };
-      }
-      isReregistration = true;
-    }
-  }
+  // A prior cancellation is still recorded (`isReregistration`) so the club
+  // can see churn on its roster, but it no longer blocks anyone: with no money
+  // moving there is nothing to cycle, and refusing an honest hiker who changed
+  // their mind twice is friction for its own sake.
+  const canceled = await db.query.tripRegistrations.findFirst({
+    where: and(
+      eq(tripRegistrations.tripId, tripId),
+      eq(tripRegistrations.userId, session.user.id),
+      eq(tripRegistrations.status, "canceled"),
+    ),
+    columns: { id: true },
+  });
 
-  const price = Number(trip.priceEur ?? 0);
-  return price > 0
-    ? registerPaid(session.user.id, trip, existing?.id ?? null, isReregistration)
-    : registerFree(session.user.id, trip, isReregistration);
+  return createRegistration(session.user.id, trip, canceled != null);
 }
 
-/** Free trip: confirm (or waitlist), email, revalidate. */
-async function registerFree(
+/** Confirm (or waitlist) the hiker, email them, revalidate. */
+async function createRegistration(
   userId: string,
   trip: typeof trips.$inferSelect,
   isReregistration: boolean,
@@ -156,7 +127,6 @@ async function registerFree(
     tripId: trip.id,
     userId,
     status,
-    paymentStatus: "free",
     isReregistration,
     waiverSignedAt: new Date(),
   });
@@ -177,176 +147,17 @@ async function registerFree(
     metadata: { organizationId: trip.organizationId, status },
   });
 
+  trackEvent("trip.registered", {
+    tripId: trip.id,
+    organizationId: trip.organizationId,
+    status,
+  });
+
   if (status === "confirmed") void sendConfirmation(userId, trip);
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath("/dashboard/my-trips");
-  return { success: true, type: "free", status };
-}
-
-/**
- * Paid trip: create a Connect Checkout Session and a `pending` registration.
- * Confirmation happens in the `payment_intent.succeeded` webhook, never here —
- * a hiker who abandons Checkout must not end up registered.
- */
-async function registerPaid(
-  userId: string,
-  trip: typeof trips.$inferSelect,
-  existingPendingId: string | null,
-  isReregistration: boolean,
-): Promise<RegisterResult> {
-  if (!isStripeConfigured()) {
-    return { success: false, error: "Pagesat nuk janë konfiguruar ende." };
-  }
-
-  const club = await db.query.organizations.findFirst({
-    where: eq(organizations.id, trip.organizationId),
-    columns: {
-      stripeConnectAccountId: true,
-      stripeAccountStatus: true,
-      commissionRate: true,
-      commissionOverrideUntil: true,
-      commissionOverrideReason: true,
-      trialEndsAt: true,
-    },
-  });
-  if (
-    !club?.stripeConnectAccountId ||
-    club.stripeAccountStatus !== "active"
-  ) {
-    return {
-      success: false,
-      error: "Ky klub nuk pranon pagesa online aktualisht.",
-    };
-  }
-
-  // Refuse to sell the last seat's worth if the trip is already full — paid
-  // hikers shouldn't be charged into a waitlist.
-  const confirmed = await confirmedCountFor(trip.id);
-  if (trip.maxParticipants !== null && confirmed >= trip.maxParticipants) {
-    return { success: false, error: "Ky udhëtim është plot." };
-  }
-
-  // All money math in integer cents — never float euros.
-  const amountCents = Math.round(Number(trip.priceEur) * 100);
-  // The club's resolved rate — 0 during a free trial or under a 0% grant.
-  const commission = resolveCommission(club);
-  const feeCents = commissionFeeCents(amountCents, commission.rate);
-
-  try {
-    const checkoutSession = await getStripe().checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            unit_amount: amountCents,
-            product_data: { name: trip.title },
-          },
-          quantity: 1,
-        },
-      ],
-      payment_intent_data: {
-        // Omitted entirely at 0% rather than sent as a literal 0. Stripe types
-        // `application_fee_amount` as an optional positive amount ("the
-        // application fee (if any)"); omitting is the documented way to say
-        // "no fee", and it keeps the club receiving the full amount minus only
-        // Stripe's own processing fee.
-        ...(feeCents > 0 ? { application_fee_amount: feeCents } : {}),
-        transfer_data: { destination: club.stripeConnectAccountId },
-        metadata: {
-          tripId: trip.id,
-          userId,
-          organizationId: trip.organizationId,
-        },
-      },
-      metadata: {
-        tripId: trip.id,
-        userId,
-        organizationId: trip.organizationId,
-      },
-      success_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.id}?payment=success`,
-      cancel_url: `${env.NEXT_PUBLIC_APP_URL}/trips/${trip.id}?payment=canceled`,
-    });
-
-    // In `payment` mode the PaymentIntent is created asynchronously by Stripe,
-    // so `payment_intent` is typically null on the freshly created session —
-    // only `url` is guaranteed here. The webhook fills in the intent id later
-    // (it correlates by tripId+userId metadata), so don't block the redirect
-    // on an id we can't have yet.
-    const paymentIntentId =
-      typeof checkoutSession.payment_intent === "string"
-        ? checkoutSession.payment_intent
-        : (checkoutSession.payment_intent?.id ?? null);
-
-    if (!checkoutSession.url) {
-      return { success: false, error: "Nuk u krijua pagesa. Provoni sërish." };
-    }
-
-    if (existingPendingId) {
-      // Resume an abandoned attempt — reuse the row (unique trip+user) and
-      // point it at the fresh session/intent. The waiver is re-accepted on
-      // every attempt, so refresh the timestamp too.
-      await db
-        .update(tripRegistrations)
-        .set({
-          status: "pending",
-          paymentStatus: "pending",
-          stripePaymentIntentId: paymentIntentId,
-          waiverSignedAt: new Date(),
-        })
-        .where(eq(tripRegistrations.id, existingPendingId));
-    } else {
-      await db.insert(tripRegistrations).values({
-        tripId: trip.id,
-        userId,
-        status: "pending",
-        paymentStatus: "pending",
-        stripePaymentIntentId: paymentIntentId,
-        isReregistration,
-        waiverSignedAt: new Date(),
-      });
-    }
-
-    trackEvent("trip.payment.started", {
-      tripId: trip.id,
-      organizationId: trip.organizationId,
-      amountCents,
-      feeCents,
-      commissionRate: commission.rate,
-      commissionSource: commission.source,
-    });
-
-    return { success: true, type: "paid", checkoutUrl: checkoutSession.url };
-  } catch (error) {
-    captureError(error, {
-      action: "registerForTrip.paid",
-      userId,
-      extra: { tripId: trip.id, organizationId: trip.organizationId },
-    });
-    return { success: false, error: "Pagesa dështoi të nisë. Provoni sërish." };
-  }
-}
-
-/**
- * `refund_application_fee` for a refund, included only when the original
- * charge actually carried a HikeIt fee.
- *
- * A payment taken during a 0% period has no application fee at all (we omit
- * `application_fee_amount` rather than sending 0), so asking Stripe to refund
- * one is meaningless. Stripe treats it as a no-op rather than an error, but
- * sending the flag only when there's a fee to reverse keeps the request
- * honest and removes the edge case entirely.
- *
- * `platformFeeEur` is the fee we recorded from the PaymentIntent, so it is the
- * authoritative record of what was charged.
- */
-function refundApplicationFeeParam(
-  platformFeeEur: string | null,
-): { refund_application_fee?: true } {
-  const fee = Number(platformFeeEur ?? 0);
-  return Number.isFinite(fee) && fee > 0 ? { refund_application_fee: true } : {};
+  return { success: true, status };
 }
 
 /** Count of confirmed registrations for a trip. */
@@ -401,17 +212,13 @@ export interface ActionResult {
   error?: string;
 }
 
-/** Free self-cancellation window: no cancellations inside this many ms before
- * the trip starts. Matches the "free cancellation 24h before" policy. */
-const CANCELLATION_CUTOFF_MS = 24 * 60 * 60 * 1000;
-
 /**
  * Hiker: cancel their own registration.
  *
- * Self-cancellation is blocked once the trip is within 24h of starting — the
- * hiker must contact the club. Otherwise a paid registration is refunded in
- * full (reversing the club transfer + HikeIt's fee, as these are destination
- * charges) before the row is canceled.
+ * Open right up until the trip starts. The old 24h cutoff existed to protect
+ * refunds; with no money moving it only converted cancellations into no-shows,
+ * which is strictly worse for the club — a no-show keeps the seat blocked,
+ * where a late cancellation at least frees it for the waitlist.
  */
 export async function cancelMyRegistration(
   registrationId: string,
@@ -429,76 +236,25 @@ export async function cancelMyRegistration(
   if (registration.status === "canceled") {
     return { success: false, error: "Ky regjistrim është anuluar tashmë." };
   }
-  if (registration.isReregistration) {
-    return {
-      success: false,
-      error:
-        "Keni anuluar një herë këtë udhëtim. Për ndihmë kontaktoni klubin direkt.",
-    };
-  }
 
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, registration.tripId),
-    columns: { slug: true, startDatetime: true },
+    columns: { slug: true },
   });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
 
-  // Cancellation deadline: within 24h of the start, self-cancellation is off.
-  if (
-    trip.startDatetime.getTime() - Date.now() < CANCELLATION_CUTOFF_MS
-  ) {
-    return {
-      success: false,
-      error:
-        "Anulimi falas mbyllet 24 orë para nisjes. Kontaktoni klubin për ndihmë.",
-    };
-  }
-
-  // Refund a paid registration before canceling. A payment still pending can't
-  // be self-canceled here — there's nothing settled to refund and the webhook
-  // may still confirm it.
-  if (registration.paymentStatus === "pending") {
-    return {
-      success: false,
-      error:
-        "Pagesa ende nuk është konfirmuar. Provoni sërish pasi të përfundojë.",
-    };
-  }
-  if (registration.paymentStatus === "paid") {
-    if (!isStripeConfigured() || !registration.stripePaymentIntentId) {
-      return {
-        success: false,
-        error: "Rimbursimi nuk mund të kryhet tani. Provoni sërish më vonë.",
-      };
-    }
-    try {
-      await getStripe().refunds.create({
-        payment_intent: registration.stripePaymentIntentId,
-        reverse_transfer: true,
-        ...refundApplicationFeeParam(registration.platformFeeEur),
-      });
-    } catch (error) {
-      captureError(error, {
-        action: "cancelMyRegistration.refund",
-        userId: session.user.id,
-        extra: { registrationId, paymentIntentId: registration.stripePaymentIntentId },
-      });
-      return {
-        success: false,
-        error: "Rimbursimi dështoi. Provoni sërish ose kontaktoni klubin.",
-      };
-    }
-  }
-
-  const isPaid = registration.paymentStatus === "paid";
   await db
     .update(tripRegistrations)
-    .set({
-      status: "canceled",
-      paymentStatus: isPaid ? "refunded" : registration.paymentStatus,
-      canceledAt: new Date(),
-    })
+    .set({ status: "canceled", canceledAt: new Date() })
     .where(eq(tripRegistrations.id, registrationId));
+
+  await db.insert(auditLogs).values({
+    userId: session.user.id,
+    action: "trip.registration.canceled",
+    entityType: "trip",
+    entityId: registration.tripId,
+    metadata: { registrationId },
+  });
 
   revalidatePath("/dashboard/my-trips");
   revalidatePath(`/trips/${trip.slug}`);
@@ -541,14 +297,9 @@ export async function updateRegistrationStatus(
 /**
  * Admin: remove a participant from a trip.
  *
- * - Paid registration → refund the Stripe payment in full, mark the row
- *   `canceled`/`refunded`, and notify the hiker (email + in-app).
- * - Free registration → mark `canceled` and notify the hiker.
- * - Pending payment → blocked; the admin must wait for it to resolve, since
- *   there's nothing settled to refund and the webhook may still confirm it.
- *
- * Stripe errors are never surfaced raw — they're caught, logged to Sentry, and
- * mapped to an Albanian message.
+ * A plain removal now — the row is marked `canceled` and the hiker is told.
+ * There is no refund to issue: any money for this trip was arranged between
+ * the hiker and the club directly, so settling up is theirs to do.
  */
 export async function removeRegistration(
   registrationId: string,
@@ -569,67 +320,10 @@ export async function removeRegistration(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  // A payment still in flight has nothing settled to refund and may yet be
-  // confirmed by the webhook — don't let the admin remove into that race.
-  if (registration.paymentStatus === "pending") {
-    return {
-      success: false,
-      error:
-        "Pagesa ende nuk është konfirmuar. Prisni derisa të përfundojë para se ta hiqni.",
-    };
-  }
-
-  const isPaid = registration.paymentStatus === "paid";
-
-  if (isPaid) {
-    if (!isStripeConfigured() || !registration.stripePaymentIntentId) {
-      return {
-        success: false,
-        error: "Rimbursimi nuk mund të kryhet tani. Provoni sërish më vonë.",
-      };
-    }
-    try {
-      // These are destination charges (created on the platform account with
-      // `transfer_data.destination` + `application_fee_amount`), so the charge
-      // and its refund live on the *platform* account — never on the club's
-      // connected account. Refund there, and claw the money back out of the
-      // club (`reverse_transfer`) and out of HikeIt's fee
-      // (`refund_application_fee`) so a full refund isn't paid for by the
-      // platform alone.
-      await getStripe().refunds.create({
-        payment_intent: registration.stripePaymentIntentId,
-        reverse_transfer: true,
-        ...refundApplicationFeeParam(registration.platformFeeEur),
-      });
-    } catch (error) {
-      captureError(error, {
-        action: "removeRegistration.refund",
-        userId: session.user.id,
-        extra: {
-          registrationId,
-          tripId: trip.id,
-          paymentIntentId: registration.stripePaymentIntentId,
-        },
-      });
-      return {
-        success: false,
-        error: "Rimbursimi dështoi. Provoni sërish ose kontaktoni mbështetjen.",
-      };
-    }
-  }
-
   await db
     .update(tripRegistrations)
-    .set({
-      status: "canceled",
-      paymentStatus: isPaid ? "refunded" : registration.paymentStatus,
-      canceledAt: new Date(),
-    })
+    .set({ status: "canceled", canceledAt: new Date() })
     .where(eq(tripRegistrations.id, registrationId));
-
-  const amountLabel = registration.amountPaidEur
-    ? `€${Number(registration.amountPaidEur).toFixed(2)}`
-    : "€0";
 
   // In-app notification (best-effort — the removal itself has already committed).
   try {
@@ -637,9 +331,7 @@ export async function removeRegistration(
       userId: registration.userId,
       type: "trip",
       title: "Jeni hequr nga udhëtimi",
-      body: isPaid
-        ? `Klubi ju ka hequr nga udhëtimi. Rimbursimi i ${amountLabel} është në proces.`
-        : "Klubi ju ka hequr nga udhëtimi.",
+      body: "Klubi ju ka hequr nga udhëtimi.",
       link: `/trips/${trip.slug}`,
     });
   } catch {
@@ -647,9 +339,6 @@ export async function removeRegistration(
   }
 
   // Email the hiker (best-effort).
-  const removalMessage = isPaid
-    ? `Klubi ju ka hequr nga udhëtimi "${trip.title}".\n\nRimbursimi i plotë prej ${amountLabel} do të shfaqet në llogarinë tuaj brenda 5–10 ditësh pune.`
-    : `Klubi ju ka hequr nga udhëtimi "${trip.title}".`;
   try {
     const hiker = await db.query.users.findFirst({
       where: eq(users.id, registration.userId),
@@ -661,7 +350,7 @@ export async function removeRegistration(
         subject: "Keni qenë hequr nga udhëtimi",
         template: GenericMessage({
           heading: "Keni qenë hequr nga udhëtimi",
-          message: removalMessage,
+          message: `Klubi ju ka hequr nga udhëtimi "${trip.title}".`,
         }),
       });
     }
@@ -671,19 +360,10 @@ export async function removeRegistration(
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
-    action: isPaid ? "trip.registration.refunded" : "trip.registration.removed",
+    action: "trip.registration.removed",
     entityType: "trip",
     entityId: trip.id,
-    metadata: {
-      registrationId,
-      hikerId: registration.userId,
-      ...(isPaid
-        ? {
-            amountEur: Number(registration.amountPaidEur ?? 0),
-            paymentIntentId: registration.stripePaymentIntentId,
-          }
-        : {}),
-    },
+    metadata: { registrationId, hikerId: registration.userId },
   });
 
   revalidatePath(`/dashboard/club/${trip.slug}`);

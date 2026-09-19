@@ -2,14 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  AlertTriangle,
   ChevronDown,
   CreditCard,
   Loader2,
   Search,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -95,7 +93,6 @@ function Field({
 export function TripForm({
   clubSlug,
   trailOptions,
-  stripeActive,
   mode = "create",
   tripId,
   tripSlug,
@@ -103,7 +100,6 @@ export function TripForm({
 }: {
   clubSlug: string;
   trailOptions: TrailOption[];
-  stripeActive: boolean;
   mode?: "create" | "edit";
   tripId?: string;
   tripSlug?: string;
@@ -317,38 +313,19 @@ export function TripForm({
             })}
           />
         </div>
-        {stripeActive ? (
-          <div className="border-moss/15 bg-moss/5 flex items-start gap-2.5 border px-3.5 py-3">
-            <CreditCard className="text-moss mt-0.5 size-4 shrink-0" />
-            <div>
-              <p className="text-moss mb-1 text-[10px] font-bold tracking-[0.08em] uppercase">
-                Stripe Connect e aktivizuar
-              </p>
-              <p className="text-summit/40 text-[11px] leading-[1.55]">
-                Pagesat do të procesohen automatikisht dhe do të transferohen në
-                llogarinë tuaj bankare pas zbritjes së komisionit të platformës
-                (2.5%).
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="border-alert/30 bg-alert/10 flex items-start gap-2.5 border px-3.5 py-3">
-            <AlertTriangle className="text-alert mt-0.5 size-4 shrink-0" />
-            <p className="text-alert text-[11px] leading-[1.55]">
-              <span className="font-bold tracking-[0.06em] uppercase">
-                Stripe nuk është aktiv
-              </span>{" "}
-              — mund ta ruani udhëtimin me çmim, por{" "}
-              <Link
-                href={`/dashboard/club/${clubSlug}?tab=settings`}
-                className="font-bold underline underline-offset-2"
-              >
-                lidhni Stripe në cilësimet e klubit
-              </Link>{" "}
-              për të mbledhur pagesa.
+        <div className="border-summit/15 bg-summit/[0.03] flex items-start gap-2.5 border px-3.5 py-3">
+          <CreditCard className="text-summit/40 mt-0.5 size-4 shrink-0" />
+          <div>
+            <p className="text-summit/60 mb-1 text-[10px] font-bold tracking-[0.08em] uppercase">
+              Pagesën e arkëtoni ju
+            </p>
+            <p className="text-summit/40 text-[11px] leading-[1.55]">
+              Çmimi shfaqet te udhëtimi që turistët ta dinë paraprakisht. HikeIt
+              nuk merr pagesa dhe nuk mban komision — ju merreni vesh direkt me
+              pjesëmarrësit.
             </p>
           </div>
-        )}
+        </div>
       </Section>
 
       {formError ? <p className="text-danger text-sm">{formError}</p> : null}
