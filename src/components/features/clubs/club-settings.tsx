@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ClubInviteCode } from "@/components/features/clubs/club-invite-code";
 import { ImageUploader } from "@/components/features/images/image-uploader";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ export function ClubSettings({
           </Field>
           <Field label="Qyteti">
             <select
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+              className="border-input h-9 w-full rounded-lg border bg-transparent px-2.5 text-sm"
               value={form.city}
               onChange={(e) => set("city", e.target.value)}
             >
@@ -134,7 +135,7 @@ export function ClubSettings({
             />
           </Field>
           {message ? (
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className="text-muted-foreground text-sm">{message}</p>
           ) : null}
           <Button onClick={save} disabled={saving}>
             {saving ? <Loader2 className="animate-spin" /> : null}
@@ -142,6 +143,8 @@ export function ClubSettings({
           </Button>
         </CardContent>
       </Card>
+
+      <ClubInviteCode club={club} />
 
       <Card>
         <CardHeader>
@@ -231,7 +234,9 @@ function DangerZone({ club }: { club: Organization }) {
     <Card className="border-destructive/40">
       <CardHeader>
         <CardTitle className="text-destructive">Zona e rrezikut</CardTitle>
-        <CardDescription>Fshirja e klubit nuk kthehet mbrapsht.</CardDescription>
+        <CardDescription>
+          Fshirja e klubit nuk kthehet mbrapsht.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog>
@@ -242,7 +247,7 @@ function DangerZone({ club }: { club: Organization }) {
             <DialogHeader>
               <DialogTitle>Fshij {club.name}?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Shkruani <strong>{club.name}</strong> për të konfirmuar.
             </p>
             <Input
@@ -250,7 +255,7 @@ function DangerZone({ club }: { club: Organization }) {
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
             />
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
             <Button
               variant="destructive"
               onClick={onDelete}

@@ -14,11 +14,22 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
-import { resolveEntitlement, trialEndsAtFrom } from "@/lib/entitlements";
-import { type CreateClubInput, createClubSchema } from "@/lib/validations/club";
+import {
+  addMonths,
+  resolveEntitlement,
+  trialEndsAtFrom,
+} from "@/lib/entitlements";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/sentry";
+import {
+  type CreateClubInput,
+  createClubSchema,
+  redeemInviteCodeSchema,
+} from "@/lib/validations/club";
 import {
   inviteCodeErrorMessages,
   type InviteCodeGrant,
+  normalizeInviteCode,
   redeemInviteCode,
 } from "@/server/services/invite-codes";
 
@@ -161,6 +172,119 @@ export async function createClub(
     inviteWarning: outcome.inviteWarning,
     inviteApplied: outcome.inviteApplied,
   };
+}
+
+/**
+ * Redeem an invite code from an existing club's settings — the same
+ * `redeemInviteCode` atomic claim `createClub` uses, so a code's limits
+ * (active, unexpired, uses remaining) are enforced identically whether it's
+ * claimed at creation or later.
+ *
+ * Unlike creation, an existing club has a trial that may already be running,
+ * so the grant extends from wherever that trial currently ends (or from now,
+ * if it's already lapsed or never started) — never from today outright. A
+ * club with 2 months left redeeming a 6-month code gets 8, not 6. This is the
+ * same base-selection rule `extendClubTrial` uses for admin-granted months.
+ */
+export async function redeemInviteCodeForClub(
+  slug: string,
+  rawCode: string,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  const access = await requireClubAdmin(session.user.id, slug);
+  if (!access || access.role !== "admin") {
+    return { success: false, error: "Nuk keni qasje." };
+  }
+
+  const parsed = redeemInviteCodeSchema.safeParse({ code: rawCode });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Kod i pavlefshëm.",
+    };
+  }
+
+  const limited = await enforceRateLimit("ratelimit.club.invite_code", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
+  const normalized = normalizeInviteCode(parsed.data.code);
+  const organizationId = access.organization.id;
+
+  try {
+    const outcome = await db.transaction(async (tx) => {
+      const now = new Date();
+
+      // Re-read fresh inside the transaction rather than trusting the
+      // pre-transaction `access.organization` — the "already redeemed" check
+      // and the extension base both need the current row, not a stale one.
+      const current = await tx.query.organizations.findFirst({
+        where: eq(organizations.id, organizationId),
+        columns: { trialEndsAt: true, inviteCodeUsed: true },
+      });
+      if (!current) {
+        return { ok: false as const, error: "Klubi nuk u gjet." };
+      }
+      if (current.inviteCodeUsed === normalized) {
+        return {
+          ok: false as const,
+          error: "Ky kod është përdorur tashmë nga klubi juaj.",
+        };
+      }
+
+      const redemption = await redeemInviteCode(normalized, tx, now);
+      if (!redemption.ok) {
+        return {
+          ok: false as const,
+          error: inviteCodeErrorMessages[redemption.error],
+        };
+      }
+
+      // From the trial's current end if it's still running, else from today —
+      // codes only ever add runway, never reset it.
+      const base =
+        current.trialEndsAt && current.trialEndsAt.getTime() > now.getTime()
+          ? current.trialEndsAt
+          : now;
+      const trialEndsAt = addMonths(base, redemption.grant.trialMonths);
+
+      await tx
+        .update(organizations)
+        .set({ trialEndsAt, inviteCodeUsed: redemption.grant.code })
+        .where(eq(organizations.id, organizationId));
+
+      await tx.insert(auditLogs).values({
+        userId: session.user.id,
+        action: "club.invite_code.redeemed",
+        entityType: "organization",
+        entityId: organizationId,
+        metadata: {
+          code: redemption.grant.code,
+          trialMonths: redemption.grant.trialMonths,
+          previousTrialEndsAt: current.trialEndsAt?.toISOString() ?? null,
+          trialEndsAt: trialEndsAt.toISOString(),
+          paddleDiscountId: redemption.grant.paddleDiscountId,
+        },
+      });
+
+      return { ok: true as const };
+    });
+
+    if (!outcome.ok) return { success: false, error: outcome.error };
+
+    revalidatePath(`/dashboard/club/${slug}`);
+    return { success: true };
+  } catch (error) {
+    captureError(error, {
+      action: "redeemInviteCodeForClub",
+      userId: session.user.id,
+      extra: { organizationId, code: normalized },
+    });
+    return { success: false, error: "Diçka shkoi keq. Provoni sërish." };
+  }
 }
 
 /** Join a club as a member. Requires auth; idempotent for active members. */

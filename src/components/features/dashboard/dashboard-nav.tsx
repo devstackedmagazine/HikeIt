@@ -8,6 +8,7 @@ import {
   Map,
   Settings,
   ShieldCheck,
+  Sparkles,
   User,
   Users,
 } from "lucide-react";
@@ -53,6 +54,11 @@ function buildItems(
       { href: club, label: "Përmbledhje", icon: LayoutDashboard, exact: true },
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
+      {
+        href: `${club}?tab=settings#invite-code`,
+        label: "Përmirëso",
+        icon: Sparkles,
+      },
       { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
       ...platformAdmin,
     ];
@@ -86,7 +92,11 @@ function isActive(
     : pathname === path || pathname.startsWith(`${path}/`);
   if (!onPath) return false;
 
-  const itemTab = query ? new URLSearchParams(query).get("tab") : null;
+  // Strip a trailing #fragment (e.g. "#invite-code") before parsing — it's
+  // not part of the query string, and URLSearchParams would otherwise fold it
+  // into the tab value and break the comparison below.
+  const queryOnly = query?.split("#")[0];
+  const itemTab = queryOnly ? new URLSearchParams(queryOnly).get("tab") : null;
   return itemTab ? currentTab === itemTab : !currentTab;
 }
 
