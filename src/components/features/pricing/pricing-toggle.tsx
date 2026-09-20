@@ -4,7 +4,6 @@ import { Check, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { UpgradeButton } from "@/components/features/billing/upgrade-button";
 import { cn } from "@/lib/utils/cn";
 
 const FREE_FEATURES = {
@@ -193,14 +192,16 @@ export function PricingToggle() {
             ))}
           </ul>
 
-          <UpgradeButton
-            tier="pro"
-            interval={annual ? "yearly" : "monthly"}
-            label="Abonohu →"
-            variant="moss"
-            className="mt-6"
-            buttonClassName="h-auto py-3.5 text-[12px] font-extrabold tracking-[0.06em]"
-          />
+          <p className="text-forest/70 mt-6 text-[12px] leading-relaxed">
+            Abonimet hapen së shpejti — çdo klub fillon me muaj provë falas. Na
+            shkruani për t&apos;u vendosur në listë.
+          </p>
+          <Link
+            href="mailto:hello@hikeit.app"
+            className="border-forest text-forest hover:bg-forest hover:text-summit mt-2 block border-2 py-3.5 text-center text-[12px] font-extrabold tracking-[0.06em] uppercase transition-colors"
+          >
+            Na Kontaktoni
+          </Link>
         </div>
 
         {/* TEAM */}
