@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://hikeit.app/terms" },
 };
 
-const LAST_UPDATED = "Korrik 2026";
+const LAST_UPDATED = "Shtator 2026";
 
 export default function TermsPage() {
   return (
@@ -30,10 +30,13 @@ export default function TermsPage() {
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
         <LegalSection heading="1. Hyrje">
           <p>
-            HikeIt është një <strong className="text-summit">platformë teknologjike ndërmjetëse</strong>{" "}
+            HikeIt është një{" "}
+            <strong className="text-summit">
+              platformë teknologjike ndërmjetëse
+            </strong>{" "}
             që lidh hikerët me klubet alpine dhe organizatorët e pavarur në
             Kosovë. HikeIt ofron infrastrukturën dixhitale — listimin e
-            udhëtimeve, regjistrimin dhe procesimin e pagesave — por{" "}
+            udhëtimeve dhe regjistrimin e pjesëmarrësve — por{" "}
             <strong className="text-summit">
               nuk është operator turistik, agjenci udhëtimesh, guidë malore apo
               organizator aktivitetesh
@@ -52,7 +55,7 @@ export default function TermsPage() {
             mënyrë të plotë dhe të pakushtëzuar këto Kushte të Shërbimit dhe{" "}
             <Link
               href="/privacy"
-              className="font-bold text-moss underline underline-offset-4 transition-colors hover:text-summit"
+              className="text-moss hover:text-summit font-bold underline underline-offset-4 transition-colors"
             >
               Politikën e Privatësisë
             </Link>
@@ -66,9 +69,9 @@ export default function TermsPage() {
               </>,
               <>
                 Personat <strong className="text-summit">16–18 vjeç</strong>{" "}
-                mund të përdorin platformën vetëm me leje të shkruar të
-                prindit ose kujdestarit ligjor, i cili merr përsipër
-                përgjegjësinë e plotë.
+                mund të përdorin platformën vetëm me leje të shkruar të prindit
+                ose kujdestarit ligjor, i cili merr përsipër përgjegjësinë e
+                plotë.
               </>,
               <>
                 Personat nën 16 vjeç nuk lejohen të regjistrohen në platformë.
@@ -93,8 +96,8 @@ export default function TermsPage() {
           <LegalCallout heading="Seksion kritik — lexoni me kujdes">
             <p>
               <strong className="text-summit">
-                HikeIt nuk organizon, nuk drejton dhe nuk mbikëqyr asnjë
-                udhëtim të listuar në platformë.
+                HikeIt nuk organizon, nuk drejton dhe nuk mbikëqyr asnjë udhëtim
+                të listuar në platformë.
               </strong>
             </p>
             <LegalList
@@ -147,56 +150,57 @@ export default function TermsPage() {
         </LegalSection>
 
         <LegalSection heading="6. Pagesat">
-          <LegalCallout heading="Seksion kritik — pagesat dhe rimbursimet">
+          <LegalCallout heading="Seksion kritik — pagesat e udhëtimeve">
             <LegalList
               items={[
                 <>
-                  Të gjitha pagesat procesohen nga{" "}
-                  <strong className="text-summit">Stripe</strong>, ofrues i
-                  certifikuar PCI DSS. HikeIt nuk ruan asnjë të dhënë të kartës
-                  suaj bankare.
-                </>,
-                <>
                   <strong className="text-summit">
-                    HikeIt nuk mban fonde.
+                    HikeIt nuk proceson, nuk mbledh, nuk mban dhe nuk transferon
+                    asnjë pagesë për udhëtime.
                   </strong>{" "}
-                  Paratë shkojnë drejtpërdrejt te llogaria e klubit organizator
-                  nëpërmjet Stripe Connect.
+                  Platforma nuk vepron si ndërmjetës financiar për çmimin e
+                  udhëtimeve dhe nuk trajton asnjë të dhënë karte bankare apo
+                  fonde të lidhura me to.
                 </>,
                 <>
-                  HikeIt mban një komision platforme prej{" "}
-                  <strong className="text-summit">2.5%</strong> të vlerës së
-                  transaksionit. Tarifat e Stripe janë të veçanta dhe zbriten
-                  sipas çmimores së Stripe.
+                  Çmimi i çdo udhëtimi i shfaqur në platformë është{" "}
+                  <strong className="text-summit">vetëm informativ</strong>, i
+                  vendosur nga klubi organizator. Pagesa mblidhet drejtpërdrejt
+                  nga klubi, sipas marrëveshjes së tij me hikerin — në para në
+                  dorë, transfertë bankare, ose çdo metodë tjetër që klubi
+                  zgjedh.
                 </>,
-                "HikeIt nuk mban përgjegjësi për dështime teknike, vonesa apo gabime të shkaktuara nga Stripe ose nga banka juaj.",
+                "HikeIt nuk mban asnjë komision mbi çmimin e udhëtimeve. E gjithë vlera e pagesës i takon klubit organizator.",
+                <>
+                  Çdo mosmarrëveshje rreth pagesës, anulimit apo rimbursimit të
+                  një udhëtimi zgjidhet{" "}
+                  <strong className="text-summit">
+                    drejtpërdrejt mes hikerit dhe klubit organizator
+                  </strong>
+                  . HikeIt nuk është palë në këtë marrëdhënie financiare dhe nuk
+                  ndërmjetëson, nuk garanton dhe nuk proceson rimbursime për
+                  udhëtime.
+                </>,
+                "Klubi organizator është përgjegjës të komunikojë qartë kushtet e veta të anulimit dhe rimbursimit përpara se hikeri të regjistrohet në udhëtim.",
               ]}
             />
-            <p className="text-xs font-bold tracking-[0.15em] text-alert uppercase">
-              Politika e rimbursimit
+            <p className="text-alert text-xs font-bold tracking-[0.15em] uppercase">
+              Abonimet e klubeve
             </p>
             <LegalList
               items={[
                 <>
-                  <strong className="text-summit">
-                    Anulim 24+ orë para nisjes:
-                  </strong>{" "}
-                  rimbursim i plotë i shumës së paguar.
+                  Klubet që abonohen te planet Pro ose Team të HikeIt paguajnë
+                  nëpërmjet <strong className="text-summit">Paddle</strong>, i
+                  cili vepron si{" "}
+                  <strong className="text-summit">Merchant of Record</strong>{" "}
+                  për këto abonime — Paddle faturon klubin, mban të dhënat e
+                  kartës bankare dhe trajton TVSH-në sipas juridiksionit të
+                  klubit.
                 </>,
-                <>
-                  <strong className="text-summit">
-                    Anulim brenda 24 orëve para nisjes:
-                  </strong>{" "}
-                  nuk ofrohet rimbursim, përveç rasteve kur udhëtimi anulohet
-                  nga vetë klubi.
-                </>,
-                <>
-                  <strong className="text-summit">
-                    Anulim nga klubi organizator:
-                  </strong>{" "}
-                  rimbursim i plotë automatik, pavarësisht afatit.
-                </>,
-                "Rimbursimet kthehen në të njëjtën metodë pagese dhe mund të zgjasin 5–10 ditë pune varësisht bankës suaj.",
+                "HikeIt nuk ruan asnjë të dhënë karte bankare për abonimet e klubeve — gjithçka procesohet nga Paddle.",
+                "Faturimi, anulimi dhe menaxhimi i abonimit bëhen nëpërmjet portalit të Paddle, të aksesueshëm nga paneli i klubit.",
+                "HikeIt nuk mban përgjegjësi për dështime teknike, vonesa apo gabime të shkaktuara nga Paddle gjatë procesimit të abonimeve.",
               ]}
             />
           </LegalCallout>
@@ -213,8 +217,8 @@ export default function TermsPage() {
                 <>
                   <strong className="text-summit">
                     Përgjegjësia totale e HikeIt ndaj jush nuk do të tejkalojë
-                    shumën totale që ju keni paguar te HikeIt gjatë 12 muajve
-                    të fundit
+                    shumën totale që ju keni paguar te HikeIt gjatë 12 muajve të
+                    fundit
                   </strong>{" "}
                   përpara ngjarjes që shkaktoi pretendimin.
                 </>,
@@ -225,8 +229,8 @@ export default function TermsPage() {
               ]}
             />
             <p>
-              <strong className="text-summit">Force majeure:</strong> HikeIt
-              nuk mban përgjegjësi për mospërmbushje të detyrimeve për shkak
+              <strong className="text-summit">Force majeure:</strong> HikeIt nuk
+              mban përgjegjësi për mospërmbushje të detyrimeve për shkak
               ngjarjesh jashtë kontrollit të arsyeshëm, përfshirë mot ekstrem,
               fatkeqësi natyrore, tërmete, zjarre, pandemi, luftë, trazira,
               vendime shtetërore, ose ndërprerje të infrastrukturës së
@@ -247,7 +251,7 @@ export default function TermsPage() {
               "Të respektojnë legjislacionin në fuqi të Republikës së Kosovës, përfshirë detyrimet tatimore dhe ato për mbrojtjen e konsumatorit.",
               "Të disponojnë licencat, lejet dhe sigurimet e nevojshme sipas natyrës së aktivitetit që organizojnë.",
               "Të trajtojnë të dhënat personale të pjesëmarrësve në përputhje me Ligjin Nr. 06/L-082.",
-              "Të nderojnë politikën e rimbursimit të përcaktuar në Seksionin 6.",
+              "Të përcaktojnë dhe respektojnë politikën e tyre të anulimit dhe rimbursimit ndaj hikerëve, siç përshkruhet në Seksionin 6.",
             ]}
           />
           <p>
@@ -292,10 +296,9 @@ export default function TermsPage() {
           <p>
             HikeIt mund t&apos;i ndryshojë këto Kushte në çdo kohë. Për
             ndryshime thelbësore, ju njoftojmë me email dhe/ose me njoftim në
-            platformë të paktën{" "}
-            <strong className="text-summit">30 ditë</strong> përpara hyrjes në
-            fuqi. Vazhdimi i përdorimit të platformës pas kësaj date konsiderohet
-            pranim i kushteve të reja.
+            platformë të paktën <strong className="text-summit">30 ditë</strong>{" "}
+            përpara hyrjes në fuqi. Vazhdimi i përdorimit të platformës pas
+            kësaj date konsiderohet pranim i kushteve të reja.
           </p>
         </LegalSection>
 
@@ -318,8 +321,11 @@ export default function TermsPage() {
 
         <LegalSection heading="13. Kontakti">
           <p>
-            Për çdo pyetje në lidhje me këto Kushte të Shërbimit, na shkruani
-            në <LegalLink href="mailto:hello@hikeit.app">hello@hikeit.app</LegalLink>.
+            Për çdo pyetje në lidhje me këto Kushte të Shërbimit, na shkruani në{" "}
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>
+            .
           </p>
         </LegalSection>
       </div>
