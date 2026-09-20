@@ -16,49 +16,53 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://hikeit.app/privacy" },
 };
 
-const LAST_UPDATED = "Korrik 2026";
+const LAST_UPDATED = "Shtator 2026";
 
 /** Third-party processors, with the region their processing happens in. */
-const PROCESSORS: { name: string; purpose: string; region: string; eu: boolean }[] =
-  [
-    {
-      name: "Stripe",
-      purpose: "Procesimi i pagesave",
-      region: "SHBA — me masa mbrojtëse adekuate",
-      eu: false,
-    },
-    {
-      name: "Cloudinary",
-      purpose: "Ruajtja dhe shpërndarja e imazheve",
-      region: "SHBA — me masa mbrojtëse adekuate",
-      eu: false,
-    },
-    {
-      name: "Resend",
-      purpose: "Dërgimi i email-eve transaksionale",
-      region: "SHBA — me masa mbrojtëse adekuate",
-      eu: false,
-    },
-    {
-      name: "Supabase",
-      purpose: "Baza e të dhënave",
-      region: "Frankfurt, BE",
-      eu: true,
-    },
-    { name: "Vercel", purpose: "Hosting i aplikacionit", region: "BE", eu: true },
-    {
-      name: "Sentry",
-      purpose: "Monitorimi i gabimeve teknike",
-      region: "BE",
-      eu: true,
-    },
-    {
-      name: "PostHog",
-      purpose: "Analitikë e përdorimit (e anonimizuar)",
-      region: "BE",
-      eu: true,
-    },
-  ];
+const PROCESSORS: {
+  name: string;
+  purpose: string;
+  region: string;
+  eu: boolean;
+}[] = [
+  {
+    name: "Paddle",
+    purpose: "Procesimi i abonimeve të klubeve",
+    region: "Mbretëria e Bashkuar — me masa mbrojtëse adekuate",
+    eu: false,
+  },
+  {
+    name: "Cloudinary",
+    purpose: "Ruajtja dhe shpërndarja e imazheve",
+    region: "SHBA — me masa mbrojtëse adekuate",
+    eu: false,
+  },
+  {
+    name: "Resend",
+    purpose: "Dërgimi i email-eve transaksionale",
+    region: "SHBA — me masa mbrojtëse adekuate",
+    eu: false,
+  },
+  {
+    name: "Supabase",
+    purpose: "Baza e të dhënave",
+    region: "Frankfurt, BE",
+    eu: true,
+  },
+  { name: "Vercel", purpose: "Hosting i aplikacionit", region: "BE", eu: true },
+  {
+    name: "Sentry",
+    purpose: "Monitorimi i gabimeve teknike",
+    region: "BE",
+    eu: true,
+  },
+  {
+    name: "PostHog",
+    purpose: "Analitikë e përdorimit (e anonimizuar)",
+    region: "BE",
+    eu: true,
+  },
+];
 
 export default function PrivacyPage() {
   return (
@@ -77,8 +81,9 @@ export default function PrivacyPage() {
             përdorim, ruajmë dhe mbrojmë të dhënat tuaja personale.
           </p>
           <p>
-            Ne veprojmë si <strong className="text-summit">kontrollues i të dhënave</strong>{" "}
-            në përputhje me{" "}
+            Ne veprojmë si{" "}
+            <strong className="text-summit">kontrollues i të dhënave</strong> në
+            përputhje me{" "}
             <strong className="text-summit">
               Ligjin Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale
             </strong>{" "}
@@ -87,12 +92,14 @@ export default function PrivacyPage() {
           </p>
           <p>
             Për çdo pyetje ose kërkesë:{" "}
-            <LegalLink href="mailto:hello@hikeit.app">hello@hikeit.app</LegalLink>
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>
           </p>
         </LegalSection>
 
         <LegalSection heading="2. Të Dhënat që Mbledhim">
-          <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Të dhëna që na jepni ju
           </p>
           <LegalList
@@ -105,18 +112,17 @@ export default function PrivacyPage() {
               "Fotoja e profilit dhe biografia (opsionale)",
             ]}
           />
-          <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Të dhëna të udhëtimeve
           </p>
           <LegalList
             items={[
               "Regjistrimet tuaja në udhëtime dhe statusi i tyre",
-              "Historiku i pagesave dhe rimbursimeve",
               "Anëtarësimet në klube",
               "Fotot dhe komentet që ngarkoni",
             ]}
           />
-          <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Të dhëna teknike
           </p>
           <LegalList
@@ -133,11 +139,10 @@ export default function PrivacyPage() {
           <LegalList
             items={[
               <>
-                <strong className="text-summit">
-                  Ekzekutimi i kontratës
-                </strong>{" "}
+                <strong className="text-summit">Ekzekutimi i kontratës</strong>{" "}
                 — krijimi i llogarisë, regjistrimi në udhëtime, procesimi i
-                pagesave, komunikimi me klubin organizator.
+                pagesave të abonimit për klube, komunikimi me klubin
+                organizator.
               </>,
               <>
                 <strong className="text-summit">Interesi legjitim</strong> —
@@ -163,17 +168,17 @@ export default function PrivacyPage() {
             tuaja personale. I ndajmë vetëm me përpunuesit e mëposhtëm, në masën
             e nevojshme për funksionimin e shërbimit:
           </p>
-          <div className="overflow-x-auto border-2 border-forest">
+          <div className="border-forest overflow-x-auto border-2">
             <table className="w-full min-w-[480px] border-collapse text-left text-sm">
               <thead>
                 <tr className="bg-forest">
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
+                  <th className="text-sage px-3 py-2.5 text-xs font-bold tracking-[0.1em] uppercase">
                     Shërbimi
                   </th>
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
+                  <th className="text-sage px-3 py-2.5 text-xs font-bold tracking-[0.1em] uppercase">
                     Qëllimi
                   </th>
-                  <th className="px-3 py-2.5 text-xs font-bold tracking-[0.1em] text-sage uppercase">
+                  <th className="text-sage px-3 py-2.5 text-xs font-bold tracking-[0.1em] uppercase">
                     Rajoni
                   </th>
                 </tr>
@@ -182,13 +187,13 @@ export default function PrivacyPage() {
                 {PROCESSORS.map((p) => (
                   <tr
                     key={p.name}
-                    className="border-t-2 border-forest/40 align-top"
+                    className="border-forest/40 border-t-2 align-top"
                   >
-                    <td className="px-3 py-2.5 font-bold text-summit">
+                    <td className="text-summit px-3 py-2.5 font-bold">
                       {p.name}
                     </td>
-                    <td className="px-3 py-2.5 text-summit/70">{p.purpose}</td>
-                    <td className="px-3 py-2.5 text-summit/70">
+                    <td className="text-summit/70 px-3 py-2.5">{p.purpose}</td>
+                    <td className="text-summit/70 px-3 py-2.5">
                       {p.eu ? (
                         <span className="text-sage">{p.region}</span>
                       ) : (
@@ -217,7 +222,9 @@ export default function PrivacyPage() {
                 gjithë kohëzgjatjes së llogarisë tuaj.
               </>,
               <>
-                <strong className="text-summit">Pas fshirjes së llogarisë</strong>{" "}
+                <strong className="text-summit">
+                  Pas fshirjes së llogarisë
+                </strong>{" "}
                 — 30 ditë periudhë rikthimi, pastaj fshirje e plotë.
               </>,
               <>
@@ -276,12 +283,14 @@ export default function PrivacyPage() {
           />
           <p>
             Për të ushtruar këto të drejta, shkruani në{" "}
-            <LegalLink href="mailto:hello@hikeit.app">hello@hikeit.app</LegalLink>
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>
             . Ne përgjigjemi brenda 30 ditëve. Llogarinë mund ta fshini edhe
             vetë në çdo kohë nga{" "}
             <Link
               href="/dashboard/profile"
-              className="font-bold text-moss underline underline-offset-4 transition-colors hover:text-summit"
+              className="text-moss hover:text-summit font-bold underline underline-offset-4 transition-colors"
             >
               profili juaj
             </Link>
@@ -302,14 +311,19 @@ export default function PrivacyPage() {
               </>,
               <>
                 <strong className="text-summit">Fjalëkalimet</strong> ruhen të
-                hash-uara me algoritmin <code className="text-moss">scrypt</code>{" "}
-                me salt — asnjëherë në tekst të thjeshtë. As ne nuk mund t&apos;i
-                lexojmë.
+                hash-uara me algoritmin{" "}
+                <code className="text-moss">scrypt</code> me salt — asnjëherë në
+                tekst të thjeshtë. As ne nuk mund t&apos;i lexojmë.
               </>,
               <>
-                <strong className="text-summit">Pagesat</strong> procesohen nga
-                Stripe (PCI DSS Level 1). Ne nuk ruajmë asnjë të dhënë të kartës
-                bankare në sistemet tona.
+                <strong className="text-summit">
+                  Pagesat e abonimeve të klubeve
+                </strong>{" "}
+                procesohen nga Paddle, ofrues i certifikuar PCI DSS Level 1 dhe
+                Merchant of Record për këto abonime. Ne nuk ruajmë dhe nuk kemi
+                qasje në asnjë të dhënë të kartës bankare. HikeIt nuk proceson
+                pagesa për udhëtime — ato bëhen drejtpërdrejt mes klubit dhe
+                hikerit, jashtë platformës.
               </>,
               <>
                 <strong className="text-summit">EXIF stripping</strong> — të
@@ -346,7 +360,7 @@ export default function PrivacyPage() {
         </LegalSection>
 
         <LegalSection id="cookies" heading="8. Cookies">
-          <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Cookies esenciale — nuk kërkojnë konsent
           </p>
           <LegalList
@@ -359,7 +373,7 @@ export default function PrivacyPage() {
             Këto janë të domosdoshme për funksionimin e platformës dhe nuk mund
             të çaktivizohen pa e bërë shërbimin të papërdorshëm.
           </p>
-          <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Cookies analitike — kërkojnë konsent
           </p>
           <LegalList
@@ -381,9 +395,11 @@ export default function PrivacyPage() {
           </LegalCallout>
           <p>
             <strong className="text-summit">Si t&apos;i kontrolloni:</strong>{" "}
-            mund t&apos;i menaxhoni cookies nga cilësimet e shfletuesit tuaj, ose
-            të na shkruani në{" "}
-            <LegalLink href="mailto:hello@hikeit.app">hello@hikeit.app</LegalLink>{" "}
+            mund t&apos;i menaxhoni cookies nga cilësimet e shfletuesit tuaj,
+            ose të na shkruani në{" "}
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>{" "}
             për të tërhequr konsentin.
           </p>
         </LegalSection>
@@ -414,7 +430,9 @@ export default function PrivacyPage() {
           />
           <p>
             Gjithsesi, ju inkurajojmë të na kontaktoni fillimisht në{" "}
-            <LegalLink href="mailto:hello@hikeit.app">hello@hikeit.app</LegalLink>{" "}
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>{" "}
             — shumica e çështjeve zgjidhen shpejt dhe drejtpërdrejt.
           </p>
         </LegalSection>
