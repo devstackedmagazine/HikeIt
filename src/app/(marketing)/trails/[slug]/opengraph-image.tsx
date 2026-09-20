@@ -1,11 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { difficultyLabels } from "@/lib/i18n/labels";
-import {
-  OG_CONTENT_TYPE,
-  OG_SIZE,
-  ogTemplate,
-} from "@/lib/og/og-template";
+import { OG_CONTENT_TYPE, OG_SIZE, ogTemplate } from "@/lib/og/og-template";
 import { getTrailBySlug } from "@/server/queries/trails";
 
 export const alt = "Shteg në HikeIt";
@@ -19,14 +15,19 @@ export default async function Image({
 }) {
   const { slug } = await params;
   const trail = await getTrailBySlug(slug);
-  const subtitle = trail
-    ? [trail.region, difficultyLabels[trail.difficulty]]
+  // Unverified trails aren't publicly reachable — this endpoint is fetched by
+  // link-preview crawlers with no session/cookies to gate on, so an
+  // unverified trail just falls back to the generic image, same as one that
+  // doesn't exist at all.
+  const visible = trail?.verified ? trail : undefined;
+  const subtitle = visible
+    ? [visible.region, difficultyLabels[visible.difficulty]]
         .filter(Boolean)
         .join(" · ")
     : undefined;
   return new ImageResponse(
     ogTemplate({
-      title: trail?.name ?? "Shteg",
+      title: visible?.name ?? "Shteg",
       subtitle,
       eyebrow: "Shteg · HikeIt",
     }),

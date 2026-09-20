@@ -28,12 +28,7 @@ export const clubBasicInfoSchema = z.object({
     .min(50, "Të paktën 50 karaktere")
     .max(1000, "Maksimumi 1000 karaktere"),
   city: z.string().min(1, "Zgjidhni një qytet"),
-  foundedYear: z
-    .number()
-    .int()
-    .min(1900)
-    .max(currentYear)
-    .optional(),
+  foundedYear: z.number().int().min(1900).max(currentYear).optional(),
 });
 
 export const clubContactSchema = z.object({
@@ -57,6 +52,18 @@ export const inviteCodeFieldSchema = z
 export const createClubSchema = clubBasicInfoSchema
   .extend(clubContactSchema.shape)
   .extend({ inviteCode: inviteCodeFieldSchema });
+
+/** Redeeming a code from club settings, after creation — unlike the field
+ * above, a code is required here since submitting the form is the whole point. */
+export const redeemInviteCodeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, "Shkruani një kod")
+    .max(50, "Maksimumi 50 karaktere"),
+});
+
+export type RedeemInviteCodeInput = z.infer<typeof redeemInviteCodeSchema>;
 
 export type ClubBasicInfo = z.infer<typeof clubBasicInfoSchema>;
 export type ClubContact = z.infer<typeof clubContactSchema>;

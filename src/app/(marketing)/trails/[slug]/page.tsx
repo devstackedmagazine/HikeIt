@@ -56,6 +56,25 @@ export async function generateStaticParams() {
   return rows.map((r) => ({ slug: r.slug }));
 }
 
+/**
+ * Whether `userId` may see a trail that isn't verified yet — its submitter,
+ * previewing their own pending submission, or a super admin reviewing it.
+ * The same two roles `uploadTrailGpx` already trusts, so this is also what
+ * gates the GPX-upload section below, not a separate rule.
+ */
+async function isTrailManager(
+  userId: string | undefined,
+  trail: Pick<Trail, "submittedBy">,
+): Promise<boolean> {
+  if (!userId) return false;
+  if (trail.submittedBy === userId) return true;
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { role: true },
+  });
+  return user?.role === "super_admin";
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -64,6 +83,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const trail = await getTrailBySlug(slug);
   if (!trail) return { title: "Shtegu nuk u gjet" };
+
+  // Metadata is generated independently of the page body below, so an
+  // unverified trail's name/description/cover image would otherwise still
+  // leak into <title>, OG tags and search snippets even once the page itself
+  // 404s for an unauthorized visitor.
+  if (!trail.verified) {
+    const session = await getOptionalSession();
+    if (!(await isTrailManager(session?.user.id, trail))) {
+      return { title: "Shtegu nuk u gjet" };
+    }
+  }
 
   const description =
     trail.description ??
@@ -189,15 +219,11 @@ export default async function TrailDetailPage({
     ? await isTrailFavorited(session.user.id, trail.id)
     : false;
 
-  let canUploadGpx = false;
-  if (session) {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: { role: true },
-    });
-    canUploadGpx =
-      user?.role === "super_admin" || trail.submittedBy === session.user.id;
-  }
+  const canUploadGpx = await isTrailManager(session?.user.id, trail);
+
+  // Not publicly reachable until verified — only the submitter previewing
+  // their own pending trail, or a super admin reviewing it, gets past here.
+  if (!trail.verified && !canUploadGpx) notFound();
 
   const nearbyTrails = regionTrails
     .filter((t) => t.id !== trail.id)
