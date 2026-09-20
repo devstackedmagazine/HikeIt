@@ -7,7 +7,7 @@ import { requireSuperAdmin } from "@/lib/auth/helpers";
 import { cn } from "@/lib/utils/cn";
 import {
   getAdminClubs,
-  getCommissionSummary,
+  getEntitlementSummary,
   getInviteCodes,
 } from "@/server/queries/admin";
 
@@ -21,7 +21,7 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 /**
- * Super-admin panel: commission overrides per club, and invite-code
+ * Super-admin panel: trial extensions per club, and invite-code
  * management.
  *
  * `requireSuperAdmin()` 404s anyone else — the route must not confirm its own
@@ -43,13 +43,13 @@ export default async function AdminPage({
   const [clubs, codes, summary] = await Promise.all([
     getAdminClubs(),
     getInviteCodes(),
-    getCommissionSummary(),
+    getEntitlementSummary(),
   ]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <p className="mb-2 text-xs font-bold tracking-[0.15em] text-moss uppercase">
+        <p className="mb-2 text-xs font-bold tracking-[0.15em] text-forest uppercase">
           Kontroll i platformës
         </p>
         <h1 className="font-heading text-3xl font-black tracking-tight text-forest uppercase sm:text-4xl">
@@ -61,8 +61,12 @@ export default async function AdminPage({
       <div className="grid grid-cols-2 border-2 border-forest lg:grid-cols-4">
         <SummaryBox label="Klube gjithsej" value={summary.totalClubs} />
         <SummaryBox label="Në provë falas" value={summary.onTrial} accent />
-        <SummaryBox label="Me komision special" value={summary.onGrant} accent />
-        <SummaryBox label="Me 2.5% standard" value={summary.onDefault} last />
+        <SummaryBox
+          label="Me abonim"
+          value={summary.onSubscription}
+          accent
+        />
+        <SummaryBox label="Në plan falas" value={summary.onFree} last />
       </div>
 
       {/* Tabs as links so the whole panel stays a Server Component. */}
@@ -112,13 +116,13 @@ function SummaryBox({
         "border-b-2 border-forest lg:border-b-0",
       )}
     >
-      <p className="text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase">
+      <p className="text-[10px] font-bold tracking-[0.12em] text-forest/70 uppercase">
         {label}
       </p>
       <p
         className={cn(
           "font-heading mt-1 text-3xl font-black tracking-tight",
-          accent ? "text-moss" : "text-forest",
+          accent ? "text-pine" : "text-forest",
         )}
       >
         {value}

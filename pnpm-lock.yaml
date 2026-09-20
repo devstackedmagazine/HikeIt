@@ -23,6 +23,12 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.4.0
         version: 5.4.0(react-hook-form@7.79.0(react@19.2.4))
+      '@paddle/paddle-js':
+        specifier: ^1.6.5
+        version: 1.6.5
+      '@paddle/paddle-node-sdk':
+        specifier: ^3.10.0
+        version: 3.10.0
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -92,9 +98,6 @@ importers:
       resend:
         specifier: ^6.12.4
         version: 6.12.4(@react-email/render@2.0.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
-      stripe:
-        specifier: ^22.2.1
-        version: 22.2.1(@types/node@20.19.43)
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -1316,6 +1319,13 @@ packages:
   '@opentelemetry/semantic-conventions@1.41.1':
     resolution: {integrity: sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA==}
     engines: {node: '>=14'}
+
+  '@paddle/paddle-js@1.6.5':
+    resolution: {integrity: sha512-uFRvptUzYRqRlqTU5XmfcZWC9BGVYpZNdANd3giJjZbJlHesnE4gn8PyjtYpesU1ar2ZGPuJxHvrrSIV9jjdVw==}
+
+  '@paddle/paddle-node-sdk@3.10.0':
+    resolution: {integrity: sha512-njqp+L6e/2aR99EYh/Ulyu6B9sIyVERTFclGOznKmLZcy11pAwHoHyIgq1BUH1ybQH+YmJQmrrUQC/Rfg8JAAw==}
+    engines: {node: '>=20'}
 
   '@radix-ui/primitive@1.1.4':
     resolution: {integrity: sha512-7AdCK9PQyiljKoBDbN8OuctCbd/esdwZPQ8RtOE3SsyQtUpiPb+ND75q0jEhC1m1ecBI0MFNeLJvwIh9iKHRcQ==}
@@ -3219,6 +3229,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4420,15 +4431,6 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
-
-  stripe@22.2.1:
-    resolution: {integrity: sha512-ULAtq25USBEx3yeN5zimEkfYVFETVMP5om25Ryr8ol11P62imaCZLBIEW78T7zm7Wg3wnZi+80S72yf3LCpNhw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@types/node': '>=18'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
 
   strnum@2.4.0:
     resolution: {integrity: sha512-sHrVyWWdq28RbhjuJdZsA1SnGRJV6NiXbk6AXBxDOsgAcA+lmpUZCYjOdLBxkXMwis6RRe7dlZt4VlIWFVzkmg==}
@@ -5695,6 +5697,10 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.41.1
 
   '@opentelemetry/semantic-conventions@1.41.1': {}
+
+  '@paddle/paddle-js@1.6.5': {}
+
+  '@paddle/paddle-node-sdk@3.10.0': {}
 
   '@radix-ui/primitive@1.1.4': {}
 
@@ -8700,10 +8706,6 @@ snapshots:
   strip-bom@3.0.0: {}
 
   strip-json-comments@3.1.1: {}
-
-  stripe@22.2.1(@types/node@20.19.43):
-    optionalDependencies:
-      '@types/node': 20.19.43
 
   strnum@2.4.0:
     dependencies:

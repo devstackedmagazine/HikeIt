@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Resend } from "resend";
 
 import { env } from "@/config/env";
+import { captureError } from "@/lib/sentry";
 
 /**
  * Resend client, instantiated lazily so the app still boots in environments
@@ -51,6 +52,15 @@ export async function sendEmail({
   });
 
   if (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
+    const failure = new Error(`Failed to send email: ${error.message}`);
+    // Better Auth swallows throws from its `sendVerificationEmail` /
+    // `sendResetPassword` hooks (it logs them and still returns 200), so a
+    // broken Resend key looks like a successful signup that never arrives.
+    // Report here so the failure is visible instead of dying in the logs.
+    captureError(failure, {
+      action: "email.send",
+      extra: { to, from, subject, resendError: error.name },
+    });
+    throw failure;
   }
 }

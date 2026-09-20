@@ -6,7 +6,14 @@ import { useQueryStates } from "nuqs";
 import { clubsParsers } from "@/lib/search-params/clubs";
 import { cn } from "@/lib/utils/cn";
 
-const CITIES = ["Prishtinë", "Pejë", "Prizren", "Gjakovë", "Gjilan", "Mitrovicë"];
+const CITIES = [
+  "Prishtinë",
+  "Pejë",
+  "Prizren",
+  "Gjakovë",
+  "Gjilan",
+  "Mitrovicë",
+];
 
 /** Prominent white search box for the light header. */
 export function ClubSearch() {
@@ -16,7 +23,7 @@ export function ClubSearch() {
   });
 
   return (
-    <div className="flex h-16 w-full max-w-[500px] items-center gap-2.5 border border-forest/20 bg-summit px-3.5 focus-within:border-forest/50">
+    <div className="border-forest/60 bg-summit focus-within:border-forest flex h-16 w-full max-w-[500px] items-center gap-2.5 border px-3.5">
       <input
         type="search"
         aria-label="Kërko klubet"
@@ -25,9 +32,9 @@ export function ClubSearch() {
         onChange={(e) =>
           setFilters({ search: e.target.value, page: 1 }, { throttleMs: 300 })
         }
-        className="min-w-0 flex-1 bg-transparent text-[13px] text-forest placeholder:text-forest/35 focus:outline-none"
+        className="text-forest placeholder:text-forest/35 min-w-0 flex-1 bg-transparent text-[13px] focus:outline-none"
       />
-      <Search className="size-[18px] shrink-0 text-forest/40" />
+      <Search className="text-forest/40 size-[18px] shrink-0" />
     </div>
   );
 }
@@ -74,8 +81,8 @@ function CityTab({
       className={cn(
         "flex h-8 shrink-0 items-center px-4 text-[11px] whitespace-nowrap uppercase transition-colors",
         active
-          ? "border border-moss/50 bg-moss/25 font-bold tracking-[0.08em] text-moss"
-          : "font-semibold tracking-[0.06em] text-summit/45 hover:text-summit/80",
+          ? "border-moss/50 bg-moss/25 text-moss border font-bold tracking-[0.08em]"
+          : "text-summit/45 hover:text-summit/80 font-semibold tracking-[0.06em]",
       )}
     >
       {label}

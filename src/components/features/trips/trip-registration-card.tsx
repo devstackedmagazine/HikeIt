@@ -4,22 +4,13 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { formatRatePercent } from "@/lib/commission";
 import { cn } from "@/lib/utils/cn";
 import {
   cancelMyRegistration,
   registerForTrip,
 } from "@/server/actions/trip-registrations";
-
-import { StripeRedirectOverlay } from "./stripe-redirect-overlay";
-
-/** How often we re-check the DB while a payment is confirming. */
-const POLL_INTERVAL_MS = 3000;
-
-const STRIPE_PCT = 0.014;
-const STRIPE_FIXED = 0.25;
 
 export interface TripRegistrationCardProps {
   tripId: string;
@@ -29,23 +20,7 @@ export interface TripRegistrationCardProps {
   priceEur: string;
   confirmedCount: number;
   maxParticipants: number | null;
-  /**
-   * The club's resolved HikeIt commission rate (0 during a free trial or a
-   * granted 0% period). Resolved server-side so this breakdown always matches
-   * what registration actually charges.
-   */
-  commissionRate: number;
-  registration: {
-    id: string;
-    status: string;
-    paymentStatus: string;
-    isReregistration: boolean;
-  } | null;
-  /** True when Stripe Checkout redirected back with `?payment=success` —
-   * purely informational. The webhook, not this flag, confirms payment; if
-   * the DB still shows `pending` we tell the hiker it's processing, never
-   * that they're registered. */
-  returnedFromCheckout?: boolean;
+  registration: { id: string; status: string } | null;
 }
 
 export function TripRegistrationCard({
@@ -56,35 +31,19 @@ export function TripRegistrationCard({
   priceEur,
   confirmedCount,
   maxParticipants,
-  commissionRate,
   registration,
-  returnedFromCheckout = false,
 }: TripRegistrationCardProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redirecting, setRedirecting] = useState(false);
   const [acceptedWaiver, setAcceptedWaiver] = useState(false);
 
   const price = Number(priceEur);
   const free = price === 0;
-  // Only "confirmed"/"waitlisted" count as registered — a "pending" row means
-  // payment hasn't been confirmed by the webhook yet, and must never render
-  // as success regardless of what the client thinks happened at Checkout.
   const isRegistered =
     registration !== null &&
     (registration.status === "confirmed" ||
       registration.status === "waitlisted");
-  // Gated on `returnedFromCheckout` (the `?payment=success` redirect) too — a
-  // `pending`/`pending` row alone isn't enough, since that's also what a
-  // hiker sees if they abandon or cancel Checkout, or simply revisit the page
-  // later without coming back through Stripe. Without this gate the card
-  // polls forever for a webhook that's never coming.
-  const isPaymentProcessing =
-    registration !== null &&
-    registration.status === "pending" &&
-    registration.paymentStatus === "pending" &&
-    returnedFromCheckout;
   const isFull = maxParticipants !== null && confirmedCount >= maxParticipants;
   const remaining =
     maxParticipants !== null
@@ -95,21 +54,6 @@ export function TripRegistrationCard({
       ? Math.min(100, Math.round((confirmedCount / maxParticipants) * 100))
       : 0;
 
-  // Rough hiker-facing breakdown of who takes what from the price. At a 0%
-  // rate there is no HikeIt fee to name — promising one that won't be charged
-  // would be simply untrue.
-  const platformFee = price * commissionRate;
-  const stripeFee = price * STRIPE_PCT + STRIPE_FIXED;
-
-  // While a payment is confirming, poll the DB every few seconds so the card
-  // flips to "REGJISTRUAR ✓" the moment the webhook lands — no manual refresh,
-  // no waiting on a club approval step (payment = registered, Option A).
-  useEffect(() => {
-    if (!isPaymentProcessing) return;
-    const id = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [isPaymentProcessing, router]);
-
   async function register() {
     setLoading(true);
     setError(null);
@@ -119,16 +63,6 @@ export function TripRegistrationCard({
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
-    // Paid trips: full-page, top-level redirect to Stripe's hosted Checkout.
-    // Swap the whole page for the branded transition overlay first so the
-    // handoff feels intentional. The registration stays "pending" until the
-    // webhook confirms payment — never mark it confirmed from the client.
-    if (result.type === "paid" && result.checkoutUrl) {
-      setRedirecting(true);
-      window.location.href = result.checkoutUrl;
-      return;
-    }
-    // Free trips are confirmed immediately.
     setLoading(false);
     router.refresh();
   }
@@ -151,14 +85,12 @@ export function TripRegistrationCard({
   const primaryClass =
     "border-moss/50 bg-moss/20 text-moss hover:border-moss/70 hover:bg-moss/30";
 
-  if (redirecting) return <StripeRedirectOverlay />;
-
   return (
-    <div className="min-w-0 border border-summit/12 bg-summit/[0.03] p-4 sm:p-[18px]">
-      <p className="mb-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+    <div className="border-summit/12 bg-summit/[0.03] min-w-0 border p-4 sm:p-[18px]">
+      <p className="text-summit/30 mb-1 text-[9px] font-semibold tracking-[0.12em] uppercase">
         Çmimi per person
       </p>
-      <p className="font-heading mb-3.5 text-[36px] leading-none font-extrabold tracking-[-0.03em] text-summit">
+      <p className="font-heading text-summit mb-3.5 text-[36px] leading-none font-extrabold tracking-[-0.03em]">
         {free ? (
           <span className="text-moss uppercase">Falas</span>
         ) : (
@@ -169,24 +101,22 @@ export function TripRegistrationCard({
       {maxParticipants !== null ? (
         <>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold tracking-[0.04em] text-summit/45 uppercase">
+            <span className="text-summit/45 text-[10px] font-semibold tracking-[0.04em] uppercase">
               {remaining}/{maxParticipants} Vende të mbetura
             </span>
-            <span className="text-[10px] font-bold text-summit/35">{pct}%</span>
+            <span className="text-summit/35 text-[10px] font-bold">{pct}%</span>
           </div>
-          <div className="my-2 h-1 w-full bg-summit/[0.08]">
-            <div className="h-full bg-moss" style={{ width: `${pct}%` }} />
+          <div className="bg-summit/[0.08] my-2 h-1 w-full">
+            <div className="bg-moss h-full" style={{ width: `${pct}%` }} />
           </div>
         </>
       ) : null}
 
-      {/* Fee breakdown for paid trips (not while paying). */}
-      {!free && !isRegistered && !isPast ? (
-        <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words text-summit/25 uppercase">
-          Stripe merr ~€{stripeFee.toFixed(2)}
-          {commissionRate > 0
-            ? ` · HikeIt €${platformFee.toFixed(2)} (${formatRatePercent(commissionRate)})`
-            : ""}
+      {/* HikeIt does not process trip money — say so plainly, so nobody
+          expects to be charged here and nobody forgets to pay the club. */}
+      {!free && !isPast ? (
+        <p className="text-summit/25 mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words uppercase">
+          Pagesa bëhet direkt te klubi
         </p>
       ) : null}
 
@@ -200,45 +130,26 @@ export function TripRegistrationCard({
             href={`/login?redirect=/trips/${slug}`}
             className={cn(buttonClass, primaryClass)}
           >
-            {free ? "Regjistrohu falas →" : `Regjistrohu — €${price}`}
+            {free ? "Regjistrohu falas →" : "Regjistrohu →"}
           </Link>
         ) : isRegistered ? (
           <div className="space-y-2">
-            <span className="flex items-center justify-center gap-2 border border-moss/40 bg-moss/15 py-3 text-[13px] font-bold text-moss uppercase">
+            <span className="border-moss/40 bg-moss/15 text-moss flex items-center justify-center gap-2 border py-3 text-[13px] font-bold uppercase">
               <CheckCircle2 className="size-4" />
               {registration?.status === "waitlisted"
                 ? "Në listën e pritjes"
                 : "Regjistruar ✓"}
             </span>
-            {registration?.isReregistration ? (
-              <p className="text-center text-[10px] tracking-[0.04em] text-summit/35 uppercase">
-                Për anulim kontaktoni klubin direkt.
-              </p>
-            ) : (
-              <CancelConfirmDialog
-                priceLabel={`€${price}`}
-                isPaid={!free}
-                loading={loading}
-                onConfirm={cancel}
-              />
-            )}
-            {!free && !registration?.isReregistration ? (
-              <p className="text-center text-[9px] leading-relaxed tracking-[0.02em] text-summit/30 uppercase">
-                Rimbursim i plotë nëse anulohet 24 orë para nisjes.
+            <CancelConfirmDialog
+              isPaid={!free}
+              loading={loading}
+              onConfirm={cancel}
+            />
+            {!free ? (
+              <p className="text-summit/30 text-center text-[9px] leading-relaxed tracking-[0.02em] uppercase">
+                Çmimin e arkëton klubi direkt.
               </p>
             ) : null}
-          </div>
-        ) : isPaymentProcessing ? (
-          <div className="space-y-2">
-            <span className="flex items-center justify-center gap-2 border border-moss/40 bg-moss/15 py-3 text-[12px] font-bold text-moss uppercase">
-              <Loader2 className="size-4 animate-spin" />
-              Pagesa po konfirmohet…
-            </span>
-            <p className="text-center text-[10px] tracking-[0.02em] text-summit/35 uppercase">
-              {returnedFromCheckout
-                ? "U kthyet nga Stripe — konfirmohet automatikisht."
-                : "Do të konfirmohet automatikisht."}
-            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -249,20 +160,20 @@ export function TripRegistrationCard({
                 type="checkbox"
                 checked={acceptedWaiver}
                 onChange={(e) => setAcceptedWaiver(e.target.checked)}
-                className="mt-0.5 size-4 shrink-0 appearance-none border-2 border-summit/30 bg-transparent transition-colors checked:border-moss checked:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moss"
+                className="border-summit/40 checked:border-moss checked:bg-moss focus-visible:outline-moss mt-0.5 size-4 shrink-0 appearance-none border-2 bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               />
-              <span className="text-[10px] leading-[1.5] text-summit/45">
+              <span className="text-summit/45 text-[10px] leading-[1.5]">
                 Kuptoj që hiking ka rreziqe të qenësishme. Lexova dhe pranoj{" "}
                 <Link
                   href="/terms"
-                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                  className="text-moss hover:text-summit font-bold underline underline-offset-2"
                 >
                   Kushtet e Shërbimit
                 </Link>{" "}
                 dhe{" "}
                 <Link
                   href="/privacy"
-                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                  className="text-moss hover:text-summit font-bold underline underline-offset-2"
                 >
                   Politikën e Privatësisë
                 </Link>
@@ -280,19 +191,19 @@ export function TripRegistrationCard({
                 ? "Lista e pritjes →"
                 : free
                   ? "Regjistrohu falas →"
-                  : `Regjistrohu — €${price}`}
+                  : "Regjistrohu →"}
             </button>
           </div>
         )}
       </div>
 
       {error ? (
-        <p className="mt-2 text-[11px] text-danger" role="alert">
+        <p className="text-danger mt-2 text-[11px]" role="alert">
           {error}
         </p>
       ) : (
-        <p className="mt-2.5 text-center text-[10px] tracking-[0.04em] text-summit/25 uppercase">
-          Anulimi falas deri 24 ore para nisjes.
+        <p className="text-summit/25 mt-2.5 text-center text-[10px] tracking-[0.04em] uppercase">
+          Mund ta anuloni në çdo kohë para nisjes.
         </p>
       )}
     </div>
@@ -307,12 +218,10 @@ export function TripRegistrationCard({
  * club admin's removal dialog.
  */
 function CancelConfirmDialog({
-  priceLabel,
   isPaid,
   loading,
   onConfirm,
 }: {
-  priceLabel: string;
   isPaid: boolean;
   loading: boolean;
   onConfirm: () => void | Promise<void>;
@@ -331,7 +240,7 @@ function CancelConfirmDialog({
           <button
             type="button"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 border border-summit/15 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/45 uppercase transition-colors hover:text-summit disabled:opacity-50"
+            className="border-summit/40 text-summit/45 hover:text-summit flex w-full items-center justify-center gap-2 border py-2.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
           />
         }
       >
@@ -339,20 +248,20 @@ function CancelConfirmDialog({
         Anulo regjistrimin
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 border-forest bg-abyss p-6 text-summit outline-none sm:max-w-md">
-          <AlertDialog.Title className="font-heading text-[16px] font-extrabold tracking-[0.04em] text-summit uppercase">
+        <AlertDialog.Backdrop className="bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 z-50" />
+        <AlertDialog.Popup className="border-forest bg-abyss text-summit fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 p-6 outline-none sm:max-w-md">
+          <AlertDialog.Title className="font-heading text-summit text-[16px] font-extrabold tracking-[0.04em] uppercase">
             A jeni i sigurt?
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-3 space-y-2 text-[13px] leading-relaxed text-summit/70">
+          <AlertDialog.Description className="text-summit/70 mt-3 space-y-2 text-[13px] leading-relaxed">
             <p>
-              Nëse anuloni regjistrimin, nuk do të mund të regjistroheni
-              përsëri në këtë udhëtim.
+              Vendi juaj lirohet dhe mund t&apos;i kalojë dikujt nga lista e
+              pritjes.
             </p>
             {isPaid ? (
               <p>
-                Pagesa juaj prej {priceLabel}{" "}do t&apos;ju rimbursohet plotësisht
-                nëse anulohet 24 orë para nisjes.
+                Nëse i keni paguar tashmë klubit, rimbursimi merret vesh
+                direkt me ta.
               </p>
             ) : null}
           </AlertDialog.Description>
@@ -362,7 +271,7 @@ function CancelConfirmDialog({
                 <button
                   type="button"
                   disabled={loading}
-                  className="border-2 border-forest bg-transparent px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-forest disabled:opacity-50"
+                  className="border-forest font-heading text-summit hover:bg-forest border-2 bg-transparent px-4 py-2 text-[12px] font-bold tracking-[0.04em] uppercase transition-colors disabled:opacity-50"
                 />
               }
             >
@@ -372,7 +281,7 @@ function CancelConfirmDialog({
               type="button"
               onClick={confirm}
               disabled={loading}
-              className="flex items-center gap-2 border-2 border-danger bg-danger px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
+              className="border-danger bg-danger font-heading text-summit flex items-center gap-2 border-2 px-4 py-2 text-[12px] font-bold tracking-[0.04em] uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
               Anulo regjistrimin

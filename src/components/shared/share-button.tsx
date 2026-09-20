@@ -68,15 +68,15 @@ export function ShareButton({ title, className }: ShareButtonProps) {
         className={cn(
           "flex items-center justify-center border transition-colors",
           copied
-            ? "border-moss/50 text-moss"
-            : "border-summit/15 bg-summit/[0.05] text-summit/50 hover:text-summit",
+            ? "border-moss/60 text-moss"
+            : "border-summit/40 bg-summit/[0.05] text-summit/50 hover:text-summit",
           className,
         )}
       >
         {copied ? <Check className="size-4" /> : <Share2 className="size-4" />}
       </button>
       {copied ? (
-        <span className="text-[10px] font-bold tracking-[0.04em] text-moss uppercase">
+        <span className="text-moss text-[10px] font-bold tracking-[0.04em] uppercase">
           LIDHJA U KOPJUA
         </span>
       ) : null}

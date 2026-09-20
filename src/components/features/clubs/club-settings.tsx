@@ -4,7 +4,6 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { ClubPaymentsSection } from "@/components/features/billing/club-payments-section";
 import { ImageUploader } from "@/components/features/images/image-uploader";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { ResolvedCommission } from "@/lib/commission";
 import type { Organization } from "@/lib/db/schema";
 import { CLUB_CITIES } from "@/lib/validations/club";
 import { deleteClub, setClubImages, updateClub } from "@/server/actions/clubs";
@@ -33,15 +31,9 @@ import { deleteClub, setClubImages, updateClub } from "@/server/actions/clubs";
 export function ClubSettings({
   club,
   canDelete,
-  commission,
 }: {
   club: Organization;
   canDelete: boolean;
-  /**
-   * Resolved on the server so the rate shown here is computed at request time
-   * with a single `now`, rather than drifting per client clock.
-   */
-  commission: ResolvedCommission;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -187,12 +179,6 @@ export function ClubSettings({
           </div>
         </CardContent>
       </Card>
-
-      <ClubPaymentsSection
-        organizationId={club.id}
-        status={club.stripeAccountStatus}
-        commission={commission}
-      />
 
       <Card>
         <CardHeader>

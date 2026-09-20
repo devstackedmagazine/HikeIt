@@ -4,13 +4,12 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { formatRatePercent } from "@/lib/commission";
 import { cn } from "@/lib/utils/cn";
 import { formatTripDate } from "@/lib/utils/datetime";
 import {
   createInviteCode,
   toggleInviteCode,
-} from "@/server/actions/admin-commission";
+} from "@/server/actions/admin-trial";
 import type { InviteCodeRow, InviteCodeStatus } from "@/server/queries/admin";
 
 /** Characters used for generated codes — no 0/O/1/I, which get misread. */
@@ -52,8 +51,8 @@ export function AdminInviteCodes({ codes }: { codes: InviteCodeRow[] }) {
 function CreateCodeForm() {
   const router = useRouter();
   const [code, setCode] = useState("");
-  const [ratePercent, setRatePercent] = useState("0");
-  const [durationMonths, setDurationMonths] = useState("");
+  const [trialMonths, setTrialMonths] = useState("3");
+  const [paddleDiscountId, setPaddleDiscountId] = useState("");
   const [maxUses, setMaxUses] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [saving, setSaving] = useState(false);
@@ -64,19 +63,19 @@ function CreateCodeForm() {
     setError(null);
     setSuccess(null);
 
-    const parsedRate = Number(ratePercent);
-    if (!Number.isFinite(parsedRate)) {
-      setError("Norma duhet të jetë numër.");
+    const parsedMonths = Number(trialMonths);
+    if (!Number.isInteger(parsedMonths) || parsedMonths < 1) {
+      setError("Muajt duhet të jenë numër i plotë.");
       return;
     }
 
     setSaving(true);
     const result = await createInviteCode({
       code,
-      ratePercent: parsedRate,
+      trialMonths: parsedMonths,
+      paddleDiscountId: paddleDiscountId.trim() || undefined,
       // Empty means "no limit" for each of these, which the schema and DB
       // both represent as NULL.
-      durationMonths: durationMonths ? Number(durationMonths) : null,
       maxUses: maxUses ? Number(maxUses) : null,
       expiresAt: expiresAt ? new Date(`${expiresAt}T23:59:59`).toISOString() : null,
     });
@@ -88,8 +87,8 @@ function CreateCodeForm() {
     }
     setSuccess(`Kodi ${code.toUpperCase()} u krijua.`);
     setCode("");
-    setRatePercent("0");
-    setDurationMonths("");
+    setTrialMonths("3");
+    setPaddleDiscountId("");
     setMaxUses("");
     setExpiresAt("");
     router.refresh();
@@ -124,27 +123,33 @@ function CreateCodeForm() {
             </div>
           </Field>
 
-          <Field label="Norma e komisionit (%)">
-            <input
-              type="number"
-              min={0}
-              max={2.5}
-              step={0.1}
-              value={ratePercent}
-              onChange={(e) => setRatePercent(e.target.value)}
-              className="w-full border-2 border-forest bg-summit px-3 py-2.5 text-[14px] font-bold text-forest outline-none focus-visible:border-moss"
-            />
-          </Field>
-
-          <Field label="Kohëzgjatja (muaj)">
+          <Field label="Muaj provë">
             <input
               type="number"
               min={1}
-              value={durationMonths}
-              onChange={(e) => setDurationMonths(e.target.value)}
-              placeholder="Bosh = përgjithmonë"
+              max={120}
+              step={1}
+              value={trialMonths}
+              onChange={(e) => setTrialMonths(e.target.value)}
               className="w-full border-2 border-forest bg-summit px-3 py-2.5 text-[14px] font-bold text-forest outline-none focus-visible:border-moss"
             />
+            <p className="mt-1.5 text-[11px] text-forest/50">
+              Qasje e plotë Pro, në vend të provës standarde 3-mujore.
+            </p>
+          </Field>
+
+          <Field label="Paddle discount ID (opsional)">
+            <input
+              type="text"
+              value={paddleDiscountId}
+              onChange={(e) => setPaddleDiscountId(e.target.value)}
+              placeholder="dsc_..."
+              className="w-full border-2 border-forest bg-summit px-3 py-2.5 text-[14px] font-bold text-forest outline-none focus-visible:border-moss"
+            />
+            <p className="mt-1.5 text-[11px] text-forest/50">
+              Zbritja aplikohet në Paddle nëse klubi abonohet. Bosh = vetëm
+              provë e zgjatur.
+            </p>
           </Field>
 
           <Field label="Përdorime maksimale">
@@ -206,8 +211,8 @@ function CodesTable({ codes }: { codes: InviteCodeRow[] }) {
         <thead>
           <tr className="bg-forest text-summit">
             <Th>Kodi</Th>
-            <Th align="right">Norma</Th>
-            <Th>Kohëzgjatja</Th>
+            <Th align="right">Muaj provë</Th>
+            <Th>Zbritje Paddle</Th>
             <Th align="right">Përdorime</Th>
             <Th>Skadon</Th>
             <Th>Statusi</Th>
@@ -243,12 +248,18 @@ function CodeRow({ code }: { code: InviteCodeRow }) {
         </span>
       </Td>
       <Td align="right">
-        <span className="font-heading text-[15px] font-black text-moss">
-          {formatRatePercent(Number(code.commissionRate))}
+        <span className="font-heading text-[15px] font-black text-sage">
+          {code.trialMonths}
         </span>
       </Td>
       <Td>
-        {code.durationMonths ? `${code.durationMonths} muaj` : "Përgjithmonë"}
+        {code.paddleDiscountId ? (
+          <span className="font-mono text-[11px] text-forest/70">
+            {code.paddleDiscountId}
+          </span>
+        ) : (
+          "—"
+        )}
       </Td>
       <Td align="right">
         {code.usedCount} / {code.maxUses ?? "∞"}

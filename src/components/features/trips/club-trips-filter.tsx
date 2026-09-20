@@ -22,7 +22,7 @@ export function ClubTripsFilter() {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] font-semibold tracking-[0.1em] text-forest/40 uppercase">
+      <span className="text-forest/40 text-[10px] font-semibold tracking-[0.1em] uppercase">
         Filtro:
       </span>
       <div className="relative">
@@ -30,7 +30,7 @@ export function ClubTripsFilter() {
           aria-label="Filtro sipas statusit"
           value={filters.status}
           onChange={(e) => setFilters({ status: e.target.value, page: 1 })}
-          className="h-8 appearance-none border border-forest/20 bg-summit pr-7 pl-3 text-[11px] font-semibold text-forest uppercase focus:border-forest/50 focus:outline-none"
+          className="border-forest/60 bg-summit text-forest focus:border-forest h-8 appearance-none border pr-7 pl-3 text-[11px] font-semibold uppercase focus:outline-none"
         >
           {STATUS_OPTIONS.map(([value, label]) => (
             <option key={value} value={value}>
@@ -38,7 +38,7 @@ export function ClubTripsFilter() {
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-forest/40" />
+        <ChevronDown className="text-forest/40 pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2" />
       </div>
     </div>
   );

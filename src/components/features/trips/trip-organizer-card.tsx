@@ -3,11 +3,11 @@ import Link from "next/link";
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-summit/[0.06] py-2 last:border-b-0">
-      <span className="text-[10px] font-medium text-summit/35 uppercase">
+    <div className="border-summit/[0.06] flex items-center justify-between border-b py-2 last:border-b-0">
+      <span className="text-summit/35 text-[10px] font-medium uppercase">
         {label}
       </span>
-      <span className="text-[11px] font-bold text-summit/70">{value}</span>
+      <span className="text-summit/70 text-[11px] font-bold">{value}</span>
     </div>
   );
 }
@@ -24,17 +24,17 @@ export function TripOrganizerCard({
   tripCount: number;
 }) {
   return (
-    <div className="min-w-0 border border-summit/[0.08] bg-summit/[0.02] p-4">
-      <p className="mb-3 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+    <div className="border-summit/[0.08] bg-summit/[0.02] min-w-0 border p-4">
+      <p className="text-summit/30 mb-3 text-[9px] font-semibold tracking-[0.12em] uppercase">
         Organizatori
       </p>
 
       <div className="flex items-center gap-2.5">
         {/* Square (not circular) club icon — unique to this card. */}
-        <span className="flex size-9 shrink-0 items-center justify-center border border-moss/20 bg-moss/[0.12] text-moss">
+        <span className="border-moss/20 bg-moss/[0.12] text-moss flex size-9 shrink-0 items-center justify-center border">
           <Mountain className="size-[18px]" />
         </span>
-        <span className="font-heading text-[14px] leading-[1.1] font-extrabold tracking-[-0.01em] text-summit uppercase">
+        <span className="font-heading text-summit text-[14px] leading-[1.1] font-extrabold tracking-[-0.01em] uppercase">
           {clubName}
         </span>
       </div>
@@ -47,7 +47,7 @@ export function TripOrganizerCard({
 
       <Link
         href={`/clubs/${clubSlug}`}
-        className="mt-3 block border border-summit/12 py-2 text-center text-[10px] font-semibold tracking-[0.08em] text-summit/45 uppercase transition-colors hover:border-moss/30 hover:text-moss"
+        className="border-summit/40 text-summit/45 hover:border-moss hover:text-moss mt-3 block border py-2 text-center text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors"
       >
         Shiko Klubin →
       </Link>

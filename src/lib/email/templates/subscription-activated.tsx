@@ -14,8 +14,8 @@ export function SubscriptionActivated({
       <Heading style={heading}>Abonimi juaj HikeIt {planName} është aktiv!</Heading>
       <Text style={text}>
         Faleminderit! Klubi juaj tani ka qasje në të gjitha veçoritë{" "}
-        {planName}: anëtarë të pakufizuar, udhëtime të pakufizuara, pagesa online
-        dhe dashboard analitike.
+        {planName}: anëtarë të pakufizuar, udhëtime të pakufizuara dhe
+        dashboard analitike.
       </Text>
       <Button href={dashboardUrl} style={button}>
         Shko te Paneli

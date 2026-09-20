@@ -49,14 +49,14 @@ const TRIP_ACCENTS = ["border-l-forest", "border-l-sunset", "border-l-moss"];
 const CLUB_ICONS = [
   "bg-forest text-moss",
   "bg-moss text-abyss",
-  "bg-pine text-moss",
+  "bg-abyss text-moss",
 ];
 
 function SuggestedTrailCard({ trail }: { trail: Trail }) {
   return (
     <Link
       href={`/trails/${trail.slug}`}
-      className="overflow-hidden border border-forest/12 bg-summit"
+      className="border-forest/12 bg-summit overflow-hidden border"
     >
       <div className="relative h-[120px] overflow-hidden">
         <CloudImage
@@ -66,29 +66,29 @@ function SuggestedTrailCard({ trail }: { trail: Trail }) {
           fallback="trail"
           className="h-full w-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-forest/40 to-transparent" />
+        <div className="from-forest/40 absolute inset-0 bg-gradient-to-t to-transparent" />
       </div>
       <div className="p-2.5">
-        <h3 className="font-heading mb-1.5 text-xs font-extrabold tracking-[-0.01em] text-forest uppercase">
+        <h3 className="font-heading text-forest mb-1.5 text-xs font-extrabold tracking-[-0.01em] uppercase">
           {trail.name}
         </h3>
         <div className="flex gap-4">
           {trail.distanceKm ? (
             <div>
-              <p className="text-[8px] font-semibold tracking-[0.1em] text-forest/40 uppercase">
+              <p className="text-forest/70 text-[8px] font-semibold tracking-[0.1em] uppercase">
                 Distanca
               </p>
-              <p className="font-heading text-xs font-bold text-forest">
+              <p className="font-heading text-forest text-xs font-bold">
                 {Number(trail.distanceKm)} KM
               </p>
             </div>
           ) : null}
           {trail.elevationGainM != null ? (
             <div>
-              <p className="text-[8px] font-semibold tracking-[0.1em] text-forest/40 uppercase">
+              <p className="text-forest/70 text-[8px] font-semibold tracking-[0.1em] uppercase">
                 Lartësia
               </p>
-              <p className="font-heading text-xs font-bold text-forest">
+              <p className="font-heading text-forest text-xs font-bold">
                 {trail.elevationGainM.toLocaleString("en-US")} M
               </p>
             </div>
@@ -108,17 +108,17 @@ function DiscoverClubCard({
 }) {
   const featured = index === 1;
   return (
-    <div className="flex flex-col items-center border border-forest/12 bg-summit p-4 text-center">
+    <div className="border-forest/12 bg-summit flex flex-col items-center border p-4 text-center">
       <span
         className={`mb-2.5 flex size-12 items-center justify-center ${CLUB_ICONS[index % CLUB_ICONS.length]}`}
       >
         <Mountain className="size-6" />
       </span>
-      <h3 className="font-heading mb-1.5 text-[13px] font-extrabold tracking-[-0.01em] text-forest uppercase">
+      <h3 className="font-heading text-forest mb-1.5 text-[13px] font-extrabold tracking-[-0.01em] uppercase">
         {club.name}
       </h3>
       {club.description ? (
-        <p className="mb-3 line-clamp-2 text-[11px] leading-[1.5] text-forest/50">
+        <p className="text-forest/70 mb-3 line-clamp-2 text-[11px] leading-[1.5]">
           {club.description}
         </p>
       ) : null}
@@ -144,9 +144,9 @@ function DashboardFooter() {
     { label: "Terms of Service", href: "/terms" },
   ];
   return (
-    <footer className="mt-8 bg-abyss px-6 py-6">
+    <footer className="bg-abyss mt-8 px-6 py-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <span className="flex items-center gap-2 font-heading text-sm font-extrabold text-summit/30 uppercase">
+        <span className="font-heading text-summit/50 flex items-center gap-2 text-sm font-extrabold uppercase">
           <Image
             src="/logos/Hikeit-pfp.png"
             alt=""
@@ -161,7 +161,7 @@ function DashboardFooter() {
             <Link
               key={l.label}
               href={l.href}
-              className="text-[10px] font-medium tracking-[0.06em] text-summit/40 uppercase transition-colors hover:text-summit/70"
+              className="text-summit/50 hover:text-summit/70 text-[10px] font-medium tracking-[0.06em] uppercase transition-colors"
             >
               {l.label}
             </Link>
@@ -171,15 +171,15 @@ function DashboardFooter() {
           {[Globe, Share2].map((Icon, i) => (
             <span
               key={i}
-              className="flex size-[26px] items-center justify-center border border-summit/12 bg-summit/[0.05] text-summit/45"
+              className="border-summit/12 bg-summit/[0.05] text-summit/45 flex size-[26px] items-center justify-center border"
             >
               <Icon className="size-3.5" />
             </span>
           ))}
         </div>
       </div>
-      <p className="mt-4 border-t border-summit/[0.06] pt-3.5 text-[10px] tracking-[0.08em] text-summit/20 uppercase">
-        © 2024 HIKEIT BALKANS. FORGED IN THE PEAKS.
+      <p className="border-summit/[0.06] text-summit/50 mt-4 border-t pt-3.5 text-[10px] tracking-[0.08em] uppercase">
+        © 2026 HIKEIT BALKANS. FORGED IN THE PEAKS.
       </p>
     </footer>
   );
@@ -210,16 +210,16 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
         <section className="mb-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="bg-moss px-2 py-[3px] text-[9px] font-bold tracking-[0.08em] text-abyss uppercase">
+              <span className="bg-moss text-abyss px-2 py-[3px] text-[9px] font-bold tracking-[0.08em] uppercase">
                 Organizimet
               </span>
-              <span className="text-[11px] font-bold tracking-[0.06em] text-forest uppercase">
+              <span className="text-forest text-[11px] font-bold tracking-[0.06em] uppercase">
                 Udhëtimet Ardhshme
               </span>
             </div>
             <Link
               href="/dashboard/my-trips"
-              className="text-[10px] font-semibold tracking-[0.06em] text-moss uppercase transition-opacity hover:opacity-70"
+              className="text-pine text-[10px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-70"
             >
               Shiko të gjitha →
             </Link>
@@ -233,18 +233,18 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
                   <Link
                     key={reg.registrationId}
                     href={`/trips/${reg.trip.slug}`}
-                    className={`border border-l-4 border-forest/12 bg-summit p-3.5 ${TRIP_ACCENTS[i % TRIP_ACCENTS.length]}`}
+                    className={`border-forest/12 bg-summit border border-l-4 p-3.5 ${TRIP_ACCENTS[i % TRIP_ACCENTS.length]}`}
                   >
-                    <p className="font-heading mb-2.5 text-[13px] leading-[1.2] font-extrabold tracking-[-0.01em] text-forest uppercase">
+                    <p className="font-heading text-forest mb-2.5 text-[13px] leading-[1.2] font-extrabold tracking-[-0.01em] uppercase">
                       {reg.trip.title}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-[10px] font-medium text-forest/50 uppercase">
-                        <Calendar className="size-[11px] text-forest/40" />
+                      <span className="text-forest/50 flex items-center gap-1.5 text-[10px] font-medium uppercase">
+                        <Calendar className="text-forest/40 size-[11px]" />
                         {shortDate(reg.trip.startDatetime)}
                       </span>
                       <span
-                        className={`font-heading text-xs font-bold ${free ? "text-moss" : "text-forest"}`}
+                        className={`font-heading text-xs font-bold ${free ? "text-pine" : "text-forest"}`}
                       >
                         {free ? "FALAS" : `€${Number(reg.trip.priceEur)}`}
                       </span>
@@ -266,7 +266,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
         {/* Suggested trails */}
         {suggested.length > 0 ? (
           <section className="mb-5">
-            <h2 className="mb-3 text-[11px] font-bold tracking-[0.06em] text-forest uppercase">
+            <h2 className="text-forest mb-3 text-[11px] font-bold tracking-[0.06em] uppercase">
               Shtigjet e Sugjeruara
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -280,7 +280,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
         {/* Discover clubs */}
         {clubsResult.clubs.length > 0 ? (
           <section>
-            <h2 className="mb-3 text-[11px] font-bold tracking-[0.06em] text-forest uppercase">
+            <h2 className="text-forest mb-3 text-[11px] font-bold tracking-[0.06em] uppercase">
               Zbuloni Klubet
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -309,14 +309,17 @@ async function ClubAdminHome({
   if (!club) {
     return (
       <div className="mx-auto max-w-5xl space-y-6">
-        <h1 className="font-heading text-2xl font-extrabold text-forest uppercase">
+        <h1 className="font-heading text-forest text-2xl font-extrabold uppercase">
           Mirë se vjen, {getFirstName(name)}! 👋
         </h1>
         <EmptyState
           icon={Building2}
           title="Ende pa klub"
           description="Krijo klubin tënd për të filluar organizimin e udhëtimeve."
-          action={{ label: "Krijo klubin tënd", href: "/dashboard/club/create" }}
+          action={{
+            label: "Krijo klubin tënd",
+            href: "/dashboard/club/create",
+          }}
         />
       </div>
     );
@@ -338,20 +341,20 @@ async function ClubAdminHome({
   return (
     <div className="space-y-4">
       {/* Welcome club card */}
-      <div className="flex items-start justify-between gap-4 border border-summit/10 bg-summit/[0.04] p-5">
+      <div className="border-summit/10 bg-summit/[0.04] flex items-start justify-between gap-4 border p-5">
         <div>
-          <p className="mb-1.5 text-[10px] font-semibold tracking-[0.1em] text-summit/40 uppercase">
+          <p className="text-summit/60 mb-1.5 text-[10px] font-semibold tracking-[0.1em] uppercase">
             Mirë se vjen
           </p>
-          <h1 className="font-heading mb-2.5 text-[clamp(20px,3vw,32px)] leading-none font-extrabold tracking-[-0.02em] text-summit uppercase">
+          <h1 className="font-heading text-summit mb-2.5 text-[clamp(20px,3vw,32px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
             {club.name}
           </h1>
-          <p className="max-w-[380px] text-xs leading-[1.65] text-summit/55">
+          <p className="text-summit/70 max-w-[380px] text-xs leading-[1.65]">
             Menaxhoni ekspeditat tuaja, anëtarët dhe rritjen e komunitetit nga
-            një qendër e vetme <span className="text-moss">alpine</span>.
+            një qendër e vetme <span className="text-sage">alpine</span>.
           </p>
         </div>
-        <span className="flex size-20 shrink-0 items-center justify-center border border-summit/10 bg-abyss text-moss">
+        <span className="border-summit/10 bg-abyss text-moss flex size-20 shrink-0 items-center justify-center border">
           <Mountain className="size-9" />
         </span>
       </div>
@@ -360,25 +363,25 @@ async function ClubAdminHome({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminStat label="Anëtarë" value={stats.memberCount}>
           {growthPct > 0 ? (
-            <span className="text-[11px] font-semibold text-moss">
+            <span className="text-moss text-[11px] font-semibold">
               +{growthPct}%
             </span>
           ) : null}
         </AdminStat>
         <AdminStat label="Udhëtime aktive" value={stats.activeTrips}>
-          <PersonStanding className="size-3.5 text-summit/35" />
+          <PersonStanding className="text-summit/35 size-3.5" />
         </AdminStat>
         <AdminStat label="Të përfunduara" value={stats.completedTrips}>
-          <Check className="size-3.5 text-summit/35" />
+          <Check className="text-summit/35 size-3.5" />
         </AdminStat>
-        <div className="border border-summit/8 bg-summit/[0.04] p-4">
-          <p className="mb-1.5 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
-            Të ardhura
+        <div className="border-summit/8 bg-summit/[0.04] border p-4">
+          <p className="text-summit/60 mb-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase">
+            Të pritura
           </p>
-          <p className="font-heading text-[28px] leading-none font-extrabold text-sunset">
-            €{stats.revenue}
-            <span className="ml-1.5 text-[9px] font-semibold tracking-[0.08em] text-sunset/60 uppercase">
-              Mujor
+          <p className="font-heading text-sunset text-[28px] leading-none font-extrabold">
+            €{stats.expectedRevenue}
+            <span className="text-summit/60 ml-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase">
+              Arkëtoni vetë
             </span>
           </p>
         </div>
@@ -387,14 +390,14 @@ async function ClubAdminHome({
       {/* Two-column */}
       <div className="grid gap-4 lg:grid-cols-[1fr_240px]">
         {/* Trips table */}
-        <div className="border border-summit/8 bg-summit/[0.03]">
+        <div className="border-summit/8 bg-summit/[0.03] border">
           <div className="flex items-center justify-between px-4 py-3.5">
-            <h2 className="text-[11px] font-bold tracking-[0.08em] text-summit/50 uppercase">
+            <h2 className="text-summit/70 text-[11px] font-bold tracking-[0.08em] uppercase">
               Udhëtimet ardhshme
             </h2>
             <Link
               href={`/dashboard/club/${club.slug}/trips/create`}
-              className="border border-moss/35 bg-moss/15 px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:bg-moss/25"
+              className="border-moss bg-moss text-abyss hover:bg-sage border-2 px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
             >
               Krijo udhëtim →
             </Link>
@@ -402,7 +405,7 @@ async function ClubAdminHome({
 
           {dashboard.upcomingTrips.length > 0 ? (
             <div>
-              <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.5fr] gap-2 border-y border-summit/8 bg-summit/[0.04] px-4 py-2 text-[9px] font-semibold tracking-[0.1em] text-summit/30 uppercase">
+              <div className="border-summit/8 bg-summit/[0.04] text-summit/60 grid grid-cols-[2fr_1.5fr_1fr_1fr_0.5fr] gap-2 border-y px-4 py-2 text-[9px] font-semibold tracking-[0.1em] uppercase">
                 <span>Titulli</span>
                 <span>Data</span>
                 <span>Regj/Max</span>
@@ -412,22 +415,22 @@ async function ClubAdminHome({
               {dashboard.upcomingTrips.map(({ trip, confirmedCount }) => (
                 <div
                   key={trip.id}
-                  className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.5fr] items-center gap-2 border-b border-summit/[0.05] px-4 py-2.5"
+                  className="border-summit/[0.05] grid grid-cols-[2fr_1.5fr_1fr_1fr_0.5fr] items-center gap-2 border-b px-4 py-2.5"
                 >
-                  <span className="font-heading text-xs leading-[1.2] font-bold text-summit uppercase">
+                  <span className="font-heading text-summit text-xs leading-[1.2] font-bold uppercase">
                     {trip.title}
                   </span>
-                  <span className="text-[10px] font-medium text-summit/50 uppercase">
+                  <span className="text-summit/70 text-[10px] font-medium uppercase">
                     {formatAdminDate(trip.startDatetime)}
                   </span>
-                  <span className="text-[11px] font-semibold text-summit/60">
+                  <span className="text-summit/60 text-[11px] font-semibold">
                     {confirmedCount}/{trip.maxParticipants ?? "∞"}
                   </span>
                   <StatusDot status={trip.status} />
                   <Link
                     href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
                     aria-label="Ndrysho"
-                    className="flex justify-end text-summit/35 hover:text-moss"
+                    className="text-summit/60 hover:text-moss flex justify-end"
                   >
                     <Pencil className="size-3.5" />
                   </Link>
@@ -435,15 +438,15 @@ async function ClubAdminHome({
               ))}
             </div>
           ) : (
-            <p className="px-4 py-8 text-center text-xs text-summit/40">
+            <p className="text-summit/70 px-4 py-8 text-center text-xs">
               Asnjë udhëtim aktiv. Krijoni të parin.
             </p>
           )}
         </div>
 
         {/* Recent registrations */}
-        <div className="border border-summit/8 bg-summit/[0.03] p-3.5">
-          <p className="mb-3.5 text-[10px] font-bold tracking-[0.1em] text-summit/40 uppercase">
+        <div className="border-summit/8 bg-summit/[0.03] border p-3.5">
+          <p className="text-summit/70 mb-3.5 text-[10px] font-bold tracking-[0.1em] uppercase">
             Regjistrimet e fundit
           </p>
           {dashboard.recentRegistrations.length > 0 ? (
@@ -451,27 +454,27 @@ async function ClubAdminHome({
               {dashboard.recentRegistrations.map((reg) => (
                 <div
                   key={reg.id}
-                  className="flex items-center gap-2.5 border-b border-summit/[0.05] py-2 last:border-b-0"
+                  className="border-summit/[0.05] flex items-center gap-2.5 border-b py-2 last:border-b-0"
                 >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pine text-[10px] font-bold text-moss">
+                  <span className="bg-pine text-moss flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
                     {initials(reg.userName)}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[11px] font-bold text-summit">
+                    <p className="text-summit truncate text-[11px] font-bold">
                       {reg.userName ?? "Anëtar"}
                     </p>
-                    <p className="truncate text-[9px] text-summit/35 uppercase">
+                    <p className="text-summit/60 truncate text-[9px] uppercase">
                       {reg.tripTitle}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[9px] font-medium text-summit/30 uppercase">
+                  <span className="text-summit/60 shrink-0 text-[9px] font-medium uppercase">
                     {timeAgo(reg.registeredAt)}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="py-4 text-center text-xs text-summit/40">
+            <p className="text-summit/70 py-4 text-center text-xs">
               Ende pa regjistrime.
             </p>
           )}
@@ -491,12 +494,12 @@ function AdminStat({
   children?: ReactNode;
 }) {
   return (
-    <div className="border border-summit/8 bg-summit/[0.04] p-4">
-      <p className="mb-1.5 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+    <div className="border-summit/8 bg-summit/[0.04] border p-4">
+      <p className="text-summit/60 mb-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase">
         {label}
       </p>
       <div className="flex items-baseline gap-2">
-        <span className="font-heading text-[28px] leading-none font-extrabold text-summit">
+        <span className="font-heading text-summit text-[28px] leading-none font-extrabold">
           {value}
         </span>
         {children}

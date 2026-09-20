@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
-import { trialEndsAtFrom } from "@/lib/commission";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -15,6 +14,7 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { GenericMessage } from "@/lib/email/templates/generic-message";
+import { resolveEntitlement, trialEndsAtFrom } from "@/lib/entitlements";
 import { type CreateClubInput, createClubSchema } from "@/lib/validations/club";
 import {
   inviteCodeErrorMessages,
@@ -52,9 +52,9 @@ export interface CreateClubResult extends ActionResult {
  * Create a club. Requires an authenticated club_admin. Sets the creator as
  * owner + admin member, writes an audit log, and returns the slug to redirect.
  *
- * Every new club starts on a 3-month 0% commission trial. An optional invite
- * code can override that with a partnership rate; an invalid code is reported
- * as a warning and the club falls back to the standard trial.
+ * Every new club starts on a 3-month Pro trial. An optional invite code can
+ * extend that and attach a Paddle discount for later; an invalid code is
+ * reported as a warning and the club falls back to the standard trial.
  */
 export async function createClub(
   data: CreateClubInput,
@@ -114,18 +114,11 @@ export async function createClub(
         instagram: input.instagram || null,
         facebook: input.facebook || null,
         ownerId: session.user.id,
-        // Every club gets the 3-month 0% trial. A redeemed code sits *above*
-        // the trial in `resolveCommission`, so both can be recorded and the
-        // better rate simply wins.
-        trialEndsAt: trialEndsAtFrom(now),
-        ...(grant
-          ? {
-              commissionRate: grant.rate.toFixed(4),
-              commissionOverrideUntil: grant.until,
-              commissionOverrideReason: "invite_code" as const,
-              inviteCodeUsed: grant.code,
-            }
-          : {}),
+        // Every club gets the standard 3-month Pro trial. A redeemed code
+        // replaces that end date with its own, longer one — codes are only
+        // ever worth *more* runway, never less.
+        trialEndsAt: grant ? grant.trialEndsAt : trialEndsAtFrom(now),
+        ...(grant ? { inviteCodeUsed: grant.code } : {}),
       })
       .returning({ id: organizations.id, slug: organizations.slug });
 
@@ -143,12 +136,15 @@ export async function createClub(
       entityType: "organization",
       entityId: club.id,
       metadata: {
-        trialEndsAt: trialEndsAtFrom(now).toISOString(),
+        trialEndsAt: (grant
+          ? grant.trialEndsAt
+          : trialEndsAtFrom(now)
+        ).toISOString(),
         ...(grant
           ? {
               inviteCode: grant.code,
-              commissionRate: grant.rate,
-              commissionOverrideUntil: grant.until?.toISOString() ?? null,
+              trialMonths: grant.trialMonths,
+              paddleDiscountId: grant.paddleDiscountId,
             }
           : {}),
         ...(inviteWarning ? { inviteCodeRejected: input.inviteCode } : {}),
@@ -287,8 +283,9 @@ export async function inviteMember(
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
-  // Free tier: cap at 50 active members.
-  if (access.organization.subscriptionTier === "free") {
+  // Free tier: cap at 50 active members. Resolved, not read straight off the
+  // row — a club inside its trial is entitled to Pro and must not be capped.
+  if (resolveEntitlement(access.organization).tier === "free") {
     const [memberCount] = await db
       .select({ value: count() })
       .from(organizationMembers)

@@ -31,14 +31,6 @@ export const subscriptionTierEnum = pgEnum("subscription_tier", [
   "team",
 ]);
 
-/** Stripe Connect Express onboarding state for a club's payout account. */
-export const stripeAccountStatusEnum = pgEnum("stripe_account_status", [
-  "not_connected",
-  "pending",
-  "active",
-  "restricted",
-]);
-
 /** A member's role within a single organization. */
 export const orgMemberRoleEnum = pgEnum("org_member_role", [
   "admin",
@@ -79,7 +71,14 @@ export const weatherAlertLevelEnum = pgEnum("weather_alert_level", [
   "danger",
 ]);
 
-/** State of a single participant's registration for a trip. */
+/**
+ * State of a single participant's registration for a trip.
+ *
+ * `pending` is retained but unreachable: it only ever meant "awaiting payment
+ * checkout". Registration is free at the platform level now, so a hiker is
+ * written straight to `confirmed` or `waitlisted`. Postgres cannot remove a
+ * value from an enum, so it stays in the type and is never written.
+ */
 export const registrationStatusEnum = pgEnum("registration_status", [
   "pending",
   "confirmed",
@@ -87,15 +86,6 @@ export const registrationStatusEnum = pgEnum("registration_status", [
   "canceled",
   "attended",
   "no_show",
-]);
-
-/** Payment state of a registration. */
-export const paymentStatusEnum = pgEnum("payment_status", [
-  "pending",
-  "paid",
-  "refunded",
-  "failed",
-  "free",
 ]);
 
 /**
@@ -159,34 +149,22 @@ export const organizations = pgTable("organizations", {
   subscriptionTier: subscriptionTierEnum("subscription_tier")
     .notNull()
     .default("free"),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  stripeConnectAccountId: text("stripe_connect_account_id"),
-  // Connect Express onboarding state, kept in sync via the `account.updated`
-  // webhook. `not_connected` until the club starts onboarding.
-  stripeAccountStatus: stripeAccountStatusEnum("stripe_account_status")
-    .notNull()
-    .default("not_connected"),
-  stripeOnboardingCompletedAt: timestamp("stripe_onboarding_completed_at", {
+  paddleCustomerId: text("paddle_customer_id"),
+  paddleSubscriptionId: text("paddle_subscription_id"),
+  // Paddle's own subscription status string (active, trialing, past_due,
+  // paused, canceled). Kept verbatim rather than mapped to an enum so a new
+  // Paddle status can never fail a write.
+  paddleSubscriptionStatus: text("paddle_subscription_status"),
+  // The Paddle price the club is subscribed on — identifies tier + interval.
+  paddlePriceId: text("paddle_price_id"),
+  subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end", {
     withTimezone: true,
   }),
-  subscriptionStatus: text("subscription_status"),
-  // Commission-free trial: set to now() + 3 months at club creation. While this
-  // is in the future the club pays 0% on paid trips. See `resolveCommission`.
+  // Free trial: set to now() + 3 months at club creation, or longer if an
+  // invite code granted more. While this is in the future the club has full
+  // Pro access. Never read directly to decide what a club may do — always go
+  // through `resolveEntitlement`.
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
-  // Explicit commission override. NULL means "not overridden" — the club falls
-  // through to the trial, then to the platform default. Never read these
-  // columns directly to price a payment; always go through `resolveCommission`.
-  commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }),
-  // NULL + a non-null `commissionRate` = a permanent grant.
-  commissionOverrideUntil: timestamp("commission_override_until", {
-    withTimezone: true,
-  }),
-  commissionOverrideReason: text(
-    "commission_override_reason",
-  ).$type<CommissionOverrideReason>(),
-  // Free text, super-admin only, for why the grant exists.
-  commissionOverrideNote: text("commission_override_note"),
   inviteCodeUsed: text("invite_code_used"),
   // Guards the "trial ends in 7 days" email against re-sends across cron runs.
   trialEndingNotifiedAt: timestamp("trial_ending_notified_at", {
@@ -200,17 +178,23 @@ export const organizations = pgTable("organizations", {
     .defaultNow()
     .$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
-});
+}, (t) => [
+  // Every Paddle webhook resolves an organization by one of these before it
+  // can do anything, so both are hot lookup paths, not reporting columns.
+  // Partial: the overwhelming majority of rows are NULL (clubs that never
+  // subscribed) and indexing those buys nothing.
+  index("organizations_paddle_customer_idx")
+    .on(t.paddleCustomerId)
+    .where(sql`${t.paddleCustomerId} is not null`),
+  index("organizations_paddle_subscription_idx")
+    .on(t.paddleSubscriptionId)
+    .where(sql`${t.paddleSubscriptionId} is not null`),
+]);
 
 /**
- * Why an organization's `commissionRate` was set. Stored as text rather than a
- * pg enum so adding a future grant type doesn't need a type migration.
- */
-export type CommissionOverrideReason = "invite_code" | "super_admin";
-
-/**
- * Partnership codes redeemed at club creation to grant a non-default
- * commission rate for a period. Server-side access only — enable RLS with no
+ * Partnership codes redeemed at club creation. A code grants extra months of
+ * free Pro access and/or a Paddle discount applied if the club subscribes —
+ * either half may be absent. Server-side access only: enable RLS with no
  * policies so the Supabase anon/authenticated roles can never read them (the
  * app connects as the owner role and bypasses RLS).
  */
@@ -220,12 +204,15 @@ export const inviteCodes = pgTable("invite_codes", {
   // unique constraint is what makes lookups case-insensitive in practice.
   // `unique()` already creates the btree index redemption looks the code up by.
   code: text("code").notNull().unique(),
-  commissionRate: numeric("commission_rate", {
-    precision: 5,
-    scale: 4,
-  }).notNull(),
-  /** NULL = the granted rate never expires. */
-  durationMonths: integer("duration_months"),
+  /** Months of Pro access this code grants, replacing the standard trial. */
+  trialMonths: integer("trial_months").notNull(),
+  /**
+   * Paddle discount applied at checkout if the club subscribes. NULL = the
+   * code grants free runway only. Paddle owns the discount's own recurrence,
+   * usage and expiry rules; `maxUses`/`expiresAt` here govern redemption of
+   * the HikeIt code, not the Paddle discount.
+   */
+  paddleDiscountId: text("paddle_discount_id"),
   /** NULL = unlimited redemptions. */
   maxUses: integer("max_uses"),
   usedCount: integer("used_count").notNull().default(0),
@@ -290,6 +277,19 @@ export const trails = pgTable(
     endLat: numeric("end_lat", { precision: 10, scale: 7 }),
     endLng: numeric("end_lng", { precision: 10, scale: 7 }),
     gpxUrl: text("gpx_url"),
+    gpxTrack: jsonb("gpx_track").$type<[number, number][]>(),
+    gpxMetadata:
+      jsonb("gpx_metadata").$type<{
+        name: string;
+        distanceKm: number;
+        elevationGainM: number;
+        elevationLossM: number;
+        pointCount: number;
+      }>(),
+    gpxUploadedAt: timestamp("gpx_uploaded_at", { withTimezone: true }),
+    gpxUploadedBy: uuid("gpx_uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     // Sampled elevation profile: ordered points along the trail.
     elevationProfile:
       jsonb("elevation_profile").$type<
@@ -399,23 +399,15 @@ export const tripRegistrations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     status: registrationStatusEnum("status").notNull().default("pending"),
-    paymentStatus: paymentStatusEnum("payment_status")
-      .notNull()
-      .default("free"),
-    stripePaymentIntentId: text("stripe_payment_intent_id"),
-    stripeChargeId: text("stripe_charge_id"),
-    amountPaidEur: numeric("amount_paid_eur", { precision: 8, scale: 2 }),
-    // HikeIt's 2.5% application fee recorded per transaction, for revenue audit.
-    platformFeeEur: numeric("platform_fee_eur", { precision: 8, scale: 2 }),
     waiverSignedAt: timestamp("waiver_signed_at", { withTimezone: true }),
     notes: text("notes"),
     registeredAt: timestamp("registered_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
     canceledAt: timestamp("canceled_at", { withTimezone: true }),
-    // True for a row created by re-registering after a canceled+refunded (or
-    // free) prior registration. Once true, the hiker can't self-cancel again —
-    // they must contact the club — so this can only ever go pending → true.
+    // True for a row created after the hiker had already canceled this trip
+    // once. Recorded so a club can see churn on its roster; it no longer
+    // restricts the hiker in any way.
     isReregistration: boolean("is_reregistration").notNull().default(false),
   },
   (t) => [
@@ -427,8 +419,6 @@ export const tripRegistrations = pgTable(
       .where(sql`${t.status} != 'canceled'`),
     index("trip_registrations_trip_id_idx").on(t.tripId),
     index("trip_registrations_user_id_idx").on(t.userId),
-    // Payment webhooks look registrations up by payment intent id.
-    index("trip_registrations_payment_intent_idx").on(t.stripePaymentIntentId),
   ],
 );
 

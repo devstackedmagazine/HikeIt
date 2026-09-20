@@ -8,14 +8,19 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { ElevationChart } from "@/components/features/trails/elevation-chart";
 import { ReviewForm } from "@/components/features/trails/review-form";
 import { TrailFavoriteButton } from "@/components/features/trails/trail-favorite-button";
+import { TrailGpxSection } from "@/components/features/trails/trail-gpx-section";
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { ShareButton } from "@/components/shared/share-button";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import type { Trail } from "@/lib/db/schema";
-import { trails } from "@/lib/db/schema";
-import { featureLabels, seasonLabels, trailTypeLabels } from "@/lib/i18n/labels";
+import { trails, users } from "@/lib/db/schema";
+import {
+  featureLabels,
+  seasonLabels,
+  trailTypeLabels,
+} from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
 import { isTrailFavorited } from "@/server/queries/favorites";
 import { getTrailReviews, type TrailReview } from "@/server/queries/reviews";
@@ -89,13 +94,14 @@ function trailJsonLd(trail: Trail) {
     "@type": "Place",
     name: trail.name,
     description: trail.description ?? undefined,
-    geo: trail.startLat && trail.startLng
-      ? {
-          "@type": "GeoCoordinates",
-          latitude: Number(trail.startLat),
-          longitude: Number(trail.startLng),
-        }
-      : undefined,
+    geo:
+      trail.startLat && trail.startLng
+        ? {
+            "@type": "GeoCoordinates",
+            latitude: Number(trail.startLat),
+            longitude: Number(trail.startLng),
+          }
+        : undefined,
     address: {
       "@type": "PostalAddress",
       addressCountry: "XK",
@@ -153,8 +159,8 @@ function SectionLabel({
   return (
     <p
       className={cn(
-        "text-[10px] font-bold tracking-[0.15em] text-summit/35 uppercase",
-        accent && "border-l-[3px] border-moss pl-2.5",
+        "text-summit/35 text-[10px] font-bold tracking-[0.15em] uppercase",
+        accent && "border-moss border-l-[3px] pl-2.5",
       )}
     >
       {children}
@@ -182,7 +188,20 @@ export default async function TrailDetailPage({
   const isSaved = session
     ? await isTrailFavorited(session.user.id, trail.id)
     : false;
-  const nearbyTrails = regionTrails.filter((t) => t.id !== trail.id).slice(0, 3);
+
+  let canUploadGpx = false;
+  if (session) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: { role: true },
+    });
+    canUploadGpx =
+      user?.role === "super_admin" || trail.submittedBy === session.user.id;
+  }
+
+  const nearbyTrails = regionTrails
+    .filter((t) => t.id !== trail.id)
+    .slice(0, 3);
   const badge = DIFFICULTY_BADGE[trail.difficulty];
   const region = (trail.region ?? "").toUpperCase();
   const locationLine = [trail.region, trail.city]
@@ -262,7 +281,7 @@ export default async function TrailDetailPage({
             className="absolute inset-0 h-full w-full"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-forest to-abyss" />
+          <div className="from-forest to-abyss absolute inset-0 bg-gradient-to-b" />
         )}
         <div className="absolute inset-0 bg-[rgba(13,31,20,0.82)]" />
 
@@ -277,18 +296,18 @@ export default async function TrailDetailPage({
               {badge.letter}
             </span>
             {trail.verified ? (
-              <span className="border border-moss bg-[rgba(13,31,20,0.85)] px-2.5 py-1 text-[9px] font-bold tracking-[0.08em] text-moss uppercase">
+              <span className="border-moss text-moss border bg-[rgba(13,31,20,0.85)] px-2.5 py-1 text-[9px] font-bold tracking-[0.08em] uppercase">
                 ✓ Verifikuar
               </span>
             ) : null}
           </div>
 
-          <h1 className="font-heading mb-1.5 text-[clamp(24px,4vw,40px)] leading-none font-extrabold tracking-[-0.02em] text-summit uppercase">
+          <h1 className="font-heading text-summit mb-1.5 text-[clamp(24px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
             {trail.name}
           </h1>
 
           {locationLine ? (
-            <p className="mb-4 text-[11px] font-semibold tracking-[0.08em] text-moss uppercase">
+            <p className="text-moss mb-4 text-[11px] font-semibold tracking-[0.08em] uppercase">
               {locationLine}
             </p>
           ) : null}
@@ -299,14 +318,14 @@ export default async function TrailDetailPage({
                 <div
                   key={stat.label}
                   className={cn(
-                    "border-y border-r border-summit/10 bg-summit/[0.06] px-4 py-2",
+                    "border-summit/10 bg-summit/[0.06] border-y border-r px-4 py-2",
                     i === 0 && "border-l",
                   )}
                 >
-                  <p className="mb-[3px] text-[8px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+                  <p className="text-summit/30 mb-[3px] text-[8px] font-semibold tracking-[0.12em] uppercase">
                     {stat.label}
                   </p>
-                  <p className="font-heading text-[13px] font-bold tracking-[-0.01em] text-summit uppercase">
+                  <p className="font-heading text-summit text-[13px] font-bold tracking-[-0.01em] uppercase">
                     {stat.value}
                   </p>
                 </div>
@@ -321,16 +340,17 @@ export default async function TrailDetailPage({
         {/* Left */}
         <div>
           {/* Map */}
-          <div className="relative mb-4 h-[260px] overflow-hidden border border-summit/10 bg-[#0F2818]">
+          <div className="border-summit/10 relative mb-4 h-[260px] overflow-hidden border bg-[#0F2818]">
             <TrailMap
               trailName={trail.name}
               startLat={Number(trail.startLat)}
               startLng={Number(trail.startLng)}
               endLat={trail.endLat ? Number(trail.endLat) : null}
               endLng={trail.endLng ? Number(trail.endLng) : null}
+              route={trail.gpxTrack ?? undefined}
             />
             {trail.elevationGainM != null ? (
-              <span className="pointer-events-none absolute top-2.5 right-2.5 z-[400] bg-[rgba(13,31,20,0.7)] px-2 py-[3px] text-[9px] font-semibold tracking-[0.08em] text-summit/60 uppercase">
+              <span className="text-summit/60 pointer-events-none absolute top-2.5 right-2.5 z-[400] bg-[rgba(13,31,20,0.7)] px-2 py-[3px] text-[9px] font-semibold tracking-[0.08em] uppercase">
                 {trail.elevationGainM}m Lartësia Max
               </span>
             ) : null}
@@ -338,8 +358,8 @@ export default async function TrailDetailPage({
 
           {/* Elevation profile */}
           {trail.elevationProfile && trail.elevationProfile.length > 1 ? (
-            <div className="border border-summit/10 p-4">
-              <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-summit/40 uppercase">
+            <div className="border-summit/10 border p-4">
+              <p className="text-summit/40 mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
                 Profili i Lartësisë
               </p>
               <ElevationChart data={trail.elevationProfile} />
@@ -358,7 +378,7 @@ export default async function TrailDetailPage({
 
           {/* Upcoming trips */}
           <div className="mb-3">
-            <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-summit/40 uppercase">
+            <p className="text-summit/40 mb-3 text-[10px] font-bold tracking-[0.12em] uppercase">
               Udhëtime të Ardhshme
             </p>
             {upcomingTrips.length > 0 ? (
@@ -367,9 +387,9 @@ export default async function TrailDetailPage({
                   <Link
                     key={trip.id}
                     href={`/trips/${trip.slug}`}
-                    className="block border-b border-summit/[0.06] pb-2.5 last:border-b-0 [&+a]:pt-2.5"
+                    className="border-summit/[0.06] block border-b pb-2.5 last:border-b-0 [&+a]:pt-2.5"
                   >
-                    <p className="mb-[3px] text-[9px] font-bold tracking-[0.1em] text-moss uppercase">
+                    <p className="text-moss mb-[3px] text-[9px] font-bold tracking-[0.1em] uppercase">
                       {new Intl.DateTimeFormat("sq-AL", {
                         day: "numeric",
                         month: "long",
@@ -377,14 +397,14 @@ export default async function TrailDetailPage({
                         .format(trip.startDatetime)
                         .toUpperCase()}
                     </p>
-                    <p className="font-heading text-[13px] font-bold tracking-[-0.01em] text-summit uppercase">
+                    <p className="font-heading text-summit text-[13px] font-bold tracking-[-0.01em] uppercase">
                       {trip.title}
                     </p>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-summit/35">
+              <p className="text-summit/35 text-xs">
                 Nuk ka udhëtime të ardhshme.
               </p>
             )}
@@ -396,17 +416,12 @@ export default async function TrailDetailPage({
               <a
                 href={trail.gpxUrl}
                 download
-                className="flex flex-1 items-center justify-center gap-1.5 border border-moss/30 bg-moss/[0.12] px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] text-moss uppercase transition-colors hover:bg-moss/20"
+                className="border-moss/30 bg-moss/[0.12] text-moss hover:bg-moss/20 flex flex-1 items-center justify-center gap-1.5 border px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
               >
                 <Download className="size-3.5" />
                 Shkarko GPX
               </a>
-            ) : (
-              <span className="flex flex-1 items-center justify-center gap-1.5 border border-moss/30 bg-moss/[0.12] px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] text-moss uppercase opacity-40">
-                <Download className="size-3.5" />
-                GPX — Së shpejti
-              </span>
-            )}
+            ) : null}
             <TrailFavoriteButton
               trailId={trail.id}
               isSaved={isSaved}
@@ -419,6 +434,12 @@ export default async function TrailDetailPage({
               className="size-[38px]"
             />
           </div>
+
+          {canUploadGpx ? (
+            <div className="mt-3">
+              <TrailGpxSection trailId={trail.id} />
+            </div>
+          ) : null}
         </aside>
       </div>
 
@@ -428,7 +449,7 @@ export default async function TrailDetailPage({
           <SectionLabel accent>Përshkrimi</SectionLabel>
           <div className="mt-3.5 space-y-3">
             {paragraphs.map((p, i) => (
-              <p key={i} className="text-[13px] leading-[1.7] text-summit/65">
+              <p key={i} className="text-summit/65 text-[13px] leading-[1.7]">
                 {p}
               </p>
             ))}
@@ -441,14 +462,14 @@ export default async function TrailDetailPage({
         <section className="mb-5 flex flex-wrap gap-8 px-6">
           {seasons.length > 0 ? (
             <div>
-              <p className="mb-2.5 text-[10px] font-bold tracking-[0.12em] text-summit/35 uppercase">
+              <p className="text-summit/35 mb-2.5 text-[10px] font-bold tracking-[0.12em] uppercase">
                 Sezonat më të mira
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {seasons.map((s) => (
                   <span
                     key={s}
-                    className="border border-moss/40 bg-moss/15 px-3 py-[5px] text-[10px] font-bold tracking-[0.06em] text-moss uppercase"
+                    className="border-moss/40 bg-moss/15 text-moss border px-3 py-[5px] text-[10px] font-bold tracking-[0.06em] uppercase"
                   >
                     {seasonLabels[s] ?? s}
                   </span>
@@ -459,14 +480,14 @@ export default async function TrailDetailPage({
 
           {features.length > 0 ? (
             <div>
-              <p className="mb-2.5 text-[10px] font-bold tracking-[0.12em] text-summit/35 uppercase">
+              <p className="text-summit/35 mb-2.5 text-[10px] font-bold tracking-[0.12em] uppercase">
                 Karakteristikat
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {features.map((f) => (
                   <span
                     key={f}
-                    className="border border-summit/12 bg-summit/[0.06] px-3 py-[5px] text-[10px] font-semibold tracking-[0.06em] text-summit/55 uppercase"
+                    className="border-summit/12 bg-summit/[0.06] text-summit/55 border px-3 py-[5px] text-[10px] font-semibold tracking-[0.06em] uppercase"
                   >
                     {featureLabels[f] ?? f}
                   </span>
@@ -479,18 +500,18 @@ export default async function TrailDetailPage({
 
       {/* Safety */}
       {safety.length > 0 ? (
-        <section className="mx-6 mb-6 border border-danger/25 bg-danger/[0.08] px-5 py-4">
+        <section className="border-danger/25 bg-danger/[0.08] mx-6 mb-6 border px-5 py-4">
           <div className="mb-3 flex items-center gap-2">
-            <AlertTriangle className="size-4 text-danger" />
-            <span className="text-[11px] font-bold tracking-[0.08em] text-danger uppercase">
+            <AlertTriangle className="text-danger size-4" />
+            <span className="text-danger text-[11px] font-bold tracking-[0.08em] uppercase">
               Kërkesa e Sigurisë
             </span>
           </div>
           <div className="grid gap-x-5 gap-y-1.5 sm:grid-cols-2">
             {safety.map((item) => (
               <div key={item} className="flex items-start gap-1.5">
-                <span className="mt-1.5 size-[3px] shrink-0 bg-danger/60" />
-                <span className="text-[11px] leading-[1.4] font-medium text-summit/60 uppercase">
+                <span className="bg-danger/60 mt-1.5 size-[3px] shrink-0" />
+                <span className="text-summit/60 text-[11px] leading-[1.4] font-medium uppercase">
                   {item}
                 </span>
               </div>
@@ -506,7 +527,7 @@ export default async function TrailDetailPage({
             <SectionLabel>Vlerësimet</SectionLabel>
             {reviewData.count > 0 ? (
               <div className="mt-1 flex items-center gap-2">
-                <span className="font-heading text-xl font-extrabold text-summit">
+                <span className="font-heading text-summit text-xl font-extrabold">
                   {reviewData.average.toFixed(1)}
                 </span>
                 <Stars value={reviewData.average} size="size-3.5" />
@@ -516,7 +537,7 @@ export default async function TrailDetailPage({
           {!isLoggedIn ? (
             <Link
               href="/login?redirect=/trails"
-              className="border border-summit/20 px-3.5 py-2 text-[10px] font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:text-summit"
+              className="border-summit/40 text-summit/60 hover:text-summit border px-3.5 py-2 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Shto Vlerësim
             </Link>
@@ -524,23 +545,26 @@ export default async function TrailDetailPage({
         </div>
 
         {reviewData.count === 0 ? (
-          <p className="text-xs text-summit/40">
+          <p className="text-summit/40 text-xs">
             Bëhu i pari që vlerëson këtë shteg.
           </p>
         ) : (
           <div>
             {reviewData.reviews.map((review: TrailReview) => (
-              <div key={review.id} className="border-b border-summit/[0.06] py-4">
+              <div
+                key={review.id}
+                className="border-summit/[0.06] border-b py-4"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-2.5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-forest text-[13px] font-bold text-moss">
+                    <span className="bg-forest text-moss flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold">
                       {initials(review.userName)}
                     </span>
                     <div>
-                      <p className="text-[13px] font-semibold text-summit">
+                      <p className="text-summit text-[13px] font-semibold">
                         {review.userName ?? "Anëtar"}
                       </p>
-                      <p className="text-[10px] text-summit/30">
+                      <p className="text-summit/30 text-[10px]">
                         {formatReviewDate(review.createdAt)}
                       </p>
                     </div>
@@ -548,7 +572,7 @@ export default async function TrailDetailPage({
                   <Stars value={review.rating} size="size-3" />
                 </div>
                 {review.comment ? (
-                  <p className="mt-2.5 text-[12px] leading-[1.65] text-summit/60">
+                  <p className="text-summit/60 mt-2.5 text-[12px] leading-[1.65]">
                     {review.comment}
                   </p>
                 ) : null}
@@ -566,19 +590,21 @@ export default async function TrailDetailPage({
 
       {/* Nearby trails */}
       {nearbyTrails.length > 0 ? (
-        <section className="border-t border-summit/[0.08] px-6 pt-8 pb-12">
-          <p className="mb-4 text-[10px] font-bold tracking-[0.15em] text-summit/35 uppercase">
+        <section className="border-summit/[0.08] border-t px-6 pt-8 pb-12">
+          <p className="text-summit/35 mb-4 text-[10px] font-bold tracking-[0.15em] uppercase">
             Shtigjet tjera në rajon
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {nearbyTrails.map((t) => {
               const nb = DIFFICULTY_BADGE[t.difficulty];
-              const dist = t.distanceKm ? Number(t.distanceKm).toFixed(1) : null;
+              const dist = t.distanceKm
+                ? Number(t.distanceKm).toFixed(1)
+                : null;
               return (
                 <Link
                   key={t.id}
                   href={`/trails/${t.slug}`}
-                  className="overflow-hidden border border-summit/[0.08]"
+                  className="border-summit/[0.08] overflow-hidden border"
                 >
                   <div className="relative h-[140px] overflow-hidden">
                     <CloudImage
@@ -597,16 +623,16 @@ export default async function TrailDetailPage({
                       {nb.letter}
                     </span>
                     {t.verified ? (
-                      <span className="absolute top-2 right-2 border border-moss bg-[rgba(13,31,20,0.85)] px-1.5 py-0.5 text-[8px] font-bold tracking-[0.08em] text-moss uppercase">
+                      <span className="border-moss text-moss absolute top-2 right-2 border bg-[rgba(13,31,20,0.85)] px-1.5 py-0.5 text-[8px] font-bold tracking-[0.08em] uppercase">
                         ✓
                       </span>
                     ) : null}
                   </div>
                   <div className="bg-summit/[0.02] p-3">
-                    <h3 className="font-heading text-[13px] font-extrabold text-summit uppercase">
+                    <h3 className="font-heading text-summit text-[13px] font-extrabold uppercase">
                       {t.name}
                     </h3>
-                    <p className="mt-1 text-[10px] font-medium text-summit/45">
+                    <p className="text-summit/45 mt-1 text-[10px] font-medium">
                       {dist ? `${dist} KM` : "—"}
                       {t.elevationGainM != null
                         ? ` · ${t.elevationGainM}M NGJITJE`

@@ -63,12 +63,12 @@ function FilterCheckbox({
         )}
       >
         {checked ? (
-          <Check className="size-2.5 text-abyss" strokeWidth={3} />
+          <Check className="text-abyss size-2.5" strokeWidth={3} />
         ) : null}
       </span>
       <span
         className={cn(
-          "font-medium tracking-[0.04em] text-summit/70 uppercase",
+          "text-summit/70 font-medium tracking-[0.04em] uppercase",
           labelClassName,
         )}
       >
@@ -80,7 +80,7 @@ function FilterCheckbox({
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <p className="mb-2.5 text-[10px] font-bold tracking-[0.12em] text-summit/40 uppercase">
+    <p className="text-summit/40 mb-2.5 text-[10px] font-bold tracking-[0.12em] uppercase">
       {children}
     </p>
   );
@@ -114,14 +114,14 @@ export function TrailFilters({ regions }: { regions: string[] }) {
     <div>
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
-        <span className="text-[11px] font-bold tracking-[0.1em] text-summit uppercase">
+        <span className="text-summit text-[11px] font-bold tracking-[0.1em] uppercase">
           Filtro
         </span>
         {hasActive ? (
           <button
             type="button"
             onClick={reset}
-            className="text-[10px] font-medium tracking-[0.08em] text-moss uppercase transition-opacity hover:opacity-70"
+            className="text-moss text-[10px] font-medium tracking-[0.08em] uppercase transition-opacity hover:opacity-70"
           >
             Pastro
           </button>
@@ -163,17 +163,17 @@ export function TrailFilters({ regions }: { regions: string[] }) {
         >
           <SelectTrigger
             aria-label="Rajoni"
-            className="h-9 w-full justify-between border-summit/15 bg-abyss px-3 text-[12px] font-medium text-summit/70 hover:bg-abyss focus-visible:border-moss/50 focus-visible:ring-0 data-[size=default]:h-9"
+            className="border-summit/40 bg-abyss text-summit/70 hover:bg-abyss focus-visible:border-moss h-9 w-full justify-between px-3 text-[12px] font-medium focus-visible:ring-0 data-[size=default]:h-9"
           >
             <SelectValue>
               {(value: string) => (value === ALL_REGIONS ? "TË GJITHA" : value)}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="z-50 border border-summit/15 bg-abyss text-summit/70">
+          <SelectContent className="border-summit/40 bg-abyss text-summit/70 z-50 border">
             <SelectItem
               value={ALL_REGIONS}
               className={cn(
-                "text-[12px] focus:bg-moss/15 focus:text-moss",
+                "focus:bg-moss/15 focus:text-moss text-[12px]",
                 filters.region === "" && "text-moss",
               )}
             >
@@ -184,7 +184,7 @@ export function TrailFilters({ regions }: { regions: string[] }) {
                 key={region}
                 value={region}
                 className={cn(
-                  "text-[12px] focus:bg-moss/15 focus:text-moss",
+                  "focus:bg-moss/15 focus:text-moss text-[12px]",
                   filters.region === region && "text-moss",
                 )}
               >
@@ -230,7 +230,7 @@ export function TrailFilters({ regions }: { regions: string[] }) {
                   "border px-2.5 py-[5px] text-[10px] font-semibold tracking-[0.06em] uppercase transition-colors",
                   active
                     ? "border-moss bg-moss text-abyss"
-                    : "border-summit/15 bg-summit/[0.06] text-summit/60 hover:border-summit/30",
+                    : "border-summit/40 bg-summit/[0.06] text-summit/60 hover:border-summit/60",
                 )}
               >
                 {featureLabels[f] ?? f}

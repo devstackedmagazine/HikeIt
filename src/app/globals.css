@@ -14,12 +14,17 @@
 :root {
   --radius: 0px;
 
-  /* Brand */
+  /* Brand — 10 colours. Sage is the tenth: not a shade of Moss, but the
+     official accent ink for Forest surfaces and the marketing chrome's
+     brand ink. It exists because Moss (4.43:1), Sunset (4.16:1) and Summit
+     (reads as body text, not accent) all fail as an accessible accent on
+     Forest — Sage alone clears AA there at 7.09:1. See the design roadmap's
+     Section Pattern for the full surface → ink table. */
   --abyss: #0d1f14;
   --forest: #1a3d2b;
   --pine: #2d5f3f;
   --moss: #4caf7d;
-  --sage:#A9D0B6;
+  --sage: #a9d0b6; /* accent ink on Forest; marketing-chrome brand ink */
   --mist: #e8f5ed;
   --summit: #fafff9;
   --sunset: #e87a30;
@@ -27,7 +32,9 @@
   --alert: #f5a623;
   --bg-secondary: #f0f7f2;
   --text-secondary: #3d5a47;
-  --text-muted: #6b8a76;
+  /* AA on every light surface: 5.60:1 on Summit, 5.05:1 on Mist,
+     5.21:1 on bg-muted. The old #6b8a76 was 3.76/3.39/3.49 — all below 4.5. */
+  --text-muted: #4e6e5b;
 
   /* Semantic (mapped to brand) */
   --background: var(--summit);
@@ -151,7 +158,10 @@
     font-family: var(--font-sora), system-ui, sans-serif;
     font-weight: 900;
     letter-spacing: -0.03em;
-    line-height: 1.05;
+    /* 1.2, not tighter: Sora 900 uppercase "ËÇ" has 1.25em of ink
+       (0.97em ascent + 0.28em descent), so at 1.05 a line-ending Ç cedilla
+       collides with the next line's Ë diaeresis. 1.2 clears it. */
+    line-height: 1.2;
     text-transform: uppercase;
     color: var(--forest);
   }

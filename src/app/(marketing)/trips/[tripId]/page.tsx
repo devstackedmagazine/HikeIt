@@ -54,21 +54,15 @@ function splitLines(text: string | null): string[] {
 function AccentHeader({ children }: { children: string }) {
   return (
     <div className="mb-3.5 flex items-center gap-2.5">
-      <span className="h-5 w-[3px] bg-moss" />
-      <h2 className="text-[12px] font-bold tracking-[0.1em] text-summit uppercase">
+      <span className="bg-moss h-5 w-[3px]" />
+      <h2 className="text-summit text-[12px] font-bold tracking-[0.1em] uppercase">
         {children}
       </h2>
     </div>
   );
 }
 
-function IconList({
-  items,
-  icons,
-}: {
-  items: string[];
-  icons: LucideIcon[];
-}) {
+function IconList({ items, icons }: { items: string[]; icons: LucideIcon[] }) {
   return (
     <div>
       {items.map((item, i) => {
@@ -76,10 +70,10 @@ function IconList({
         return (
           <div
             key={item}
-            className="flex items-center gap-2.5 border-b border-summit/[0.06] py-2.5 last:border-b-0"
+            className="border-summit/[0.06] flex items-center gap-2.5 border-b py-2.5 last:border-b-0"
           >
-            <Icon className="size-3.5 shrink-0 text-summit/35" />
-            <span className="text-[12px] font-medium tracking-[0.04em] text-summit/60 uppercase">
+            <Icon className="text-summit/35 size-3.5 shrink-0" />
+            <span className="text-summit/60 text-[12px] font-medium tracking-[0.04em] uppercase">
               {item}
             </span>
           </div>
@@ -91,13 +85,10 @@ function IconList({
 
 export default async function PublicTripPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ payment?: string }>;
 }) {
   const { tripId } = await params;
-  const { payment } = await searchParams;
   const trip = await getTripById(tripId);
   if (!trip) notFound();
 
@@ -129,7 +120,10 @@ export default async function PublicTripPage({
     hour: "2-digit",
     minute: "2-digit",
   }).format(trip.startDatetime);
-  const location = [trip.club.city, "Kosovë"].filter(Boolean).join(", ").toUpperCase();
+  const location = [trip.club.city, "Kosovë"]
+    .filter(Boolean)
+    .join(", ")
+    .toUpperCase();
 
   const meta = [
     dateLabel,
@@ -151,17 +145,17 @@ export default async function PublicTripPage({
       : null;
 
   return (
-    <div className="overflow-x-hidden bg-abyss">
+    <div className="bg-abyss overflow-x-hidden">
       {/* Header */}
-      <div className="border-b border-summit/[0.08] px-4 pt-5 pb-4 md:px-6">
-        <p className="mb-2 text-[10px] font-semibold tracking-[0.1em] text-moss uppercase">
+      <div className="border-summit/[0.08] border-b px-4 pt-5 pb-4 md:px-6">
+        <p className="text-moss mb-2 text-[10px] font-semibold tracking-[0.1em] uppercase">
           {trip.club.name}
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-heading text-[clamp(22px,3.5vw,36px)] leading-none font-extrabold tracking-[-0.02em] text-summit uppercase">
+          <h1 className="font-heading text-summit text-[clamp(22px,3.5vw,36px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
             {trip.title}
           </h1>
-          <span className="border border-moss/40 bg-moss/15 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-moss uppercase">
+          <span className="border-moss/40 bg-moss/15 text-moss border px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] uppercase">
             {tripStatusLabels[trip.status]}
           </span>
         </div>
@@ -169,7 +163,7 @@ export default async function PublicTripPage({
           {meta.map((m, i) => (
             <span key={m} className="flex items-center gap-4">
               {i > 0 ? <span className="text-summit/20">·</span> : null}
-              <span className="text-[11px] font-medium tracking-[0.04em] text-summit/45 uppercase">
+              <span className="text-summit/45 text-[11px] font-medium tracking-[0.04em] uppercase">
                 {m}
               </span>
             </span>
@@ -182,13 +176,17 @@ export default async function PublicTripPage({
         {/* Left */}
         <div className="min-w-0">
           {mapLat !== null && mapLng !== null ? (
-            <div className="relative mb-5 h-[280px] w-full overflow-hidden border border-summit/10">
-              <TrailMap trailName={trip.title} startLat={mapLat} startLng={mapLng} />
-              <div className="absolute bottom-0 left-0 z-20 max-w-[calc(100%-1rem)] border-t border-r border-summit/15 bg-abyss px-4 py-2.5">
-                <p className="mb-[3px] text-[8px] font-semibold tracking-[0.15em] text-summit/35 uppercase">
+            <div className="border-summit/10 relative mb-5 h-[280px] w-full overflow-hidden border">
+              <TrailMap
+                trailName={trip.title}
+                startLat={mapLat}
+                startLng={mapLng}
+              />
+              <div className="border-summit/15 bg-abyss absolute bottom-0 left-0 z-20 max-w-[calc(100%-1rem)] border-t border-r px-4 py-2.5">
+                <p className="text-summit/35 mb-[3px] text-[8px] font-semibold tracking-[0.15em] uppercase">
                   Pika e takimit
                 </p>
-                <p className="font-heading truncate text-[14px] font-extrabold tracking-[-0.01em] text-summit uppercase">
+                <p className="font-heading text-summit truncate text-[14px] font-extrabold tracking-[-0.01em] uppercase">
                   {trip.meetingPoint ?? location}
                 </p>
               </div>
@@ -202,7 +200,7 @@ export default async function PublicTripPage({
                 {paragraphs.map((p, i) => (
                   <p
                     key={i}
-                    className="text-[13px] leading-[1.7] break-words text-summit/60"
+                    className="text-summit/60 text-[13px] leading-[1.7] break-words"
                   >
                     {p}
                   </p>
@@ -231,18 +229,11 @@ export default async function PublicTripPage({
             priceEur={trip.priceEur}
             confirmedCount={trip.confirmedCount}
             maxParticipants={trip.maxParticipants}
-            commissionRate={trip.commissionRate}
             registration={
               registration
-                ? {
-                    id: registration.id,
-                    status: registration.status,
-                    paymentStatus: registration.paymentStatus,
-                    isReregistration: registration.isReregistration,
-                  }
+                ? { id: registration.id, status: registration.status }
                 : null
             }
-            returnedFromCheckout={payment === "success"}
           />
           <TripOrganizerCard
             clubName={trip.club.name}
@@ -255,20 +246,26 @@ export default async function PublicTripPage({
 
       {/* Trail info card */}
       {trail ? (
-        <div className="mx-4 mb-6 flex flex-wrap items-center justify-between gap-4 border border-moss/15 bg-moss/[0.05] px-5 py-4 md:mx-6">
+        <div className="border-moss/15 bg-moss/[0.05] mx-4 mb-6 flex flex-wrap items-center justify-between gap-4 border px-5 py-4 md:mx-6">
           <div>
-            <p className="mb-1.5 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+            <p className="text-summit/30 mb-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase">
               Shtegu i aktivitetit
             </p>
-            <p className="font-heading mb-2.5 text-base font-extrabold tracking-[-0.01em] text-summit uppercase">
+            <p className="font-heading text-summit mb-2.5 text-base font-extrabold tracking-[-0.01em] uppercase">
               {trail.name}
             </p>
             <div className="flex gap-5">
               {trail.distanceKm ? (
-                <TrailStat label="Distanca" value={`${Number(trail.distanceKm)}KM`} />
+                <TrailStat
+                  label="Distanca"
+                  value={`${Number(trail.distanceKm)}KM`}
+                />
               ) : null}
               {trail.elevationGainM != null ? (
-                <TrailStat label="Lartësia" value={`${trail.elevationGainM}M`} />
+                <TrailStat
+                  label="Lartësia"
+                  value={`${trail.elevationGainM}M`}
+                />
               ) : null}
               {trailDuration ? (
                 <TrailStat label="Kohëzgjatja" value={trailDuration} />
@@ -277,7 +274,7 @@ export default async function PublicTripPage({
           </div>
           <Link
             href={`/trails/${trail.slug}`}
-            className="border border-summit/25 px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] text-summit/60 uppercase transition-colors hover:border-moss hover:text-moss"
+            className="border-summit/40 text-summit/60 hover:border-moss hover:text-moss border px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
             Shiko Shtegun →
           </Link>
@@ -317,13 +314,16 @@ export default async function PublicTripPage({
         <div className="mb-3.5 flex items-center justify-between">
           <AccentHeader>Galeria</AccentHeader>
           {photos.length > 0 ? (
-            <span className="text-[11px] font-medium text-summit/35">
+            <span className="text-summit/35 text-[11px] font-medium">
               {photos.length} FOTO
             </span>
           ) : null}
         </div>
         <TripGallery
-          photos={photos.map((p) => ({ id: p.id, publicId: p.cloudinaryPublicId }))}
+          photos={photos.map((p) => ({
+            id: p.id,
+            publicId: p.cloudinaryPublicId,
+          }))}
         />
       </div>
     </div>
@@ -333,10 +333,10 @@ export default async function PublicTripPage({
 function TrailStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="mb-0.5 text-[8px] font-semibold tracking-[0.1em] text-summit/30 uppercase">
+      <p className="text-summit/30 mb-0.5 text-[8px] font-semibold tracking-[0.1em] uppercase">
         {label}
       </p>
-      <p className="font-heading text-[18px] font-extrabold tracking-[-0.02em] text-summit">
+      <p className="font-heading text-summit text-[18px] font-extrabold tracking-[-0.02em]">
         {value}
       </p>
     </div>

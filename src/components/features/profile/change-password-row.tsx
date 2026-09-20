@@ -13,7 +13,7 @@ export function ChangePasswordRow() {
   const [error, setError] = useState<string | null>(null);
 
   const inputClass =
-    "h-9 w-full border border-summit/12 bg-abyss px-3 text-[11px] text-summit placeholder:text-summit/25 focus:border-moss/50 focus:outline-none";
+    "h-9 w-full border border-summit/40 bg-abyss px-3 text-[11px] text-summit placeholder:text-summit/70 focus:border-moss focus:outline-none";
 
   async function submit() {
     setError(null);
@@ -33,14 +33,14 @@ export function ChangePasswordRow() {
   }
 
   return (
-    <div className="border-b border-summit/[0.06] pb-3">
+    <div className="border-summit/[0.06] border-b pb-3">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between text-[11px] font-semibold tracking-[0.06em] text-summit/60 uppercase transition-colors hover:text-summit/90"
+        className="text-summit/60 hover:text-summit/90 flex w-full items-center justify-between text-[11px] font-semibold tracking-[0.06em] uppercase transition-colors"
       >
         Ndrysho fjalëkalimin
-        <Lock className="size-3.5 text-summit/30" />
+        <Lock className="text-summit/30 size-3.5" />
       </button>
 
       {open ? (
@@ -59,15 +59,15 @@ export function ChangePasswordRow() {
             placeholder="Fjalëkalimi i ri (10+ karaktere)"
             className={inputClass}
           />
-          {error ? <p className="text-[10px] text-danger">{error}</p> : null}
+          {error ? <p className="text-danger text-[10px]">{error}</p> : null}
           {status === "done" ? (
-            <p className="text-[10px] text-moss">Fjalëkalimi u ndryshua.</p>
+            <p className="text-moss text-[10px]">Fjalëkalimi u ndryshua.</p>
           ) : null}
           <button
             type="button"
             disabled={status === "loading" || !current || next.length < 10}
             onClick={submit}
-            className="flex w-full items-center justify-center gap-2 border border-moss/40 bg-moss/20 py-2 text-[10px] font-bold tracking-[0.08em] text-moss uppercase transition-colors hover:bg-moss/30 disabled:opacity-40"
+            className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/30 flex w-full items-center justify-center gap-2 border py-2 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-40"
           >
             {status === "loading" ? (
               <Loader2 className="size-3.5 animate-spin" />

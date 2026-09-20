@@ -1,9 +1,5 @@
 import { and, count, desc, eq, isNull } from "drizzle-orm";
 
-import {
-  type CommissionSource,
-  resolveCommission,
-} from "@/lib/commission";
 import { db } from "@/lib/db";
 import type { InviteCode } from "@/lib/db/schema";
 import {
@@ -11,6 +7,11 @@ import {
   organizationMembers,
   organizations,
 } from "@/lib/db/schema";
+import {
+  type EntitlementSource,
+  type EntitlementTier,
+  resolveEntitlement,
+} from "@/lib/entitlements";
 
 /**
  * Read models for the super-admin panel. Access control lives at the route
@@ -23,19 +24,17 @@ export interface AdminClubRow {
   name: string;
   city: string | null;
   memberCount: number;
-  /** Resolved through `resolveCommission` — never read off the row directly. */
-  rate: number;
-  source: CommissionSource;
+  /** Resolved through `resolveEntitlement` — never read off the row directly. */
+  tier: EntitlementTier;
+  source: EntitlementSource;
   endsAt: Date | null;
-  /** Raw override state, so the edit dialog can pre-fill accurately. */
-  commissionRate: string | null;
-  commissionOverrideUntil: Date | null;
-  commissionOverrideNote: string | null;
+  /** Raw state, so the trial-extension dialog can pre-fill accurately. */
+  subscriptionTier: EntitlementTier;
   inviteCodeUsed: string | null;
   trialEndsAt: Date | null;
 }
 
-/** Every live club with its member count and resolved commission state. */
+/** Every live club with its member count and resolved entitlement state. */
 export async function getAdminClubs(): Promise<AdminClubRow[]> {
   const now = new Date();
 
@@ -45,10 +44,7 @@ export async function getAdminClubs(): Promise<AdminClubRow[]> {
       slug: organizations.slug,
       name: organizations.name,
       city: organizations.city,
-      commissionRate: organizations.commissionRate,
-      commissionOverrideUntil: organizations.commissionOverrideUntil,
-      commissionOverrideReason: organizations.commissionOverrideReason,
-      commissionOverrideNote: organizations.commissionOverrideNote,
+      subscriptionTier: organizations.subscriptionTier,
       inviteCodeUsed: organizations.inviteCodeUsed,
       trialEndsAt: organizations.trialEndsAt,
       // Correlated count keeps this a single query rather than N+1 across
@@ -66,19 +62,17 @@ export async function getAdminClubs(): Promise<AdminClubRow[]> {
     .orderBy(desc(organizations.createdAt));
 
   return rows.map((row) => {
-    const commission = resolveCommission(row, now);
+    const entitlement = resolveEntitlement(row, now);
     return {
       id: row.id,
       slug: row.slug,
       name: row.name,
       city: row.city,
       memberCount: Number(row.memberCount),
-      rate: commission.rate,
-      source: commission.source,
-      endsAt: commission.endsAt,
-      commissionRate: row.commissionRate,
-      commissionOverrideUntil: row.commissionOverrideUntil,
-      commissionOverrideNote: row.commissionOverrideNote,
+      tier: entitlement.tier,
+      source: entitlement.source,
+      endsAt: entitlement.endsAt,
+      subscriptionTier: row.subscriptionTier,
       inviteCodeUsed: row.inviteCodeUsed,
       trialEndsAt: row.trialEndsAt,
     };
@@ -120,21 +114,19 @@ export async function getInviteCodes(): Promise<InviteCodeRow[]> {
   }));
 }
 
-/** How many clubs are currently on each commission source. */
-export async function getCommissionSummary(): Promise<{
+/** How many clubs are currently on each entitlement source. */
+export async function getEntitlementSummary(): Promise<{
   totalClubs: number;
   onTrial: number;
-  onGrant: number;
-  onDefault: number;
+  onSubscription: number;
+  onFree: number;
 }> {
   const clubs = await getAdminClubs();
   return {
     totalClubs: clubs.length,
     onTrial: clubs.filter((c) => c.source === "trial").length,
-    onGrant: clubs.filter(
-      (c) => c.source === "super_admin" || c.source === "invite_code",
-    ).length,
-    onDefault: clubs.filter((c) => c.source === "default").length,
+    onSubscription: clubs.filter((c) => c.source === "subscription").length,
+    onFree: clubs.filter((c) => c.source === "free").length,
   };
 }
 

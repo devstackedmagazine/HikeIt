@@ -48,7 +48,7 @@ function SelectChip({
     >
       <SelectTrigger
         aria-label={label}
-        className="h-9 justify-between gap-1.5 border-summit/20 bg-transparent px-3.5 text-[11px] font-semibold tracking-[0.06em] text-summit/70 uppercase hover:bg-transparent focus-visible:border-moss/50 focus-visible:ring-0 data-[size=default]:h-9"
+        className="border-summit/40 text-summit/70 focus-visible:border-moss h-9 justify-between gap-1.5 bg-transparent px-3.5 text-[11px] font-semibold tracking-[0.06em] uppercase hover:bg-transparent focus-visible:ring-0 data-[size=default]:h-9"
       >
         <span className="flex items-center gap-1.5">
           <span className="text-summit/70">{label}:</span>
@@ -61,11 +61,11 @@ function SelectChip({
           </SelectValue>
         </span>
       </SelectTrigger>
-      <SelectContent className="z-50 border border-forest bg-forest text-summit/70">
+      <SelectContent className="border-forest bg-forest text-summit/70 z-50 border">
         <SelectItem
           value={ALL_VALUE}
           className={cn(
-            "text-[11px] tracking-[0.06em] uppercase focus:bg-moss/15 focus:text-moss",
+            "focus:bg-moss/15 focus:text-moss text-[11px] tracking-[0.06em] uppercase",
             value === "" && "text-moss",
           )}
         >
@@ -76,7 +76,7 @@ function SelectChip({
             key={v}
             value={v}
             className={cn(
-              "text-[11px] tracking-[0.06em] uppercase focus:bg-moss/15 focus:text-moss",
+              "focus:bg-moss/15 focus:text-moss text-[11px] tracking-[0.06em] uppercase",
               value === v && "text-moss",
             )}
           >
@@ -111,8 +111,8 @@ export function TripFilters({ regions }: { regions: string[] }) {
                 "flex h-9 items-center border px-3.5 text-[11px] tracking-[0.06em] uppercase transition-colors",
                 i > 0 && "-ml-px",
                 active
-                  ? "z-10 border-summit/35 bg-summit/[0.12] font-bold text-summit"
-                  : "border-summit/15 font-semibold text-summit/45 hover:border-summit/30 hover:text-summit/70",
+                  ? "border-summit/35 bg-summit/[0.12] text-summit z-10 font-bold"
+                  : "border-summit/40 text-summit/45 hover:border-summit/60 hover:text-summit/70 font-semibold",
               )}
             >
               {tab.label}
@@ -153,10 +153,10 @@ export function TripFilters({ regions }: { regions: string[] }) {
           )}
         >
           {filters.free === "1" ? (
-            <Check className="size-2.5 text-abyss" strokeWidth={3} />
+            <Check className="text-abyss size-2.5" strokeWidth={3} />
           ) : null}
         </span>
-        <span className="text-[11px] font-semibold tracking-[0.06em] text-summit/55 uppercase">
+        <span className="text-summit/55 text-[11px] font-semibold tracking-[0.06em] uppercase">
           Vetëm falas
         </span>
       </label>
