@@ -63,8 +63,8 @@ $CRON_SECRET` header.
 
 ## Deployment
 
-Deployed on Vercel with a Supabase production database. See the next session's
-deployment runbook for prod env vars, DNS, and email verification.
+Deployed on Vercel with a Supabase production database. Branching and the
+`dev` → `main` release flow are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap (Phase 2)
 

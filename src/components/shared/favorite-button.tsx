@@ -53,8 +53,8 @@ export function FavoriteButton({
       className={cn(
         "flex items-center justify-center border transition-colors",
         optimisticSaved
-          ? "border-moss/50 bg-moss/15 text-moss"
-          : "border-summit/40 bg-summit/[0.05] text-summit/50 hover:text-summit",
+          ? "border-moss/50 bg-abyss/85 text-moss"
+          : "border-summit/15 bg-summit/[0.05] text-summit/50 hover:text-summit",
         className,
       )}
     >
