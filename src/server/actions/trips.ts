@@ -21,6 +21,7 @@ import {
   type TripChange,
   TripUpdated,
 } from "@/lib/email/templates/trip-updated";
+import { resolveEntitlement } from "@/lib/entitlements";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
 import { type CreateTripInput,createTripSchema } from "@/lib/validations/trips";
@@ -43,8 +44,9 @@ export async function createTrip(
   const access = await requireClubAdmin(session.user.id, clubSlug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
-  // Free tier: cap at 3 trips per calendar month.
-  if (access.organization.subscriptionTier === "free") {
+  // Free tier: cap at 3 trips per calendar month. Resolved, not read straight
+  // off the row — a club inside its trial is entitled to Pro and isn't capped.
+  if (resolveEntitlement(access.organization).tier === "free") {
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
@@ -227,25 +229,6 @@ export async function updateTrip(
     };
   }
 
-  const newPrice = String(input.priceEur);
-  if (newPrice !== trip.priceEur) {
-    const [paid] = await db
-      .select({ value: count() })
-      .from(tripRegistrations)
-      .where(
-        and(
-          eq(tripRegistrations.tripId, tripId),
-          eq(tripRegistrations.paymentStatus, "paid"),
-        ),
-      );
-    if ((paid?.value ?? 0) > 0) {
-      return {
-        success: false,
-        error: "Nuk mund të ndryshoni çmimin pas pagesave të kryera.",
-      };
-    }
-  }
-
   // Diff the important, user-facing fields for the change email + audit log.
   const changes: TripChange[] = [];
   if (trip.startDatetime.getTime() !== newStart.getTime()) {
@@ -277,7 +260,7 @@ export async function updateTrip(
       minParticipants: input.minParticipants,
       requirements: input.requirements || null,
       included: input.included || null,
-      priceEur: newPrice,
+      priceEur: String(input.priceEur),
       difficulty: input.difficulty ?? trip.difficulty,
     })
     .where(eq(trips.id, tripId));

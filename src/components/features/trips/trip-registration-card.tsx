@@ -4,22 +4,13 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { formatRatePercent } from "@/lib/commission";
 import { cn } from "@/lib/utils/cn";
 import {
   cancelMyRegistration,
   registerForTrip,
 } from "@/server/actions/trip-registrations";
-
-import { StripeRedirectOverlay } from "./stripe-redirect-overlay";
-
-/** How often we re-check the DB while a payment is confirming. */
-const POLL_INTERVAL_MS = 3000;
-
-const STRIPE_PCT = 0.014;
-const STRIPE_FIXED = 0.25;
 
 export interface TripRegistrationCardProps {
   tripId: string;
@@ -29,23 +20,7 @@ export interface TripRegistrationCardProps {
   priceEur: string;
   confirmedCount: number;
   maxParticipants: number | null;
-  /**
-   * The club's resolved HikeIt commission rate (0 during a free trial or a
-   * granted 0% period). Resolved server-side so this breakdown always matches
-   * what registration actually charges.
-   */
-  commissionRate: number;
-  registration: {
-    id: string;
-    status: string;
-    paymentStatus: string;
-    isReregistration: boolean;
-  } | null;
-  /** True when Stripe Checkout redirected back with `?payment=success` —
-   * purely informational. The webhook, not this flag, confirms payment; if
-   * the DB still shows `pending` we tell the hiker it's processing, never
-   * that they're registered. */
-  returnedFromCheckout?: boolean;
+  registration: { id: string; status: string } | null;
 }
 
 export function TripRegistrationCard({
@@ -56,35 +31,19 @@ export function TripRegistrationCard({
   priceEur,
   confirmedCount,
   maxParticipants,
-  commissionRate,
   registration,
-  returnedFromCheckout = false,
 }: TripRegistrationCardProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redirecting, setRedirecting] = useState(false);
   const [acceptedWaiver, setAcceptedWaiver] = useState(false);
 
   const price = Number(priceEur);
   const free = price === 0;
-  // Only "confirmed"/"waitlisted" count as registered — a "pending" row means
-  // payment hasn't been confirmed by the webhook yet, and must never render
-  // as success regardless of what the client thinks happened at Checkout.
   const isRegistered =
     registration !== null &&
     (registration.status === "confirmed" ||
       registration.status === "waitlisted");
-  // Gated on `returnedFromCheckout` (the `?payment=success` redirect) too — a
-  // `pending`/`pending` row alone isn't enough, since that's also what a
-  // hiker sees if they abandon or cancel Checkout, or simply revisit the page
-  // later without coming back through Stripe. Without this gate the card
-  // polls forever for a webhook that's never coming.
-  const isPaymentProcessing =
-    registration !== null &&
-    registration.status === "pending" &&
-    registration.paymentStatus === "pending" &&
-    returnedFromCheckout;
   const isFull = maxParticipants !== null && confirmedCount >= maxParticipants;
   const remaining =
     maxParticipants !== null
@@ -95,21 +54,6 @@ export function TripRegistrationCard({
       ? Math.min(100, Math.round((confirmedCount / maxParticipants) * 100))
       : 0;
 
-  // Rough hiker-facing breakdown of who takes what from the price. At a 0%
-  // rate there is no HikeIt fee to name — promising one that won't be charged
-  // would be simply untrue.
-  const platformFee = price * commissionRate;
-  const stripeFee = price * STRIPE_PCT + STRIPE_FIXED;
-
-  // While a payment is confirming, poll the DB every few seconds so the card
-  // flips to "REGJISTRUAR ✓" the moment the webhook lands — no manual refresh,
-  // no waiting on a club approval step (payment = registered, Option A).
-  useEffect(() => {
-    if (!isPaymentProcessing) return;
-    const id = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [isPaymentProcessing, router]);
-
   async function register() {
     setLoading(true);
     setError(null);
@@ -119,16 +63,6 @@ export function TripRegistrationCard({
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
-    // Paid trips: full-page, top-level redirect to Stripe's hosted Checkout.
-    // Swap the whole page for the branded transition overlay first so the
-    // handoff feels intentional. The registration stays "pending" until the
-    // webhook confirms payment — never mark it confirmed from the client.
-    if (result.type === "paid" && result.checkoutUrl) {
-      setRedirecting(true);
-      window.location.href = result.checkoutUrl;
-      return;
-    }
-    // Free trips are confirmed immediately.
     setLoading(false);
     router.refresh();
   }
@@ -150,8 +84,6 @@ export function TripRegistrationCard({
     "flex w-full items-center justify-center gap-2 border py-3.5 font-heading text-[14px] font-extrabold tracking-[0.04em] uppercase transition-colors";
   const primaryClass =
     "border-moss/50 bg-moss/20 text-moss hover:border-moss/70 hover:bg-moss/30";
-
-  if (redirecting) return <StripeRedirectOverlay />;
 
   return (
     <div className="border-summit/12 bg-summit/[0.03] min-w-0 border p-4 sm:p-[18px]">
@@ -180,13 +112,11 @@ export function TripRegistrationCard({
         </>
       ) : null}
 
-      {/* Fee breakdown for paid trips (not while paying). */}
-      {!free && !isRegistered && !isPast ? (
+      {/* HikeIt does not process trip money — say so plainly, so nobody
+          expects to be charged here and nobody forgets to pay the club. */}
+      {!free && !isPast ? (
         <p className="text-summit/25 mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words uppercase">
-          Stripe merr ~€{stripeFee.toFixed(2)}
-          {commissionRate > 0
-            ? ` · HikeIt €${platformFee.toFixed(2)} (${formatRatePercent(commissionRate)})`
-            : ""}
+          Pagesa bëhet direkt te klubi
         </p>
       ) : null}
 
@@ -200,7 +130,7 @@ export function TripRegistrationCard({
             href={`/login?redirect=/trips/${slug}`}
             className={cn(buttonClass, primaryClass)}
           >
-            {free ? "Regjistrohu falas →" : `Regjistrohu — €${price}`}
+            {free ? "Regjistrohu falas →" : "Regjistrohu →"}
           </Link>
         ) : isRegistered ? (
           <div className="space-y-2">
@@ -210,35 +140,16 @@ export function TripRegistrationCard({
                 ? "Në listën e pritjes"
                 : "Regjistruar ✓"}
             </span>
-            {registration?.isReregistration ? (
-              <p className="text-summit/35 text-center text-[10px] tracking-[0.04em] uppercase">
-                Për anulim kontaktoni klubin direkt.
-              </p>
-            ) : (
-              <CancelConfirmDialog
-                priceLabel={`€${price}`}
-                isPaid={!free}
-                loading={loading}
-                onConfirm={cancel}
-              />
-            )}
-            {!free && !registration?.isReregistration ? (
+            <CancelConfirmDialog
+              isPaid={!free}
+              loading={loading}
+              onConfirm={cancel}
+            />
+            {!free ? (
               <p className="text-summit/30 text-center text-[9px] leading-relaxed tracking-[0.02em] uppercase">
-                Rimbursim i plotë nëse anulohet 24 orë para nisjes.
+                Çmimin e arkëton klubi direkt.
               </p>
             ) : null}
-          </div>
-        ) : isPaymentProcessing ? (
-          <div className="space-y-2">
-            <span className="border-moss/40 bg-moss/15 text-moss flex items-center justify-center gap-2 border py-3 text-[12px] font-bold uppercase">
-              <Loader2 className="size-4 animate-spin" />
-              Pagesa po konfirmohet…
-            </span>
-            <p className="text-summit/35 text-center text-[10px] tracking-[0.02em] uppercase">
-              {returnedFromCheckout
-                ? "U kthyet nga Stripe — konfirmohet automatikisht."
-                : "Do të konfirmohet automatikisht."}
-            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -280,7 +191,7 @@ export function TripRegistrationCard({
                 ? "Lista e pritjes →"
                 : free
                   ? "Regjistrohu falas →"
-                  : `Regjistrohu — €${price}`}
+                  : "Regjistrohu →"}
             </button>
           </div>
         )}
@@ -292,7 +203,7 @@ export function TripRegistrationCard({
         </p>
       ) : (
         <p className="text-summit/25 mt-2.5 text-center text-[10px] tracking-[0.04em] uppercase">
-          Anulimi falas deri 24 ore para nisjes.
+          Mund ta anuloni në çdo kohë para nisjes.
         </p>
       )}
     </div>
@@ -307,12 +218,10 @@ export function TripRegistrationCard({
  * club admin's removal dialog.
  */
 function CancelConfirmDialog({
-  priceLabel,
   isPaid,
   loading,
   onConfirm,
 }: {
-  priceLabel: string;
   isPaid: boolean;
   loading: boolean;
   onConfirm: () => void | Promise<void>;
@@ -346,13 +255,13 @@ function CancelConfirmDialog({
           </AlertDialog.Title>
           <AlertDialog.Description className="text-summit/70 mt-3 space-y-2 text-[13px] leading-relaxed">
             <p>
-              Nëse anuloni regjistrimin, nuk do të mund të regjistroheni përsëri
-              në këtë udhëtim.
+              Vendi juaj lirohet dhe mund t&apos;i kalojë dikujt nga lista e
+              pritjes.
             </p>
             {isPaid ? (
               <p>
-                Pagesa juaj prej {priceLabel} do t&apos;ju rimbursohet
-                plotësisht nëse anulohet 24 orë para nisjes.
+                Nëse i keni paguar tashmë klubit, rimbursimi merret vesh
+                direkt me ta.
               </p>
             ) : null}
           </AlertDialog.Description>

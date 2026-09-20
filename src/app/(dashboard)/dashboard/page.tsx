@@ -376,12 +376,12 @@ async function ClubAdminHome({
         </AdminStat>
         <div className="border-summit/8 bg-summit/[0.04] border p-4">
           <p className="text-summit/60 mb-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase">
-            Të ardhura
+            Të pritura
           </p>
           <p className="font-heading text-sunset text-[28px] leading-none font-extrabold">
-            €{stats.revenue}
+            €{stats.expectedRevenue}
             <span className="text-summit/60 ml-1.5 text-[9px] font-semibold tracking-[0.08em] uppercase">
-              Mujor
+              Arkëtoni vetë
             </span>
           </p>
         </div>

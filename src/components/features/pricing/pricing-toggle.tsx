@@ -20,7 +20,6 @@ const FREE_FEATURES = {
 const PRO_FEATURES = [
   "Anëtarë të pakufizuar",
   "Udhëtime të pakufizuara",
-  "Mblidh pagesa",
   "Dashboard analitike",
   "Suport email",
 ];
@@ -197,7 +196,7 @@ export function PricingToggle() {
           <UpgradeButton
             tier="pro"
             interval={annual ? "yearly" : "monthly"}
-            label="Fillo Provën 14-Ditore →"
+            label="Abonohu →"
             variant="moss"
             className="mt-6"
             buttonClassName="h-auto py-3.5 text-[12px] font-extrabold tracking-[0.06em]"

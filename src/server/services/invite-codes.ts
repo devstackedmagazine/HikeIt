@@ -1,16 +1,23 @@
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
 
-import { addMonths, clampRate } from "@/lib/commission";
 import { db } from "@/lib/db";
 import { inviteCodes } from "@/lib/db/schema";
+import { addMonths } from "@/lib/entitlements";
 
 /**
  * Invite-code redemption.
  *
- * A code is redeemed exactly once, at club creation, and grants the club a
- * commission rate for `durationMonths` (or permanently). Redemption never
- * blocks club creation — an invalid code produces a warning and the club is
- * created on the standard free trial instead.
+ * A code is redeemed exactly once, at club creation, and grants two things,
+ * either of which may be absent:
+ *
+ * 1. **Free runway** — `trialMonths` of full Pro access, replacing the
+ *    standard trial length. Applied locally, so it is worth something to a
+ *    club the moment it signs up, whether or not it ever subscribes.
+ * 2. **A Paddle discount** — `paddleDiscountId`, passed to checkout if and
+ *    when the club does subscribe. Paddle owns the money math.
+ *
+ * Redemption never blocks club creation — an invalid code produces a warning
+ * and the club is created on the standard free trial instead.
  */
 
 /** Every way a redemption can fail. Callers map these to Albanian copy. */
@@ -20,7 +27,7 @@ export type InviteCodeError =
   | "expired"
   | "exhausted";
 
-/** Albanian, user-facing. Stripe/Postgres errors are never surfaced raw. */
+/** Albanian, user-facing. Postgres errors are never surfaced raw. */
 export const inviteCodeErrorMessages: Record<InviteCodeError, string> = {
   not_found: "Kodi nuk është i vlefshëm",
   inactive: "Kodi nuk është i vlefshëm",
@@ -28,12 +35,15 @@ export const inviteCodeErrorMessages: Record<InviteCodeError, string> = {
   exhausted: "Ky kod është shfrytëzuar plotësisht",
 };
 
-/** The commission grant a successfully redeemed code confers. */
+/** What a successfully redeemed code confers. */
 export interface InviteCodeGrant {
   code: string;
-  rate: number;
-  /** `null` when the code grants the rate permanently. */
-  until: Date | null;
+  /** Months of Pro access granted from redemption. */
+  trialMonths: number;
+  /** When the granted trial ends. */
+  trialEndsAt: Date;
+  /** Paddle discount applied at checkout, or `null` if the code carries none. */
+  paddleDiscountId: string | null;
 }
 
 export type RedeemResult =
@@ -85,8 +95,8 @@ export async function redeemInviteCode(
     )
     .returning({
       code: inviteCodes.code,
-      commissionRate: inviteCodes.commissionRate,
-      durationMonths: inviteCodes.durationMonths,
+      trialMonths: inviteCodes.trialMonths,
+      paddleDiscountId: inviteCodes.paddleDiscountId,
     });
 
   const row = claimed[0];
@@ -95,10 +105,9 @@ export async function redeemInviteCode(
       ok: true,
       grant: {
         code: row.code,
-        rate: clampRate(Number(row.commissionRate)),
-        until: row.durationMonths
-          ? addMonths(now, row.durationMonths)
-          : null,
+        trialMonths: row.trialMonths,
+        trialEndsAt: addMonths(now, row.trialMonths),
+        paddleDiscountId: row.paddleDiscountId,
       },
     };
   }

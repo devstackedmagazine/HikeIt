@@ -12,7 +12,6 @@ import {
   sql,
 } from "drizzle-orm";
 
-import { resolveCommission } from "@/lib/commission";
 import { db } from "@/lib/db";
 import type { Trail, Trip, TripRegistration } from "@/lib/db/schema";
 import {
@@ -163,13 +162,6 @@ export interface TripWithDetails extends Trip {
   club: ClubLite & { id: string };
   trail: Trail | null;
   confirmedCount: number;
-  /**
-   * The organizing club's currently resolved HikeIt commission rate. Resolved
-   * server-side through `resolveCommission` so the fee breakdown shown to a
-   * hiker matches exactly what `registerForTrip` will charge — including 0
-   * during a trial or grant.
-   */
-  commissionRate: number;
 }
 
 const UUID_RE =
@@ -187,10 +179,6 @@ export async function getTripById(
       clubSlug: organizations.slug,
       clubCity: organizations.city,
       clubLogo: organizations.logoUrl,
-      clubCommissionRate: organizations.commissionRate,
-      clubCommissionOverrideUntil: organizations.commissionOverrideUntil,
-      clubCommissionOverrideReason: organizations.commissionOverrideReason,
-      clubTrialEndsAt: organizations.trialEndsAt,
       trail: trails,
       confirmedCount: confirmedCountSql,
     })
@@ -210,12 +198,6 @@ export async function getTripById(
     ...row.trip,
     confirmedCount: Number(row.confirmedCount),
     trail: row.trail,
-    commissionRate: resolveCommission({
-      commissionRate: row.clubCommissionRate,
-      commissionOverrideUntil: row.clubCommissionOverrideUntil,
-      commissionOverrideReason: row.clubCommissionOverrideReason,
-      trialEndsAt: row.clubTrialEndsAt,
-    }).rate,
     club: {
       id: row.clubId,
       name: row.clubName,
@@ -262,8 +244,7 @@ export async function getClubTrips(
 export interface RegistrationWithUser {
   id: string;
   status: TripRegistration["status"];
-  paymentStatus: TripRegistration["paymentStatus"];
-  amountPaidEur: string | null;
+  isReregistration: boolean;
   registeredAt: Date;
   userName: string | null;
   userEmail: string;
@@ -278,8 +259,7 @@ export async function getTripRegistrations(
     .select({
       id: tripRegistrations.id,
       status: tripRegistrations.status,
-      paymentStatus: tripRegistrations.paymentStatus,
-      amountPaidEur: tripRegistrations.amountPaidEur,
+      isReregistration: tripRegistrations.isReregistration,
       registeredAt: tripRegistrations.registeredAt,
       userName: users.name,
       userEmail: users.email,
