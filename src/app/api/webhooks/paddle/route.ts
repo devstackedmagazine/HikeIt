@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+
 import { env } from "@/config/env";
 import { getPaddle, isPaddleConfigured } from "@/lib/paddle/client";
 import { captureError } from "@/lib/sentry";
@@ -39,6 +41,39 @@ export async function POST(request: Request) {
   // Raw, unparsed, unmodified — the signature is over these exact bytes.
   const body = await request.text();
 
+  // === TEMPORARY WEBHOOK DIAGNOSTICS — remove before merging to main. ===
+  // Reproduces Paddle's own verification (`ts:body` HMAC-SHA256) alongside the
+  // SDK call so the logs separate the two failure modes the SDK collapses into
+  // one opaque throw: a wrong secret (hmacMatches false) versus a stale
+  // timestamp (hmacMatches true but the SDK still rejects — see the 5s window
+  // in webhooks-validator.js).
+  {
+    const secret = env.PADDLE_WEBHOOK_SECRET;
+    const ts = /ts=(\d+)/.exec(signature)?.[1];
+    const h1 = /h1=([a-f0-9]+)/.exec(signature)?.[1];
+    const skewSeconds = ts ? Math.floor(Date.now() / 1000) - Number(ts) : null;
+    const computed = ts
+      ? createHmac("sha256", secret).update(`${ts}:${body}`).digest("hex")
+      : null;
+
+    console.log("[paddle-webhook-debug]", {
+      bodyFirst50: body.slice(0, 50),
+      bodyLength: body.length,
+      signatureHeader: signature,
+      secretFirst8: secret.slice(0, 8),
+      secretLength: secret.length,
+      // A quoted secret pasted into Vercel, or one with a trailing newline,
+      // shows up here and nowhere else.
+      secretHasWhitespace: secret !== secret.trim(),
+      // The decisive pair. hmacMatches true + unmarshal throwing == the SDK's
+      // 5-second replay window rejected us, not the secret.
+      hmacMatches: computed === h1,
+      skewSeconds,
+      exceedsSdkWindow: skewSeconds !== null && skewSeconds > 5,
+    });
+  }
+  // === END TEMPORARY DIAGNOSTICS ===
+
   let event;
   try {
     event = await getPaddle().webhooks.unmarshal(
@@ -46,7 +81,9 @@ export async function POST(request: Request) {
       env.PADDLE_WEBHOOK_SECRET,
       signature,
     );
-  } catch {
+  } catch (error) {
+    // TEMPORARY: log the SDK's own message alongside the block above.
+    console.log("[paddle-webhook-debug] unmarshal threw:", error);
     // Verification failed: bad secret, tampered payload, or a replayed event
     // outside the timestamp window. Never say which.
     return Response.json({ error: "Invalid signature" }, { status: 400 });
