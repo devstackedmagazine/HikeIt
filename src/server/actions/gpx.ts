@@ -5,8 +5,13 @@ import { revalidatePath } from "next/cache";
 
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
-import { organizations, trails, trips } from "@/lib/db/schema";
-import { parseGpxString } from "@/lib/gpx/parser";
+import { organizations, trails, trips, users } from "@/lib/db/schema";
+import { downsampleTrack, parseGpxString } from "@/lib/gpx/parser";
+import {
+  enforceRateLimit,
+  getClientIp,
+} from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/sentry";
 import { isR2Configured, uploadGpx } from "@/lib/storage/r2";
 import { generateSlug } from "@/lib/utils/slug";
 
@@ -16,11 +21,6 @@ export interface SubmitTrailResult {
   error?: string;
 }
 
-/**
- * Create a new (unverified) trail from a GPX file. Coordinates, distance,
- * elevation gain, track type and the elevation profile are parsed server-side
- * (source of truth) and the GPX is stored in R2.
- */
 export async function submitTrail(data: {
   name: string;
   region?: string;
@@ -33,6 +33,10 @@ export async function submitTrail(data: {
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
   if (!data.name.trim()) return { success: false, error: "Emri është i detyrueshëm." };
 
+  if (!isR2Configured()) {
+    return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
+  }
+
   let parsed;
   try {
     parsed = await parseGpxString(data.gpxContent);
@@ -44,10 +48,24 @@ export async function submitTrail(data: {
   }
 
   const slug = `${generateSlug(data.name)}-${crypto.randomUUID().slice(0, 6)}`;
+  const trailId = crypto.randomUUID();
+
+  // R2 upload first — orphaned R2 file on DB failure is fine;
+  // a DB row pointing at a nonexistent URL is not.
+  let gpxUrl: string;
+  try {
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, data.gpxContent);
+  } catch (error) {
+    captureError(error, { action: "submitTrail", extra: { phase: "r2Upload" } });
+    return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
+  }
+
+  const gpxTrack = downsampleTrack(parsed.points);
 
   const [trail] = await db
     .insert(trails)
     .values({
+      id: trailId,
       slug,
       name: data.name.trim(),
       description: data.description || null,
@@ -61,6 +79,17 @@ export async function submitTrail(data: {
       startLng: String(parsed.startLng),
       endLat: String(parsed.endLat),
       endLng: String(parsed.endLng),
+      gpxUrl,
+      gpxTrack,
+      gpxMetadata: {
+        name: parsed.name,
+        distanceKm: parsed.totalDistanceKm,
+        elevationGainM: parsed.totalElevationGainM,
+        elevationLossM: parsed.totalElevationLossM,
+        pointCount: parsed.pointCount,
+      },
+      gpxUploadedAt: new Date(),
+      gpxUploadedBy: session.user.id,
       elevationProfile: parsed.elevationProfile.map((p) => ({
         distance: p.distanceKm,
         elevation: p.elevation,
@@ -72,15 +101,6 @@ export async function submitTrail(data: {
 
   if (!trail) return { success: false, error: "Diçka shkoi keq." };
 
-  if (isR2Configured()) {
-    try {
-      const url = await uploadGpx(`trails/${trail.id}.gpx`, data.gpxContent);
-      await db.update(trails).set({ gpxUrl: url }).where(eq(trails.id, trail.id));
-    } catch {
-      // GPX stats are already saved; the file upload is best-effort.
-    }
-  }
-
   revalidatePath("/trails");
   return { success: true, slug: trail.slug };
 }
@@ -88,6 +108,93 @@ export async function submitTrail(data: {
 export interface ActionResult {
   success: boolean;
   error?: string;
+}
+
+/** Upload GPX to an existing trail. Super admins or the trail's submitter only. */
+export async function uploadTrailGpx(
+  trailId: string,
+  gpxContent: string,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+
+  if (!isR2Configured()) {
+    return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
+  }
+
+  const ip = await getClientIp();
+  const rateLimitError = await enforceRateLimit("ratelimit.trail.gpx.upload", {
+    userId: session.user.id,
+    ip,
+  });
+  if (rateLimitError) return { success: false, error: rateLimitError };
+
+  const trail = await db.query.trails.findFirst({
+    where: eq(trails.id, trailId),
+  });
+  if (!trail) return { success: false, error: "Shtegu nuk u gjet." };
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { role: true },
+  });
+  const isSuperAdmin = user?.role === "super_admin";
+  const isSubmitter = trail.submittedBy === session.user.id;
+  if (!isSuperAdmin && !isSubmitter) {
+    return { success: false, error: "Nuk keni qasje." };
+  }
+
+  let parsed;
+  try {
+    parsed = await parseGpxString(gpxContent);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "GPX i pavlefshëm.",
+    };
+  }
+
+  let gpxUrl: string;
+  try {
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, gpxContent);
+  } catch (error) {
+    captureError(error, { action: "uploadTrailGpx", extra: { trailId } });
+    return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
+  }
+
+  const gpxTrack = downsampleTrack(parsed.points);
+
+  await db
+    .update(trails)
+    .set({
+      gpxUrl,
+      gpxTrack,
+      gpxMetadata: {
+        name: parsed.name,
+        distanceKm: parsed.totalDistanceKm,
+        elevationGainM: parsed.totalElevationGainM,
+        elevationLossM: parsed.totalElevationLossM,
+        pointCount: parsed.pointCount,
+      },
+      gpxUploadedAt: new Date(),
+      gpxUploadedBy: session.user.id,
+      distanceKm: String(parsed.totalDistanceKm),
+      elevationGainM: parsed.totalElevationGainM,
+      trailType: parsed.trackType,
+      startLat: String(parsed.startLat),
+      startLng: String(parsed.startLng),
+      endLat: String(parsed.endLat),
+      endLng: String(parsed.endLng),
+      elevationProfile: parsed.elevationProfile.map((p) => ({
+        distance: p.distanceKm,
+        elevation: p.elevation,
+      })),
+    })
+    .where(eq(trails.id, trailId));
+
+  revalidatePath(`/trails/${trail.slug}`);
+  revalidatePath("/trails");
+  return { success: true };
 }
 
 /** Upload a GPX for an existing trip (admin); backfills meeting coordinates. */

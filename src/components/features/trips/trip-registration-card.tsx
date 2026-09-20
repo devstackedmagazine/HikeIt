@@ -154,11 +154,11 @@ export function TripRegistrationCard({
   if (redirecting) return <StripeRedirectOverlay />;
 
   return (
-    <div className="min-w-0 border border-summit/12 bg-summit/[0.03] p-4 sm:p-[18px]">
-      <p className="mb-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+    <div className="border-summit/12 bg-summit/[0.03] min-w-0 border p-4 sm:p-[18px]">
+      <p className="text-summit/30 mb-1 text-[9px] font-semibold tracking-[0.12em] uppercase">
         Çmimi per person
       </p>
-      <p className="font-heading mb-3.5 text-[36px] leading-none font-extrabold tracking-[-0.03em] text-summit">
+      <p className="font-heading text-summit mb-3.5 text-[36px] leading-none font-extrabold tracking-[-0.03em]">
         {free ? (
           <span className="text-moss uppercase">Falas</span>
         ) : (
@@ -169,20 +169,20 @@ export function TripRegistrationCard({
       {maxParticipants !== null ? (
         <>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold tracking-[0.04em] text-summit/45 uppercase">
+            <span className="text-summit/45 text-[10px] font-semibold tracking-[0.04em] uppercase">
               {remaining}/{maxParticipants} Vende të mbetura
             </span>
-            <span className="text-[10px] font-bold text-summit/35">{pct}%</span>
+            <span className="text-summit/35 text-[10px] font-bold">{pct}%</span>
           </div>
-          <div className="my-2 h-1 w-full bg-summit/[0.08]">
-            <div className="h-full bg-moss" style={{ width: `${pct}%` }} />
+          <div className="bg-summit/[0.08] my-2 h-1 w-full">
+            <div className="bg-moss h-full" style={{ width: `${pct}%` }} />
           </div>
         </>
       ) : null}
 
       {/* Fee breakdown for paid trips (not while paying). */}
       {!free && !isRegistered && !isPast ? (
-        <p className="mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words text-summit/25 uppercase">
+        <p className="text-summit/25 mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words uppercase">
           Stripe merr ~€{stripeFee.toFixed(2)}
           {commissionRate > 0
             ? ` · HikeIt €${platformFee.toFixed(2)} (${formatRatePercent(commissionRate)})`
@@ -204,14 +204,14 @@ export function TripRegistrationCard({
           </Link>
         ) : isRegistered ? (
           <div className="space-y-2">
-            <span className="flex items-center justify-center gap-2 border border-moss/40 bg-moss/15 py-3 text-[13px] font-bold text-moss uppercase">
+            <span className="border-moss/40 bg-moss/15 text-moss flex items-center justify-center gap-2 border py-3 text-[13px] font-bold uppercase">
               <CheckCircle2 className="size-4" />
               {registration?.status === "waitlisted"
                 ? "Në listën e pritjes"
                 : "Regjistruar ✓"}
             </span>
             {registration?.isReregistration ? (
-              <p className="text-center text-[10px] tracking-[0.04em] text-summit/35 uppercase">
+              <p className="text-summit/35 text-center text-[10px] tracking-[0.04em] uppercase">
                 Për anulim kontaktoni klubin direkt.
               </p>
             ) : (
@@ -223,18 +223,18 @@ export function TripRegistrationCard({
               />
             )}
             {!free && !registration?.isReregistration ? (
-              <p className="text-center text-[9px] leading-relaxed tracking-[0.02em] text-summit/30 uppercase">
+              <p className="text-summit/30 text-center text-[9px] leading-relaxed tracking-[0.02em] uppercase">
                 Rimbursim i plotë nëse anulohet 24 orë para nisjes.
               </p>
             ) : null}
           </div>
         ) : isPaymentProcessing ? (
           <div className="space-y-2">
-            <span className="flex items-center justify-center gap-2 border border-moss/40 bg-moss/15 py-3 text-[12px] font-bold text-moss uppercase">
+            <span className="border-moss/40 bg-moss/15 text-moss flex items-center justify-center gap-2 border py-3 text-[12px] font-bold uppercase">
               <Loader2 className="size-4 animate-spin" />
               Pagesa po konfirmohet…
             </span>
-            <p className="text-center text-[10px] tracking-[0.02em] text-summit/35 uppercase">
+            <p className="text-summit/35 text-center text-[10px] tracking-[0.02em] uppercase">
               {returnedFromCheckout
                 ? "U kthyet nga Stripe — konfirmohet automatikisht."
                 : "Do të konfirmohet automatikisht."}
@@ -249,20 +249,20 @@ export function TripRegistrationCard({
                 type="checkbox"
                 checked={acceptedWaiver}
                 onChange={(e) => setAcceptedWaiver(e.target.checked)}
-                className="mt-0.5 size-4 shrink-0 appearance-none border-2 border-summit/30 bg-transparent transition-colors checked:border-moss checked:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-moss"
+                className="border-summit/40 checked:border-moss checked:bg-moss focus-visible:outline-moss mt-0.5 size-4 shrink-0 appearance-none border-2 bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               />
-              <span className="text-[10px] leading-[1.5] text-summit/45">
+              <span className="text-summit/45 text-[10px] leading-[1.5]">
                 Kuptoj që hiking ka rreziqe të qenësishme. Lexova dhe pranoj{" "}
                 <Link
                   href="/terms"
-                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                  className="text-moss hover:text-summit font-bold underline underline-offset-2"
                 >
                   Kushtet e Shërbimit
                 </Link>{" "}
                 dhe{" "}
                 <Link
                   href="/privacy"
-                  className="font-bold text-moss underline underline-offset-2 hover:text-summit"
+                  className="text-moss hover:text-summit font-bold underline underline-offset-2"
                 >
                   Politikën e Privatësisë
                 </Link>
@@ -287,11 +287,11 @@ export function TripRegistrationCard({
       </div>
 
       {error ? (
-        <p className="mt-2 text-[11px] text-danger" role="alert">
+        <p className="text-danger mt-2 text-[11px]" role="alert">
           {error}
         </p>
       ) : (
-        <p className="mt-2.5 text-center text-[10px] tracking-[0.04em] text-summit/25 uppercase">
+        <p className="text-summit/25 mt-2.5 text-center text-[10px] tracking-[0.04em] uppercase">
           Anulimi falas deri 24 ore para nisjes.
         </p>
       )}
@@ -331,7 +331,7 @@ function CancelConfirmDialog({
           <button
             type="button"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 border border-summit/15 py-2.5 text-[10px] font-bold tracking-[0.08em] text-summit/45 uppercase transition-colors hover:text-summit disabled:opacity-50"
+            className="border-summit/40 text-summit/45 hover:text-summit flex w-full items-center justify-center gap-2 border py-2.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
           />
         }
       >
@@ -339,20 +339,20 @@ function CancelConfirmDialog({
         Anulo regjistrimin
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 border-forest bg-abyss p-6 text-summit outline-none sm:max-w-md">
-          <AlertDialog.Title className="font-heading text-[16px] font-extrabold tracking-[0.04em] text-summit uppercase">
+        <AlertDialog.Backdrop className="bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 z-50" />
+        <AlertDialog.Popup className="border-forest bg-abyss text-summit fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 p-6 outline-none sm:max-w-md">
+          <AlertDialog.Title className="font-heading text-summit text-[16px] font-extrabold tracking-[0.04em] uppercase">
             A jeni i sigurt?
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-3 space-y-2 text-[13px] leading-relaxed text-summit/70">
+          <AlertDialog.Description className="text-summit/70 mt-3 space-y-2 text-[13px] leading-relaxed">
             <p>
-              Nëse anuloni regjistrimin, nuk do të mund të regjistroheni
-              përsëri në këtë udhëtim.
+              Nëse anuloni regjistrimin, nuk do të mund të regjistroheni përsëri
+              në këtë udhëtim.
             </p>
             {isPaid ? (
               <p>
-                Pagesa juaj prej {priceLabel}{" "}do t&apos;ju rimbursohet plotësisht
-                nëse anulohet 24 orë para nisjes.
+                Pagesa juaj prej {priceLabel} do t&apos;ju rimbursohet
+                plotësisht nëse anulohet 24 orë para nisjes.
               </p>
             ) : null}
           </AlertDialog.Description>
@@ -362,7 +362,7 @@ function CancelConfirmDialog({
                 <button
                   type="button"
                   disabled={loading}
-                  className="border-2 border-forest bg-transparent px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:bg-forest disabled:opacity-50"
+                  className="border-forest font-heading text-summit hover:bg-forest border-2 bg-transparent px-4 py-2 text-[12px] font-bold tracking-[0.04em] uppercase transition-colors disabled:opacity-50"
                 />
               }
             >
@@ -372,7 +372,7 @@ function CancelConfirmDialog({
               type="button"
               onClick={confirm}
               disabled={loading}
-              className="flex items-center gap-2 border-2 border-danger bg-danger px-4 py-2 font-heading text-[12px] font-bold tracking-[0.04em] text-summit uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
+              className="border-danger bg-danger font-heading text-summit flex items-center gap-2 border-2 px-4 py-2 text-[12px] font-bold tracking-[0.04em] uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
               Anulo regjistrimin

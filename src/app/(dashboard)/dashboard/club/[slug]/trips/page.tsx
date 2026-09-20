@@ -22,21 +22,23 @@ const cache = createSearchParamsCache(clubTripsParsers);
 const serialize = createSerializer(clubTripsParsers);
 const LIMIT = 10;
 
-const STATUS_BADGE: Record<Trip["status"], { className: string; label: string }> =
-  {
-    open: { className: "bg-moss text-abyss", label: "Hapur" },
-    full: { className: "bg-moss text-abyss", label: "Plotë" },
-    in_progress: { className: "bg-moss text-abyss", label: "Në vazhdim" },
-    draft: {
-      className: "border border-forest/30 text-forest/60",
-      label: "Draft",
-    },
-    completed: {
-      className: "border border-forest/20 bg-forest/10 text-forest",
-      label: "Përfunduar",
-    },
-    canceled: { className: "bg-danger text-summit", label: "Anuluar" },
-  };
+const STATUS_BADGE: Record<
+  Trip["status"],
+  { className: string; label: string }
+> = {
+  open: { className: "bg-moss text-abyss", label: "Hapur" },
+  full: { className: "bg-moss text-abyss", label: "Plotë" },
+  in_progress: { className: "bg-moss text-abyss", label: "Në vazhdim" },
+  draft: {
+    className: "border border-forest/60 text-forest/60",
+    label: "Draft",
+  },
+  completed: {
+    className: "border border-forest/60 bg-forest/10 text-forest",
+    label: "Përfunduar",
+  },
+  canceled: { className: "bg-danger text-summit", label: "Anuluar" },
+};
 
 function formatDate(date: Date): string {
   const dm = new Intl.DateTimeFormat("sq-AL", {
@@ -46,7 +48,8 @@ function formatDate(date: Date): string {
   return `${dm}, ${date.getFullYear()}`.toUpperCase();
 }
 
-const GRID = "grid grid-cols-[2fr_1.5fr_1fr_1.2fr_1fr_0.8fr_0.8fr] items-center gap-2";
+const GRID =
+  "grid grid-cols-[2fr_1.5fr_1fr_1.2fr_1fr_0.8fr_0.8fr] items-center gap-2";
 
 export default async function ClubTripsPage({
   params,
@@ -81,20 +84,23 @@ export default async function ClubTripsPage({
   return (
     <div>
       {/* Header */}
-      <p className="mb-2 text-[10px] font-medium tracking-[0.08em] text-forest/40 uppercase">
-        <Link href={`/dashboard/club/${club.slug}`} className="hover:text-forest">
+      <p className="text-forest/40 mb-2 text-[10px] font-medium tracking-[0.08em] uppercase">
+        <Link
+          href={`/dashboard/club/${club.slug}`}
+          className="hover:text-forest"
+        >
           Paneli i klubit
         </Link>
       </p>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <h1 className="font-heading max-w-[12ch] text-[clamp(32px,5vw,56px)] leading-[0.95] font-extrabold tracking-[-0.04em] text-forest uppercase">
+        <h1 className="font-heading text-forest max-w-[12ch] text-[clamp(32px,5vw,56px)] leading-[1.2] font-extrabold tracking-[-0.04em] uppercase">
           {club.name}
         </h1>
         <div className="flex flex-wrap gap-2">
-          <span className="border border-forest/15 bg-forest/[0.08] px-3 py-1.5 text-[9px] font-bold tracking-[0.08em] text-forest uppercase">
+          <span className="border-forest/15 bg-forest/[0.08] text-forest border px-3 py-1.5 text-[9px] font-bold tracking-[0.08em] uppercase">
             Statistikat e sotme
           </span>
-          <span className="bg-moss px-3 py-1.5 text-[9px] font-bold tracking-[0.08em] text-abyss uppercase">
+          <span className="bg-moss text-abyss px-3 py-1.5 text-[9px] font-bold tracking-[0.08em] uppercase">
             Aktive: {stats.activeTrips} Udhëtime
           </span>
         </div>
@@ -103,25 +109,25 @@ export default async function ClubTripsPage({
       {/* Filter + create */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-4">
-          <h2 className="font-heading text-sm font-extrabold tracking-[-0.01em] text-forest uppercase">
+          <h2 className="font-heading text-forest text-sm font-extrabold tracking-[-0.01em] uppercase">
             Të gjitha udhëtimet
           </h2>
           <ClubTripsFilter />
         </div>
         <Link
           href={createHref}
-          className="bg-moss px-5 py-3 text-xs font-extrabold tracking-[0.08em] text-abyss uppercase transition-colors hover:bg-pine hover:text-summit"
+          className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors"
         >
           Krijo udhëtim të ri →
         </Link>
       </div>
 
       {/* Table */}
-      <div className="border border-forest/12 bg-summit">
+      <div className="border-forest/12 bg-summit border">
         <div
           className={cn(
             GRID,
-            "bg-forest px-4 py-2.5 text-[10px] font-bold tracking-[0.1em] text-summit uppercase",
+            "bg-forest text-summit px-4 py-2.5 text-[10px] font-bold tracking-[0.1em] uppercase",
           )}
         >
           <span>Titulli</span>
@@ -134,7 +140,7 @@ export default async function ClubTripsPage({
         </div>
 
         {rows.length === 0 ? (
-          <p className="px-4 py-10 text-center text-xs text-forest/40">
+          <p className="text-forest/40 px-4 py-10 text-center text-xs">
             Asnjë udhëtim. Krijoni të parin.
           </p>
         ) : (
@@ -145,16 +151,16 @@ export default async function ClubTripsPage({
                 key={trip.id}
                 className={cn(
                   GRID,
-                  "border-b border-forest/[0.06] px-4 py-3 transition-colors last:border-b-0 hover:bg-forest/[0.03]",
+                  "border-forest/[0.06] hover:bg-forest/[0.03] border-b px-4 py-3 transition-colors last:border-b-0",
                 )}
               >
-                <span className="font-heading text-xs leading-[1.2] font-bold tracking-[-0.01em] text-forest uppercase">
+                <span className="font-heading text-forest text-xs leading-[1.2] font-bold tracking-[-0.01em] uppercase">
                   {trip.title}
                 </span>
-                <span className="text-[11px] leading-[1.3] text-forest/55 italic">
+                <span className="text-forest/55 text-[11px] leading-[1.3] italic">
                   {trailName ?? "—"}
                 </span>
-                <span className="text-[10px] font-semibold text-forest/60 uppercase">
+                <span className="text-forest/60 text-[10px] font-semibold uppercase">
                   {formatDate(trip.startDatetime)}
                 </span>
                 <span>
@@ -167,10 +173,10 @@ export default async function ClubTripsPage({
                     {badge.label}
                   </span>
                 </span>
-                <span className="text-xs font-semibold text-forest">
+                <span className="text-forest text-xs font-semibold">
                   {confirmedCount}/{trip.maxParticipants ?? "∞"}
                 </span>
-                <span className="font-heading text-xs font-bold text-forest">
+                <span className="font-heading text-forest text-xs font-bold">
                   €{Number(trip.priceEur).toFixed(2)}
                 </span>
                 <span className="flex justify-end gap-1.5">
@@ -196,8 +202,8 @@ export default async function ClubTripsPage({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-forest/[0.08] pt-3.5">
-        <span className="text-[10px] font-medium tracking-[0.04em] text-forest/40 uppercase">
+      <div className="border-forest/[0.08] flex flex-wrap items-center justify-between gap-3 border-t pt-3.5">
+        <span className="text-forest/40 text-[10px] font-medium tracking-[0.04em] uppercase">
           Duke treguar {rangeStart} - {rangeEnd} nga {total} udhëtime
         </span>
         {totalPages > 1 ? (

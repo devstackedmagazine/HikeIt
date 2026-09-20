@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-import logo from "../../../../public/logos/Hikeit-pfp.png"
+import logo from "../../../../public/logos/Hikeit-pfp.png";
 
 export const metadata: Metadata = {
   title: "Rreth nesh",
@@ -12,21 +12,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://hikeit.app/about" },
 };
 
-const STATS = [
-  { value: "00+", label: "klube" },
-  { value: "000+", label: "shtigje" },
-  { value: "3", label: "vende" },
-];
-
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
       <div className="space-y-4 text-center">
         <div className="bg-primary/10 text-primary mx-auto flex size-14 items-center justify-center rounded-2xl">
           {/* <Mountain className="size-7" /> */}
-          <Image src={logo} alt="HikeIt logo"/>
+          <Image src={logo} alt="HikeIt logo" />
         </div>
-        <h1 className="text-4xl font-bold tracking-tight text-sage sm:text-5xl">
+        <h1 className="text-sage text-4xl font-bold tracking-tight sm:text-5xl">
           HikeIt u krijua për të bashkuar komunitetin e alpinizmit në Kosovë
         </h1>
       </div>
@@ -45,45 +39,32 @@ export default function AboutPage() {
         </p>
       </div>
 
-      <div className="mt-12 grid grid-cols-3 divide-x-2 divide-moss border-2 border-moss bg-forest text-center">
-        {STATS.map((stat) => (
-          <div key={stat.label} className="px-8 py-6">
-            <p className="font-heading text-4xl font-black uppercase text-moss">
-              {stat.value}
-            </p>
-            <p className="mt-1 text-xs font-bold tracking-[0.15em] text-summit uppercase">
-              {stat.label}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-12 bg-forest px-6 py-12 text-center">
-        <h2 className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+      <div className="bg-forest mt-12 px-6 py-12 text-center">
+        <h2 className="text-sage text-xs font-bold tracking-[0.15em] uppercase">
           Ekipi
         </h2>
-        <div className="mt-6 flex flex-col items-center gap-3 border-2 border-moss bg-abyss px-8 py-6">
-          <span className="flex size-20 items-center justify-center bg-moss text-2xl font-black text-abyss">
+        <div className="border-moss bg-abyss mt-6 flex flex-col items-center gap-3 border-2 px-8 py-6">
+          <span className="bg-moss text-abyss flex size-20 items-center justify-center text-2xl font-black">
             FG
           </span>
           <div>
-            <p className="text-lg font-black text-summit uppercase">
+            <p className="text-summit text-lg font-black uppercase">
               Fatlum Gërxhaliu
             </p>
-            <p className="text-xs tracking-widest text-moss uppercase">
+            <p className="text-moss text-xs tracking-widest uppercase">
               HikeIt Founder
             </p>
           </div>
         </div>
       </div>
 
-      <div className="border-t-2 border-forest bg-abyss px-6 py-12 text-center">
-        <h2 className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+      <div className="border-forest bg-abyss border-t-2 px-6 py-12 text-center">
+        <h2 className="text-sage text-xs font-bold tracking-[0.15em] uppercase">
           Na kontakto
         </h2>
         <Link
           href="mailto:hello@hikeit.app"
-          className="mx-auto mt-6 flex w-full max-w-sm items-center justify-center gap-2 border-2 border-moss bg-transparent py-3.5 text-sm font-bold tracking-[0.06em] text-moss uppercase transition-colors hover:bg-moss hover:text-abyss"
+          className="border-moss text-moss hover:bg-moss hover:text-abyss mx-auto mt-6 flex w-full max-w-sm items-center justify-center gap-2 border-2 bg-transparent py-3.5 text-sm font-bold tracking-[0.06em] uppercase transition-colors"
         >
           <Mail className="size-4" />
           hello@hikeit.app

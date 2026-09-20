@@ -290,6 +290,19 @@ export const trails = pgTable(
     endLat: numeric("end_lat", { precision: 10, scale: 7 }),
     endLng: numeric("end_lng", { precision: 10, scale: 7 }),
     gpxUrl: text("gpx_url"),
+    gpxTrack: jsonb("gpx_track").$type<[number, number][]>(),
+    gpxMetadata:
+      jsonb("gpx_metadata").$type<{
+        name: string;
+        distanceKm: number;
+        elevationGainM: number;
+        elevationLossM: number;
+        pointCount: number;
+      }>(),
+    gpxUploadedAt: timestamp("gpx_uploaded_at", { withTimezone: true }),
+    gpxUploadedBy: uuid("gpx_uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     // Sampled elevation profile: ordered points along the trail.
     elevationProfile:
       jsonb("elevation_profile").$type<

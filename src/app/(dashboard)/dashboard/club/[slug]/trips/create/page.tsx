@@ -31,7 +31,7 @@ export default async function CreateTripPage({
         <span className="text-summit/20">·</span>
         <span className="text-summit/55">Krijo të ri</span>
       </p>
-      <h1 className="font-heading mb-6 text-[clamp(24px,4vw,40px)] leading-none font-extrabold tracking-[-0.02em] text-summit uppercase">
+      <h1 className="font-heading mb-6 text-[clamp(24px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.02em] text-summit uppercase">
         Krijo udhëtim të ri
       </h1>
 

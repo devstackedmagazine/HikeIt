@@ -46,12 +46,12 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email adresa juaj..."
           aria-label="Email"
-          className="border-summit/20 bg-abyss text-summit placeholder:text-summit/35 focus:border-moss/50 !h-[54px] min-w-0 border px-5 text-sm focus:outline-none sm:flex-1"
+          className="border-summit/40 bg-abyss text-summit placeholder:text-summit/60 focus:border-moss !h-[54px] min-w-0 border px-5 text-sm focus:outline-none sm:flex-1"
         />
         <button
           type="submit"
           disabled={status === "loading"}
-          className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/35 flex h-[54px] w-full shrink-0 items-center justify-center gap-2 border px-7 text-xs font-bold tracking-[0.1em] uppercase transition-colors disabled:opacity-50 sm:w-auto"
+          className="border-moss bg-moss text-abyss hover:bg-sage flex h-[54px] w-full shrink-0 items-center justify-center gap-2 border px-7 text-xs font-bold tracking-[0.1em] uppercase transition-colors disabled:opacity-50 sm:w-auto"
         >
           {status === "loading" ? (
             <>

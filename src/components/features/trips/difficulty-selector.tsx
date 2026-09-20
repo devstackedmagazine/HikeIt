@@ -6,9 +6,21 @@ export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 
 const DIFFICULTIES: { label: string; value: Difficulty; active: string }[] = [
   { label: "L", value: "easy", active: "border-moss bg-moss/20 text-moss" },
-  { label: "M", value: "moderate", active: "border-alert bg-alert/20 text-alert" },
-  { label: "V", value: "hard", active: "border-sunset bg-sunset/20 text-sunset" },
-  { label: "E", value: "expert", active: "border-danger bg-danger/20 text-danger" },
+  {
+    label: "M",
+    value: "moderate",
+    active: "border-alert bg-alert/20 text-alert",
+  },
+  {
+    label: "V",
+    value: "hard",
+    active: "border-sunset bg-sunset/20 text-sunset",
+  },
+  {
+    label: "E",
+    value: "expert",
+    active: "border-danger bg-danger/20 text-danger",
+  },
 ];
 
 export function DifficultySelector({
@@ -32,7 +44,7 @@ export function DifficultySelector({
               "font-heading flex size-9 items-center justify-center border text-[13px] font-extrabold uppercase transition-colors",
               active
                 ? d.active
-                : "border-summit/15 bg-summit/[0.06] text-summit/50 hover:text-summit/80",
+                : "border-summit/40 bg-summit/[0.06] text-summit/50 hover:text-summit/80",
             )}
           >
             {d.label}

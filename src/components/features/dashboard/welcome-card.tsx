@@ -7,8 +7,8 @@ export function WelcomeCard({ firstName }: { firstName: string }) {
         </p>
         <p className="max-w-[400px] text-xs leading-[1.6] text-[#3D5A47]">
           Gati për sfidën e radhës në{" "}
-          <span className="text-moss">Bjeshkët e Nemuna</span>? Sot kemi kushte
-          ideale për <span className="text-moss">ngjitje në lartësi mbi 2000m</span>.
+          <span className="text-pine">Bjeshkët e Nemuna</span>? Sot kemi kushte
+          ideale për <span className="text-pine">ngjitje në lartësi mbi 2000m</span>.
         </p>
       </div>
       <svg

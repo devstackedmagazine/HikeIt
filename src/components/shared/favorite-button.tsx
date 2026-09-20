@@ -10,7 +10,11 @@ interface FavoriteButtonProps {
   isSaved: boolean;
   isLoggedIn: boolean;
   returnPath: string;
-  onToggle: () => Promise<{ success: boolean; saved?: boolean; error?: string }>;
+  onToggle: () => Promise<{
+    success: boolean;
+    saved?: boolean;
+    error?: string;
+  }>;
   className?: string;
 }
 
@@ -54,9 +58,7 @@ export function FavoriteButton({
         className,
       )}
     >
-      <Heart
-        className={cn("size-4", optimisticSaved && "fill-moss")}
-      />
+      <Heart className={cn("size-4", optimisticSaved && "fill-moss")} />
     </button>
   );
 }

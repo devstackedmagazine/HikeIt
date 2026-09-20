@@ -28,7 +28,7 @@ export function TripSocialActions({
 }: TripSocialActionsProps) {
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-3 border-t border-summit/[0.06] pt-4">
+      <div className="border-summit/[0.06] flex items-center gap-3 border-t pt-4">
         <ShareButton title={title} className="size-11 md:size-8" />
 
         <TripFavoriteButton
@@ -45,7 +45,7 @@ export function TripSocialActions({
               <button
                 type="button"
                 aria-label="Raporto"
-                className="flex size-11 items-center justify-center border border-summit/15 text-summit/40 transition-colors hover:border-summit/30 hover:text-summit/70 md:size-8"
+                className="border-summit/40 text-summit/40 hover:border-summit/60 hover:text-summit/70 flex size-11 items-center justify-center border transition-colors md:size-8"
               />
             }
           >

@@ -13,7 +13,7 @@ export function TrailSearch() {
   });
 
   return (
-    <div className="flex h-[38px] w-full items-center gap-2.5 border border-summit/15 bg-summit/[0.05] px-3 focus-within:border-moss/50 sm:w-[260px]">
+    <div className="border-summit/40 bg-summit/[0.05] focus-within:border-moss flex h-[38px] w-full items-center gap-2.5 border px-3 sm:w-[260px]">
       <input
         type="search"
         aria-label="Kërko shtegun"
@@ -22,9 +22,9 @@ export function TrailSearch() {
         onChange={(e) =>
           setFilters({ search: e.target.value, page: 1 }, { throttleMs: 400 })
         }
-        className="min-w-0 flex-1 bg-transparent text-[13px] text-summit placeholder:text-summit/35 focus:outline-none"
+        className="text-summit placeholder:text-summit/35 min-w-0 flex-1 bg-transparent text-[13px] focus:outline-none"
       />
-      <Search className="size-4 shrink-0 text-summit/35" />
+      <Search className="text-summit/35 size-4 shrink-0" />
     </div>
   );
 }

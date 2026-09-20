@@ -49,7 +49,7 @@ export default async function AdminPage({
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <p className="mb-2 text-xs font-bold tracking-[0.15em] text-moss uppercase">
+        <p className="mb-2 text-xs font-bold tracking-[0.15em] text-forest uppercase">
           Kontroll i platformës
         </p>
         <h1 className="font-heading text-3xl font-black tracking-tight text-forest uppercase sm:text-4xl">
@@ -112,13 +112,13 @@ function SummaryBox({
         "border-b-2 border-forest lg:border-b-0",
       )}
     >
-      <p className="text-[10px] font-bold tracking-[0.12em] text-forest/50 uppercase">
+      <p className="text-[10px] font-bold tracking-[0.12em] text-forest/70 uppercase">
         {label}
       </p>
       <p
         className={cn(
           "font-heading mt-1 text-3xl font-black tracking-tight",
-          accent ? "text-moss" : "text-forest",
+          accent ? "text-pine" : "text-forest",
         )}
       >
         {value}

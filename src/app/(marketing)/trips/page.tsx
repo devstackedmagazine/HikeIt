@@ -55,13 +55,13 @@ export default async function TripsPage({
     <div className="bg-abyss">
       {/* Header + filter bar (Forest) */}
       <div className="bg-forest px-6 pt-8 sm:px-8">
-        <p className="mb-2.5 text-[10px] font-bold tracking-[0.15em] text-moss uppercase">
+        <p className="text-sage mb-2.5 text-[10px] font-bold tracking-[0.15em] uppercase">
           Aventura
         </p>
-        <h1 className="font-heading mb-3.5 text-[clamp(32px,5vw,56px)] leading-none font-extrabold tracking-[-0.03em] text-summit uppercase">
+        <h1 className="font-heading text-summit mb-3.5 text-[clamp(32px,5vw,56px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
           Udhëtimet e Ardhshme
         </h1>
-        <p className="mb-6 max-w-[480px] text-[13px] leading-[1.65] text-summit/55">
+        <p className="text-summit/55 mb-6 max-w-[480px] text-[13px] leading-[1.65]">
           [{total}] udhëtime të planifikuara në rajon. Eksploro shtigjet më të
           bukura me komunitetin tonë të bjeshkatarëve.
         </p>
@@ -73,11 +73,11 @@ export default async function TripsPage({
       {/* Cards grid (Abyss) */}
       <div className="px-6 pt-6 pb-12 sm:px-8">
         {trips.length === 0 ? (
-          <div className="flex min-h-[240px] flex-col items-center justify-center border border-summit/10 bg-summit/[0.03] p-10 text-center">
-            <p className="font-heading text-base font-extrabold text-summit uppercase">
+          <div className="border-summit/10 bg-summit/[0.03] flex min-h-[240px] flex-col items-center justify-center border p-10 text-center">
+            <p className="font-heading text-summit text-base font-extrabold uppercase">
               Asnjë udhëtim nuk u gjet
             </p>
-            <p className="mt-2 text-xs text-summit/45">
+            <p className="text-summit/45 mt-2 text-xs">
               Provo të ndryshosh filtrat.
             </p>
           </div>
@@ -121,7 +121,7 @@ function Pagination({
         aria-label="Faqja e mëparshme"
         className={cn(
           cellClass,
-          "border-summit/15 text-summit/50 hover:border-summit/40 hover:text-summit",
+          "border-summit/40 text-summit/50 hover:border-summit/60 hover:text-summit",
           currentPage <= 1 && "pointer-events-none opacity-40",
         )}
       >
@@ -136,7 +136,7 @@ function Pagination({
             cellClass,
             page === currentPage
               ? "border-summit/40 bg-summit/10 text-summit"
-              : "border-summit/15 text-summit/50 hover:border-summit/40 hover:text-summit",
+              : "border-summit/40 text-summit/50 hover:border-summit/60 hover:text-summit",
           )}
         >
           {page}
@@ -147,7 +147,7 @@ function Pagination({
         aria-label="Faqja tjetër"
         className={cn(
           cellClass,
-          "border-summit/15 text-summit/50 hover:border-summit/40 hover:text-summit",
+          "border-summit/40 text-summit/50 hover:border-summit/60 hover:text-summit",
           currentPage >= totalPages && "pointer-events-none opacity-40",
         )}
       >

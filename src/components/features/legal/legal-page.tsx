@@ -21,13 +21,13 @@ export function LegalHeader({
   return (
     <header className="border-b-2 border-forest bg-forest px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-3xl">
-        <p className="text-xs font-bold tracking-[0.15em] text-moss uppercase">
+        <p className="text-xs font-bold tracking-[0.15em] text-sage uppercase">
           {label}
         </p>
-        <h1 className="font-heading mt-3 text-[clamp(28px,5vw,44px)] leading-[1.05] font-black tracking-[-0.02em] text-summit uppercase">
+        <h1 className="font-heading mt-3 text-[clamp(28px,5vw,44px)] leading-[1.2] font-black tracking-[-0.02em] text-summit uppercase">
           {title}
         </h1>
-        <p className="mt-4 text-xs font-bold tracking-[0.15em] text-summit/50 uppercase">
+        <p className="mt-4 text-xs font-bold tracking-[0.15em] text-summit/60 uppercase">
           Përditësuar së fundi: {lastUpdated}
         </p>
       </div>
