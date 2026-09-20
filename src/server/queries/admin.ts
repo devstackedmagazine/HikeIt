@@ -1,11 +1,14 @@
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, isNull, notExists } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { InviteCode } from "@/lib/db/schema";
+import type { InviteCode, Trail } from "@/lib/db/schema";
 import {
+  auditLogs,
   inviteCodes,
   organizationMembers,
   organizations,
+  trails,
+  users,
 } from "@/lib/db/schema";
 import {
   type EntitlementSource,
@@ -83,11 +86,7 @@ export async function getAdminClubs(): Promise<AdminClubRow[]> {
  * Whether a code can still be redeemed, and if not, why. Derived on the server
  * so the table doesn't have to call `Date.now()` during render.
  */
-export type InviteCodeStatus =
-  | "active"
-  | "inactive"
-  | "expired"
-  | "exhausted";
+export type InviteCodeStatus = "active" | "inactive" | "expired" | "exhausted";
 
 export interface InviteCodeRow extends InviteCode {
   status: InviteCodeStatus;
@@ -134,4 +133,70 @@ export async function getEntitlementSummary(): Promise<{
 export async function getInviteCodeUsageTotal(): Promise<number> {
   const [row] = await db.select({ value: count() }).from(inviteCodes);
   return row?.value ?? 0;
+}
+
+export interface UnverifiedTrailRow {
+  id: string;
+  slug: string;
+  name: string;
+  region: string | null;
+  difficulty: Trail["difficulty"];
+  distanceKm: string | null;
+  elevationGainM: number | null;
+  hasGpx: boolean;
+  submittedByName: string | null;
+  submittedByEmail: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Submitted trails still awaiting review, newest first.
+ *
+ * `verified` alone can't distinguish "not yet reviewed" from "reviewed and
+ * rejected" — there's no separate column for that, deliberately: rejection
+ * doesn't touch the trail row at all (see `rejectTrail`), it only writes an
+ * audit-log entry, so nothing about a rejected trail's data or its uploaded
+ * GPX is ever destroyed. This query excludes a trail the moment that entry
+ * exists, which is the only place "rejected" is recorded.
+ */
+export async function getUnverifiedTrails(): Promise<UnverifiedTrailRow[]> {
+  const rows = await db
+    .select({
+      id: trails.id,
+      slug: trails.slug,
+      name: trails.name,
+      region: trails.region,
+      difficulty: trails.difficulty,
+      distanceKm: trails.distanceKm,
+      elevationGainM: trails.elevationGainM,
+      gpxUrl: trails.gpxUrl,
+      createdAt: trails.createdAt,
+      submittedByName: users.name,
+      submittedByEmail: users.email,
+    })
+    .from(trails)
+    .leftJoin(users, eq(users.id, trails.submittedBy))
+    .where(
+      and(
+        eq(trails.verified, false),
+        notExists(
+          db
+            .select({ id: auditLogs.id })
+            .from(auditLogs)
+            .where(
+              and(
+                eq(auditLogs.entityType, "trail"),
+                eq(auditLogs.action, "trail.rejected"),
+                eq(auditLogs.entityId, trails.id),
+              ),
+            ),
+        ),
+      ),
+    )
+    .orderBy(desc(trails.createdAt));
+
+  return rows.map(({ gpxUrl, ...row }) => ({
+    ...row,
+    hasGpx: gpxUrl !== null,
+  }));
 }

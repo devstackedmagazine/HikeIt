@@ -3,12 +3,14 @@ import Link from "next/link";
 
 import { AdminClubsTable } from "@/components/features/admin/admin-clubs-table";
 import { AdminInviteCodes } from "@/components/features/admin/admin-invite-codes";
+import { AdminTrailsTable } from "@/components/features/admin/admin-trails-table";
 import { requireSuperAdmin } from "@/lib/auth/helpers";
 import { cn } from "@/lib/utils/cn";
 import {
   getAdminClubs,
   getEntitlementSummary,
   getInviteCodes,
+  getUnverifiedTrails,
 } from "@/server/queries/admin";
 
 export const metadata: Metadata = { title: "HikeIt Admin" };
@@ -16,6 +18,7 @@ export const metadata: Metadata = { title: "HikeIt Admin" };
 const TABS = [
   { key: "clubs", label: "Klubet" },
   { key: "codes", label: "Kodet e ftesës" },
+  { key: "trails", label: "Shtigje pa u verifikuar" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -40,44 +43,41 @@ export default async function AdminPage({
     ? (tabParam as TabKey)
     : "clubs";
 
-  const [clubs, codes, summary] = await Promise.all([
+  const [clubs, codes, summary, unverifiedTrails] = await Promise.all([
     getAdminClubs(),
     getInviteCodes(),
     getEntitlementSummary(),
+    getUnverifiedTrails(),
   ]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <p className="mb-2 text-xs font-bold tracking-[0.15em] text-forest uppercase">
+        <p className="text-forest mb-2 text-xs font-bold tracking-[0.15em] uppercase">
           Kontroll i platformës
         </p>
-        <h1 className="font-heading text-3xl font-black tracking-tight text-forest uppercase sm:text-4xl">
+        <h1 className="font-heading text-forest text-3xl font-black tracking-tight uppercase sm:text-4xl">
           HikeIt Admin
         </h1>
       </div>
 
       {/* Summary strip — adjacent boxes, no gap. */}
-      <div className="grid grid-cols-2 border-2 border-forest lg:grid-cols-4">
+      <div className="border-forest grid grid-cols-2 border-2 lg:grid-cols-4">
         <SummaryBox label="Klube gjithsej" value={summary.totalClubs} />
         <SummaryBox label="Në provë falas" value={summary.onTrial} accent />
-        <SummaryBox
-          label="Me abonim"
-          value={summary.onSubscription}
-          accent
-        />
+        <SummaryBox label="Me abonim" value={summary.onSubscription} accent />
         <SummaryBox label="Në plan falas" value={summary.onFree} last />
       </div>
 
       {/* Tabs as links so the whole panel stays a Server Component. */}
-      <div className="flex border-2 border-forest">
+      <div className="border-forest flex border-2">
         {TABS.map((t, i) => (
           <Link
             key={t.key}
             href={`/dashboard/admin?tab=${t.key}`}
             className={cn(
               "flex-1 px-5 py-3 text-center text-[12px] font-bold tracking-[0.08em] uppercase transition-colors",
-              i > 0 && "border-l-2 border-forest",
+              i > 0 && "border-forest border-l-2",
               tab === t.key
                 ? "bg-forest text-summit"
                 : "bg-summit text-forest hover:bg-mist",
@@ -90,8 +90,10 @@ export default async function AdminPage({
 
       {tab === "clubs" ? (
         <AdminClubsTable clubs={clubs} />
-      ) : (
+      ) : tab === "codes" ? (
         <AdminInviteCodes codes={codes} />
+      ) : (
+        <AdminTrailsTable trails={unverifiedTrails} />
       )}
     </div>
   );
@@ -112,11 +114,11 @@ function SummaryBox({
     <div
       className={cn(
         "bg-summit p-5",
-        !last && "border-r-2 border-forest",
-        "border-b-2 border-forest lg:border-b-0",
+        !last && "border-forest border-r-2",
+        "border-forest border-b-2 lg:border-b-0",
       )}
     >
-      <p className="text-[10px] font-bold tracking-[0.12em] text-forest/70 uppercase">
+      <p className="text-forest/70 text-[10px] font-bold tracking-[0.12em] uppercase">
         {label}
       </p>
       <p
