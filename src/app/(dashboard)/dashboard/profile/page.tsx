@@ -151,8 +151,8 @@ export default async function ProfilePage({
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <Stat
-          label="Udhëtime"
-          value={profile.tripsCount}
+          label="Ecje"
+          value={profile.hikesCount}
           icon={<Mountain className="text-summit/25 size-3.5" />}
         />
         <Stat

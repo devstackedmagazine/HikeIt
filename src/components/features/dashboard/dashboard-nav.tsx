@@ -3,6 +3,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import {
   Calendar,
+  Footprints,
   Heart,
   LayoutDashboard,
   type LucideIcon,
@@ -84,6 +85,7 @@ function buildItems(
   return [
     { href: "/dashboard", label: "Paneli", icon: LayoutDashboard, exact: true },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
+    { href: "/dashboard/hikes", label: "Ecjet e mia", icon: Footprints },
     { href: "/dashboard/trails", label: "Të ruajtura", icon: Heart },
     { href: "/clubs", label: "Klubet", icon: Users },
     { href: "/trails", label: "Shtigjet", icon: Map },

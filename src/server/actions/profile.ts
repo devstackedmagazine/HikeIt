@@ -11,7 +11,7 @@ import { isCloudinaryConfigured } from "@/lib/cloudinary/client";
 import { uploadImage } from "@/lib/cloudinary/upload";
 import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { hikes, users } from "@/lib/db/schema";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 
 export interface ActionResult {
@@ -173,10 +173,16 @@ export async function deleteAccount(confirmation: string): Promise<void> {
     return;
   }
 
-  await db
-    .update(users)
-    .set({ deletedAt: new Date() })
-    .where(eq(users.id, session.user.id));
+  // The user row is only soft-deleted, which cascades nothing, so hikes —
+  // personal location data — are hard-deleted explicitly, in the same
+  // transaction: both happen or neither does.
+  await db.transaction(async (tx) => {
+    await tx.delete(hikes).where(eq(hikes.userId, session.user.id));
+    await tx
+      .update(users)
+      .set({ deletedAt: new Date() })
+      .where(eq(users.id, session.user.id));
+  });
 
   await auth.api.signOut({ headers: await headers() });
   redirect("/");

@@ -21,6 +21,8 @@ export interface TrailMapProps {
   trailName: string;
   /** Optional full route as [lat, lng] pairs — draws a polyline if provided. */
   route?: [number, number][];
+  /** CSS height of the map. Defaults to the full-size trail map. */
+  height?: string;
 }
 
 /**
@@ -48,6 +50,7 @@ export function TrailMap({
   endLng,
   trailName,
   route,
+  height = "400px",
 }: TrailMapProps) {
   const start: [number, number] = [Number(startLat), Number(startLng)];
   const hasEnd =
@@ -66,7 +69,7 @@ export function TrailMap({
       zoom={13}
       bounds={bounds}
       scrollWheelZoom={false}
-      style={{ height: "400px", width: "100%" }}
+      style={{ height, width: "100%" }}
       className="z-0 rounded-xl border"
     >
       <TileLayer

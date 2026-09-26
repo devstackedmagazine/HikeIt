@@ -6,6 +6,7 @@ import {
   Mountain,
   Pencil,
   PersonStanding,
+  Plus,
   Share2,
 } from "lucide-react";
 import Image from "next/image";
@@ -199,8 +200,28 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
         <WelcomeCard firstName={getFirstName(name)} />
 
         {/* Stats */}
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-forest text-[11px] font-bold tracking-[0.06em] uppercase">
+            Ecjet e tua
+          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/hikes"
+              className="text-pine text-[10px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-70"
+            >
+              Shiko të gjitha →
+            </Link>
+            <Link
+              href="/dashboard/hikes?shto=1"
+              className="border-moss bg-moss text-abyss hover:bg-pine hover:text-summit flex items-center gap-1.5 border-2 px-3 py-1.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
+            >
+              <Plus className="size-3.5" />
+              Shto një ecje
+            </Link>
+          </div>
+        </div>
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Udhëtime" value={stats.tripsJoined} />
+          <StatCard label="Ecje" value={stats.hikesCount} />
           <StatCard label="Klube" value={stats.clubsJoined} />
           <StatCard label="Vlerësime" value={stats.trailsReviewed} />
           <StatCard label="Distancë" value={`${stats.totalKm} KM`} />

@@ -4,6 +4,8 @@ export interface GpxPoint {
   lat: number;
   lng: number;
   elevation?: number;
+  /** Epoch ms from the point's `<time>`, when present. Planned routes have none. */
+  time?: number;
 }
 
 export interface ElevationSample {
@@ -48,7 +50,7 @@ const MAX_POINTS = 50_000;
 const DOWNSAMPLE_TARGET = 5_000;
 
 /** Great-circle distance between two coordinates, in meters. */
-function haversine(a: GpxPoint, b: GpxPoint): number {
+export function haversine(a: GpxPoint, b: GpxPoint): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
   const dLng = toRad(b.lng - a.lng);
@@ -75,6 +77,7 @@ function sanitizeXml(content: string): string {
 interface RawTrkpt {
   $: { lat: string; lon: string };
   ele?: string[];
+  time?: unknown[];
 }
 
 export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
@@ -110,7 +113,11 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
       const lng = Number(pt.$.lon);
       if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
       const elevation = pt.ele?.[0] ? Number(pt.ele[0]) : undefined;
-      points.push({ lat, lng, elevation });
+      const rawTime = pt.time?.[0];
+      const parsedTime =
+        typeof rawTime === "string" ? Date.parse(rawTime) : Number.NaN;
+      const time = Number.isNaN(parsedTime) ? undefined : parsedTime;
+      points.push({ lat, lng, elevation, time });
     }
   }
 
