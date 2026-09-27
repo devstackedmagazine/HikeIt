@@ -26,6 +26,19 @@ import {
   googleCalendarUrl,
 } from "@/lib/utils/datetime";
 
+
+/**
+ * Views that change when a club edits a trip's roster: every club dashboard
+ * page (by route pattern — the paths were previously built with the trip's
+ * slug in place of the club's, so they matched nothing), the club home at
+ * /dashboard (sign-up counts, recent registrations), and the public trip
+ * page (spots left).
+ */
+function revalidateClubRosterViews(tripSlug: string) {
+  revalidatePath("/dashboard/club/[slug]", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath(`/trips/${tripSlug}`);
+}
 export interface RegisterResult {
   success: boolean;
   status?: "confirmed" | "waitlisted";
@@ -290,7 +303,7 @@ export async function updateRegistrationStatus(
     })
     .where(eq(tripRegistrations.id, registrationId));
 
-  revalidatePath(`/dashboard/club/${trip.slug}`);
+  revalidateClubRosterViews(trip.slug);
   return { success: true };
 }
 
@@ -366,8 +379,7 @@ export async function removeRegistration(
     metadata: { registrationId, hikerId: registration.userId },
   });
 
-  revalidatePath(`/dashboard/club/${trip.slug}`);
-  revalidatePath(`/dashboard/club/${trip.slug}/trips/${trip.slug}`);
+  revalidateClubRosterViews(trip.slug);
   return { success: true };
 }
 

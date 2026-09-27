@@ -1,9 +1,8 @@
-import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { AuditLog, Organization } from "@/lib/db/schema";
+import type { Organization } from "@/lib/db/schema";
 import {
-  auditLogs,
   organizationMembers,
   organizations,
   tripRegistrations,
@@ -331,22 +330,4 @@ export async function getClubExpectedRevenue(
       ),
     );
   return Number(row?.value ?? 0);
-}
-
-/** Recent audit-log activity for a club (trip + club events). */
-export async function getClubActivity(
-  organizationId: string,
-  limit = 10,
-): Promise<AuditLog[]> {
-  return db
-    .select()
-    .from(auditLogs)
-    .where(
-      or(
-        sql`${auditLogs.metadata}->>'organizationId' = ${organizationId}`,
-        eq(auditLogs.entityId, organizationId),
-      ),
-    )
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(limit);
 }

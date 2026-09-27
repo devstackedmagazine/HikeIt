@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
@@ -116,6 +116,15 @@ export async function getUserAdminClub(
         isNull(organizationMembers.leftAt),
         inArray(organizationMembers.role, ["admin", "organizer"]),
       ),
+    )
+    // Deterministic: the layout's sidebar and the /dashboard home each call
+    // this and must land on the same club. Clubs the user admins beat ones
+    // they only organise (enum order: admin < organizer), then the earliest
+    // joined; the id breaks exact ties.
+    .orderBy(
+      asc(organizationMembers.role),
+      asc(organizationMembers.joinedAt),
+      asc(organizations.id),
     )
     .limit(1);
 

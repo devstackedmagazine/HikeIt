@@ -75,7 +75,9 @@ export async function setTripCover(
     .set({ coverImageUrl: publicId })
     .where(eq(trips.id, tripId));
   revalidatePath(`/trips/${trip.slug}`);
-  revalidatePath(`/dashboard/club/${trip.organizationId}`);
+  // Route pattern: this used the organization's UUID where the club slug
+  // belongs, so it matched no page.
+  revalidatePath("/dashboard/club/[slug]", "layout");
   return { success: true };
 }
 
