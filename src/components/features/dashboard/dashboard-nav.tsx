@@ -3,11 +3,11 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import {
   Calendar,
-  Ellipsis,
   Heart,
   LayoutDashboard,
   type LucideIcon,
   Map,
+  MoreHorizontal,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -281,7 +281,7 @@ export function DashboardMobileTabs({
               moreActive || moreOpen ? "text-moss" : "text-summit/50",
             )}
           >
-            <Ellipsis className="size-5 shrink-0" />
+            <MoreHorizontal className="size-5 shrink-0" />
             Më shumë
           </DialogPrimitive.Trigger>
           <DialogPrimitive.Portal>
