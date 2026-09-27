@@ -5,10 +5,14 @@ import { useRef, useState } from "react";
 
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { Button } from "@/components/ui/button";
-import { type ParsedGpx, parseGpxFile } from "@/lib/gpx/parser";
+import {
+  GPX_TOO_LARGE_MESSAGE,
+  MAX_GPX_BYTES,
+  type ParsedGpx,
+  parseGpxFile,
+} from "@/lib/gpx/parser";
 import { trailTypeLabels } from "@/lib/i18n/labels";
 
-const MAX_BYTES = 5 * 1024 * 1024;
 
 export function GpxUploader({
   onParsed,
@@ -27,8 +31,8 @@ export function GpxUploader({
       setError("Vetëm skedarë .gpx lejohen.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError("Skedari tejkalon 5MB.");
+    if (file.size > MAX_GPX_BYTES) {
+      setError(GPX_TOO_LARGE_MESSAGE);
       return;
     }
     setParsing(true);
@@ -78,7 +82,7 @@ export function GpxUploader({
             <FileUp className="size-6" />
           )}
           <span className="text-sm">
-            {parsing ? "Duke lexuar…" : "Zgjidh një skedar GPX (.gpx, max 5MB)"}
+            {parsing ? "Duke lexuar…" : "Zgjidh një skedar GPX (.gpx, max 4 MB)"}
           </span>
         </button>
       ) : (

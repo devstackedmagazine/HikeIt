@@ -13,7 +13,9 @@ collect payments.
 - **Leaflet** + OpenStreetMap (maps), **Open-Meteo** (weather, no API key)
 - **Resend** (email) + React Email
 - **Cloudinary** (photos, avatars) + **Supabase Storage** (trail & trip GPX)
-- **Stripe** (club subscriptions + Connect foundation)
+- **Paddle** (club subscriptions, Merchant of Record) — dormant: checkout is
+  disabled for the MVP; trials and entitlements are live. HikeIt processes no
+  trip payments.
 - **recharts** (elevation charts), **nuqs** (URL filters), **cmdk** (search)
 
 ## Setup
@@ -42,7 +44,7 @@ pnpm dev
 | `CLOUDINARY_*` / `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Photo and avatar uploads |
 | `SUPABASE_STORAGE_*` | Trail and trip GPX uploads |
 | `CRON_SECRET` | Protects `/api/cron/*` endpoints |
-| `STRIPE_*` (+ price IDs) | Club subscriptions & payments |
+| `PADDLE_ENV` / `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET` / `PADDLE_PRICE_*` / `NEXT_PUBLIC_PADDLE_ENV` / `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` | Club subscriptions — dormant (checkout disabled for the MVP) |
 
 Weather (Open-Meteo) and maps (OpenStreetMap) need **no keys**.
 
@@ -70,6 +72,6 @@ Deployed on Vercel with a Supabase production database. Branching and the
 ## Roadmap (Phase 2)
 
 - Service worker + offline trail caching (PWA today is install-only)
-- Full Stripe Connect onboarding + paid trip checkout
+- Turn on Paddle checkout for club subscriptions (dormant for the MVP)
 - Postgres full-text search (currently `ilike`)
 - Trip photos upload, super-admin trail verification UI

@@ -35,7 +35,15 @@ export class GpxError extends Error {
 }
 
 const EARTH_RADIUS_M = 6_371_000;
-const MAX_GPX_BYTES = 5 * 1024 * 1024;
+/**
+ * 4MB, not higher: the GPX text travels to a server action, and Vercel caps
+ * every request body at 4.5MB — anything bigger would fail with an opaque
+ * platform error instead of this message.
+ */
+export const MAX_GPX_BYTES = 4 * 1024 * 1024;
+
+export const GPX_TOO_LARGE_MESSAGE =
+  "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.";
 const MAX_POINTS = 50_000;
 const DOWNSAMPLE_TARGET = 5_000;
 
@@ -71,7 +79,7 @@ interface RawTrkpt {
 
 export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
   if (gpxContent.length > MAX_GPX_BYTES) {
-    throw new GpxError("Skedari GPX tejkalon 5MB.");
+    throw new GpxError(GPX_TOO_LARGE_MESSAGE);
   }
 
   const sanitized = sanitizeXml(gpxContent);
