@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 
 import { signIn } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
+import { safeRedirect } from "@/lib/utils/safe-redirect";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
@@ -26,7 +27,9 @@ const INPUT =
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  // Validated: this feeds router.push and Better Auth's callbackURL, so an
+  // unchecked value would be an open redirect.
+  const redirectTo = safeRedirect(searchParams.get("redirect"));
   const [formError, setFormError] = useState<{
     message: string;
     tone: "error" | "warning";
