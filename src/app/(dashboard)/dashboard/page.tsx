@@ -466,6 +466,16 @@ async function ClubAdminHome({
                     <p className="text-summit/60 truncate text-[9px] uppercase">
                       {reg.tripTitle}
                     </p>
+                    {reg.waitlisted || reg.isReregistration ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {reg.waitlisted ? (
+                          <RegistrationTag tone="alert">Listë pritje</RegistrationTag>
+                        ) : null}
+                        {reg.isReregistration ? (
+                          <RegistrationTag tone="muted">Ri-regjistrim</RegistrationTag>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   <span className="text-summit/60 shrink-0 text-[9px] font-medium uppercase">
                     {timeAgo(reg.registeredAt)}
@@ -481,6 +491,27 @@ async function ClubAdminHome({
         </div>
       </div>
     </div>
+  );
+}
+
+function RegistrationTag({
+  tone,
+  children,
+}: {
+  tone: "alert" | "muted";
+  children: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "border px-1.5 py-px text-[8px] font-bold tracking-[0.08em] uppercase",
+        tone === "alert"
+          ? "border-alert/40 bg-alert/10 text-alert"
+          : "border-summit/20 bg-summit/[0.06] text-summit/70",
+      )}
+    >
+      {children}
+    </span>
   );
 }
 

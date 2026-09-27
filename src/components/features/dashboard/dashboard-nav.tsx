@@ -60,7 +60,14 @@ function buildItems(
   if (variant === "admin" && adminClubSlug) {
     const club = `/dashboard/club/${adminClubSlug}`;
     return [
-      { href: club, label: "Përmbledhje", icon: LayoutDashboard, exact: true },
+      // The club's home is /dashboard (the page club admins land on after
+      // login); /dashboard/club/[slug] only hosts the members/settings tabs.
+      {
+        href: "/dashboard",
+        label: "Përmbledhje",
+        icon: LayoutDashboard,
+        exact: true,
+      },
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
       {
@@ -139,7 +146,7 @@ export function DashboardSidebar({
       <div className="border-summit/[0.06] flex flex-col items-center border-b px-2.5 py-3.5 text-center">
         {isAdmin ? (
           <>
-            <Link href={"/"}>
+            <Link href="/dashboard" aria-label="Përmbledhje">
               <Image
                 src="/logos/Hikeit-pfp.png"
                 alt=""

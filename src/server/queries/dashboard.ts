@@ -87,6 +87,11 @@ export interface RecentRegistration {
   userAvatarUrl: string | null;
   tripTitle: string;
   registeredAt: Date;
+  /** Shown as a LISTË PRITJE tag. */
+  waitlisted: boolean;
+  /** The person had canceled this trip before — shown as RI-REGJISTRIM, so
+   * roster churn stays visible now that canceled rows are hidden. */
+  isReregistration: boolean;
 }
 
 export interface ClubDashboard {
@@ -141,11 +146,25 @@ export async function getClubDashboard(
         userAvatarUrl: users.avatarUrl,
         tripTitle: trips.title,
         registeredAt: tripRegistrations.registeredAt,
+        status: tripRegistrations.status,
+        isReregistration: tripRegistrations.isReregistration,
       })
       .from(tripRegistrations)
       .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
       .innerJoin(users, eq(users.id, tripRegistrations.userId))
-      .where(eq(trips.organizationId, organizationId))
+      .where(
+        and(
+          eq(trips.organizationId, organizationId),
+          // Live registrations only. A canceled row next to the same person's
+          // re-registration read as a duplicate sign-up; the churn it hinted
+          // at is carried by the RI-REGJISTRIM tag instead.
+          inArray(tripRegistrations.status, [
+            "confirmed",
+            "attended",
+            "waitlisted",
+          ]),
+        ),
+      )
       .orderBy(desc(tripRegistrations.registeredAt))
       .limit(5),
   ]);
@@ -157,7 +176,10 @@ export async function getClubDashboard(
       trip,
       confirmedCount: countMap.get(trip.id) ?? 0,
     })),
-    recentRegistrations: recent,
+    recentRegistrations: recent.map(({ status, ...r }) => ({
+      ...r,
+      waitlisted: status === "waitlisted",
+    })),
   };
 }
 

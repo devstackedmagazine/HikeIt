@@ -87,7 +87,7 @@ export default async function ClubTripsPage({
       {/* Header */}
       <p className="text-forest/40 mb-2 text-[10px] font-medium tracking-[0.08em] uppercase">
         <Link
-          href={`/dashboard/club/${club.slug}`}
+          href="/dashboard"
           className="hover:text-forest"
         >
           Paneli i klubit

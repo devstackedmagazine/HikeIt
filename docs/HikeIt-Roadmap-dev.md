@@ -475,6 +475,8 @@ Google Analytics:   Not yet set up
   - **Club deleted:** clubs are soft-deleted (`organizations.deleted_at`), so the FK's `SET NULL` won't fire — the display query must also require `organizations.deleted_at IS NULL` and simply show nothing otherwise. A hard delete nulls the column. The trail itself is never affected.
   - **Abuse:** clubs proposing trails for visibility is gated by the existing review queue; no extra control needed.
 
+- [ ] **Known duplication — club page tab strip.** `/dashboard/club/[slug]` still renders its own tab strip (Udhëtimet · Anëtarët · Cilësimet) that repeats the club sidebar, and its Udhëtimet tab is a second trips list beside the dedicated `/dashboard/club/[slug]/trips` page (the one the sidebar links to). The overview tab was removed 2026-09-27 (the club home is `/dashboard`); the rest was deliberately left. Cleanup: drop the tab strip and the trips tab, keep Anëtarët/Cilësimet as the page's content driven by `?tab=` (the sidebar already links there), and redirect `?tab=trips` to the trips page. Old-style shadcn styling on this page should move to Alpine Brutalism at the same time.
+
 ### Nice to have
 - [ ] Legal review of privacy policy and terms
 - [ ] Uptime monitoring on Better Stack
