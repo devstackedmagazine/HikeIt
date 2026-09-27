@@ -63,7 +63,8 @@ export async function globalSearch(
     db
       .select()
       .from(trails)
-      .where(trailMatch)
+      // Unverified proposals aren't public yet.
+      .where(and(trailMatch, eq(trails.verified, true)))
       .limit(limit),
     db
       .select()
