@@ -42,6 +42,7 @@ export const RATE_LIMITS = {
   "ratelimit.admin.trail_review": { max: 40, windowMs: 60 * 60 * 1000 },
   "ratelimit.favorite.toggle": { max: 60, windowMs: 60 * 60 * 1000 },
   "ratelimit.trail.gpx.upload": { max: 10, windowMs: 60 * 60 * 1000 },
+  "ratelimit.hike.upload": { max: 10, windowMs: 60 * 60 * 1000 },
   // Club-side, not admin — a club admin redeeming their own code. Same
   // ceiling as the admin invite-code limits since it guards the same
   // underlying redemption path.
