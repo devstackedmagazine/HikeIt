@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { downscaleImage } from "@/lib/images/downscale-image";
 import { updateAvatar, updateProfile } from "@/server/actions/profile";
 
 interface ProfileFormValues {
@@ -77,8 +78,18 @@ export function ProfileForm({
     const file = e.target.files?.[0];
     if (!file) return;
     const fd = new FormData();
-    fd.set("avatar", file);
-    const result = await updateAvatar(fd);
+    // Avatars render at 200×200; 1024px keeps plenty of headroom while
+    // keeping the request well under the platform body limit.
+    fd.set("avatar", await downscaleImage(file, 1024));
+    let result;
+    try {
+      result = await updateAvatar(fd);
+    } catch {
+      // The action never ran — typically the body was over the size limit
+      // (a format the browser couldn't shrink, e.g. HEIC outside Safari).
+      setMessage("Imazhi është shumë i madh. Provo një foto JPG ose PNG.");
+      return;
+    }
     if (result.success && result.avatarUrl) {
       setAvatar(result.avatarUrl);
       router.refresh();
