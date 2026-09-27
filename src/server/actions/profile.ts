@@ -7,10 +7,12 @@ import { z } from "zod";
 
 import { auth } from "@/lib/auth";
 import { getOptionalSession } from "@/lib/auth/helpers";
+import { isCloudinaryConfigured } from "@/lib/cloudinary/client";
+import { uploadImage } from "@/lib/cloudinary/upload";
+import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
-import { isR2Configured, uploadFile } from "@/lib/storage/r2";
 
 export interface ActionResult {
   success: boolean;
@@ -70,12 +72,23 @@ export interface AvatarResult extends ActionResult {
   avatarUrl?: string;
 }
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-
+/**
+ * Avatars go through the shared Cloudinary pipeline (`uploadImage`): MIME
+ * allowlist, magic bytes, size cap, SHA-256 dedupe, EXIF stripping and the
+ * hourly upload limit all come from there — there is no avatar-specific
+ * image path.
+ *
+ * The pipeline is called directly rather than via /api/upload + a follow-up
+ * action, so the avatar is always the file this request uploaded, never a
+ * publicId supplied by the client.
+ *
+ * The previous avatar is intentionally left in Cloudinary: dedupe means one
+ * asset can back several records, so deleting it could break someone else's.
+ */
 export async function updateAvatar(formData: FormData): Promise<AvatarResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
-  if (!isR2Configured()) {
+  if (!isCloudinaryConfigured()) {
     return { success: false, error: "Ngarkimi nuk është konfiguruar." };
   }
 
@@ -83,31 +96,33 @@ export async function updateAvatar(formData: FormData): Promise<AvatarResult> {
   if (!(file instanceof File)) {
     return { success: false, error: "Skedar i pavlefshëm." };
   }
-  if (!file.type.startsWith("image/")) {
-    return { success: false, error: "Vetëm imazhe lejohen." };
-  }
-  if (file.size > MAX_AVATAR_BYTES) {
-    return { success: false, error: "Imazhi tejkalon 2MB." };
-  }
-
-  const ext = file.type.split("/")[1] ?? "jpg";
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
-    const url = await uploadFile(
-      `avatars/${session.user.id}.${ext}`,
-      buffer,
+    const uploaded = await uploadImage(
+      Buffer.from(await file.arrayBuffer()),
       file.type,
+      file.name,
+      {
+        entityType: "avatar",
+        entityId: session.user.id,
+        userId: session.user.id,
+      },
     );
-    // Cache-bust so the new image shows immediately.
-    const avatarUrl = `${url}?v=${Date.now()}`;
+    // Store the 200×200 face-cropped delivery URL — a full URL, like the
+    // OAuth provider photos already in this column.
+    const avatarUrl = getImageUrl(uploaded.publicId, "avatar");
     await db
       .update(users)
       .set({ avatarUrl })
       .where(eq(users.id, session.user.id));
     return { success: true, avatarUrl };
-  } catch {
-    return { success: false, error: "Ngarkimi dështoi." };
+  } catch (error) {
+    // uploadImage throws user-facing Albanian messages for validation, the
+    // rate limit and missing config; anything else is unexpected.
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Ngarkimi dështoi.",
+    };
   }
 }
 

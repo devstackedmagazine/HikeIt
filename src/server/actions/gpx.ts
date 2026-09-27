@@ -12,7 +12,7 @@ import {
   getClientIp,
 } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
-import { isR2Configured, uploadGpx } from "@/lib/storage/r2";
+import { isGpxStorageConfigured, uploadGpx } from "@/lib/storage/gpx-storage";
 import { generateSlug } from "@/lib/utils/slug";
 
 export interface SubmitTrailResult {
@@ -33,7 +33,7 @@ export async function submitTrail(data: {
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
   if (!data.name.trim()) return { success: false, error: "Emri është i detyrueshëm." };
 
-  if (!isR2Configured()) {
+  if (!isGpxStorageConfigured()) {
     return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
   }
 
@@ -50,13 +50,13 @@ export async function submitTrail(data: {
   const slug = `${generateSlug(data.name)}-${crypto.randomUUID().slice(0, 6)}`;
   const trailId = crypto.randomUUID();
 
-  // R2 upload first — orphaned R2 file on DB failure is fine;
+  // Storage upload first — an orphaned file on DB failure is fine;
   // a DB row pointing at a nonexistent URL is not.
   let gpxUrl: string;
   try {
     gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, data.gpxContent);
   } catch (error) {
-    captureError(error, { action: "submitTrail", extra: { phase: "r2Upload" } });
+    captureError(error, { action: "submitTrail", extra: { phase: "storageUpload" } });
     return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
   }
 
@@ -118,7 +118,7 @@ export async function uploadTrailGpx(
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
 
-  if (!isR2Configured()) {
+  if (!isGpxStorageConfigured()) {
     return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
   }
 
@@ -204,7 +204,7 @@ export async function uploadTripGpx(
 ): Promise<ActionResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
-  if (!isR2Configured()) {
+  if (!isGpxStorageConfigured()) {
     return { success: false, error: "Ngarkimi nuk është konfiguruar." };
   }
 

@@ -7,7 +7,7 @@ import { z } from "zod";
  * missing or malformed value fails fast instead of surfacing as a runtime crash.
  *
  * Only the variables we actually use *today* are required. Integrations that
- * land in later sessions (Paddle, R2, OpenWeather, Resend, Sentry, PostHog) are
+ * land in later sessions (Paddle, Supabase Storage, OpenWeather, Resend, Sentry, PostHog) are
  * `.optional()` for now so `pnpm dev` runs before every key is provisioned.
  * Promote them to required as each feature ships — format is still validated
  * whenever a value is present.
@@ -45,12 +45,15 @@ export const env = createEnv({
     PADDLE_PRICE_TEAM_MONTHLY: z.string().min(1).optional(),
     PADDLE_PRICE_TEAM_YEARLY: z.string().min(1).optional(),
 
-    // Cloudflare R2 — optional until uploads ship.
-    R2_ACCOUNT_ID: z.string().min(1).optional(),
-    R2_ACCESS_KEY_ID: z.string().min(1).optional(),
-    R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-    R2_BUCKET_NAME: z.string().min(1).optional(),
-    R2_PUBLIC_URL: z.url().optional(),
+    // Supabase Storage (S3-compatible API) for public trail/trip GPX files —
+    // optional so the app boots without it; uploads fail loudly until set.
+    // The S3 keys bypass RLS across every bucket: server-only, never public.
+    SUPABASE_STORAGE_S3_ENDPOINT: z.url().optional(),
+    SUPABASE_STORAGE_REGION: z.string().min(1).optional(),
+    SUPABASE_STORAGE_ACCESS_KEY_ID: z.string().min(1).optional(),
+    SUPABASE_STORAGE_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    SUPABASE_STORAGE_GPX_BUCKET: z.string().min(1).optional(),
+    SUPABASE_STORAGE_PUBLIC_URL: z.url().optional(),
 
     // Weather uses Open-Meteo — no API key required.
 
@@ -118,11 +121,13 @@ export const env = createEnv({
     PADDLE_PRICE_PRO_YEARLY: process.env.PADDLE_PRICE_PRO_YEARLY,
     PADDLE_PRICE_TEAM_MONTHLY: process.env.PADDLE_PRICE_TEAM_MONTHLY,
     PADDLE_PRICE_TEAM_YEARLY: process.env.PADDLE_PRICE_TEAM_YEARLY,
-    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
-    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
-    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
+    SUPABASE_STORAGE_S3_ENDPOINT: process.env.SUPABASE_STORAGE_S3_ENDPOINT,
+    SUPABASE_STORAGE_REGION: process.env.SUPABASE_STORAGE_REGION,
+    SUPABASE_STORAGE_ACCESS_KEY_ID: process.env.SUPABASE_STORAGE_ACCESS_KEY_ID,
+    SUPABASE_STORAGE_SECRET_ACCESS_KEY:
+      process.env.SUPABASE_STORAGE_SECRET_ACCESS_KEY,
+    SUPABASE_STORAGE_GPX_BUCKET: process.env.SUPABASE_STORAGE_GPX_BUCKET,
+    SUPABASE_STORAGE_PUBLIC_URL: process.env.SUPABASE_STORAGE_PUBLIC_URL,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,

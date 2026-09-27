@@ -12,7 +12,7 @@ collect payments.
 - **Tailwind CSS v4** + shadcn/ui (base-nova)
 - **Leaflet** + OpenStreetMap (maps), **Open-Meteo** (weather, no API key)
 - **Resend** (email) + React Email
-- **Cloudflare R2** (avatars, GPX, photos)
+- **Cloudinary** (photos, avatars) + **Supabase Storage** (trail & trip GPX)
 - **Stripe** (club subscriptions + Connect foundation)
 - **recharts** (elevation charts), **nuqs** (URL filters), **cmdk** (search)
 
@@ -39,7 +39,8 @@ pnpm dev
 | Variable | Enables |
 | --- | --- |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Transactional email |
-| `R2_*` | Avatar / GPX / photo uploads |
+| `CLOUDINARY_*` / `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Photo and avatar uploads |
+| `SUPABASE_STORAGE_*` | Trail and trip GPX uploads |
 | `CRON_SECRET` | Protects `/api/cron/*` endpoints |
 | `STRIPE_*` (+ price IDs) | Club subscriptions & payments |
 
