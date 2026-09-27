@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { CoverPhotoUploader } from "@/components/features/images/cover-photo-uploader";
+import { SUBMIT_TRAIL_PATH } from "@/components/features/trails/propose-trail-link";
 import {
   type Difficulty,
   DifficultySelector,
@@ -189,6 +190,21 @@ export function TripForm({
               </select>
               <ChevronDown className="text-summit/30 pointer-events-none absolute top-1/2 right-3.5 size-3.5 -translate-y-1/2" />
             </div>
+            {/* New tab: following it in place would throw away this form. */}
+            <p className="mt-1.5 text-[11px] leading-[1.5]">
+              <a
+                href={SUBMIT_TRAIL_PATH}
+                target="_blank"
+                rel="noopener"
+                className="text-moss font-semibold hover:underline"
+              >
+                Nuk e gjen shtegun? Propozo një të ri →
+              </a>
+              <span className="text-summit/40 block">
+                Hapet në skedë të re. Shtegu shfaqet në këtë listë pasi të
+                miratohet.
+              </span>
+            </p>
           </Field>
           <Field label="Vështirësia" error={errors.difficulty?.message}>
             <DifficultySelector

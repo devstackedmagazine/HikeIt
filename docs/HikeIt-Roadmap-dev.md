@@ -467,6 +467,14 @@ Google Analytics:   Not yet set up
 - [ ] Outreach to 5 Kosovo hiking clubs (message template ready in Albanian)
 - [ ] Wire Share button = copy URL clipboard on trail/trip detail pages
 
+### Post-launch
+- [ ] **Club credit on proposed trails — "Propozuar nga [klubi]".** Decided 2026-09-27: worth doing, not before launch. A trail proposed from a club dashboard is publicly credited to the club. Design:
+  - **Schema:** `trails.proposed_by_organization_id uuid NULL REFERENCES organizations(id) ON DELETE SET NULL` (idempotent SQL file under `sql/`, schema.ts to match).
+  - **Setting it:** the club UDHËTIMET "Propozo shteg" button and the trip-form "Propozo një të ri" link pass `?club=<slug>` to `/dashboard/trails/submit`; `submitTrail` records it **only** after `requireClubAdmin(user, slug)` passes — otherwise ignored, so no one can credit a club they don't run.
+  - **Where it shows:** trail detail page, **only once the trail is verified**, linking to `/clubs/[slug]`; also in the super-admin review queue as context for the reviewer. Not on trail cards.
+  - **Club deleted:** clubs are soft-deleted (`organizations.deleted_at`), so the FK's `SET NULL` won't fire — the display query must also require `organizations.deleted_at IS NULL` and simply show nothing otherwise. A hard delete nulls the column. The trail itself is never affected.
+  - **Abuse:** clubs proposing trails for visibility is gated by the existing review queue; no extra control needed.
+
 ### Nice to have
 - [ ] Legal review of privacy policy and terms
 - [ ] Uptime monitoring on Better Stack

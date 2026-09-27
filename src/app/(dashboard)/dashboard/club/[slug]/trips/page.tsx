@@ -8,6 +8,7 @@ import {
   type SearchParams,
 } from "nuqs/server";
 
+import { ProposeTrailLink } from "@/components/features/trails/propose-trail-link";
 import { ClubTripsFilter } from "@/components/features/trips/club-trips-filter";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
@@ -114,12 +115,21 @@ export default async function ClubTripsPage({
           </h2>
           <ClubTripsFilter />
         </div>
-        <Link
-          href={createHref}
-          className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors"
-        >
-          Krijo udhëtim të ri →
-        </Link>
+        {/* Stacked full-width on phones so neither label truncates; side by
+            side from `sm`, with the trail proposal as the secondary action. */}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-stretch">
+          <ProposeTrailLink
+            isLoggedIn
+            label="Propozo shteg"
+            className="px-5 py-3 text-xs"
+          />
+          <Link
+            href={createHref}
+            className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-center text-xs font-extrabold tracking-[0.08em] whitespace-nowrap uppercase transition-colors"
+          >
+            Krijo udhëtim të ri →
+          </Link>
+        </div>
       </div>
 
       {/* Table */}

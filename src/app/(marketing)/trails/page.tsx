@@ -6,9 +6,11 @@ import {
   type SearchParams,
 } from "nuqs/server";
 
+import { ProposeTrailLink } from "@/components/features/trails/propose-trail-link";
 import { TrailCard } from "@/components/features/trails/trail-card";
 import { TrailFilters } from "@/components/features/trails/trail-filters";
 import { TrailSearch } from "@/components/features/trails/trail-search";
+import { getOptionalSession } from "@/lib/auth/helpers";
 import type { Trail } from "@/lib/db/schema";
 import { trailsParsers } from "@/lib/search-params/trails";
 import { cn } from "@/lib/utils/cn";
@@ -39,7 +41,8 @@ export default async function TrailsPage({
 }) {
   const filters = await cache.parse(searchParams);
 
-  const [regions, { trails, total }] = await Promise.all([
+  const [session, regions, { trails, total }] = await Promise.all([
+    getOptionalSession(),
     getTrailRegions(),
     getTrails({
       search: filters.search || undefined,
@@ -70,6 +73,11 @@ export default async function TrailsPage({
             [{total}] shtigje të verifikuara nga komuniteti i ekspertëve të
             HIKEIT.
           </p>
+          <ProposeTrailLink
+            isLoggedIn={Boolean(session)}
+            tone="dark"
+            className="mt-4"
+          />
         </div>
         <TrailSearch />
       </div>

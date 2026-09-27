@@ -75,8 +75,8 @@ export async function getTrails(
   const limit = Math.max(1, params.limit ?? 12);
   const offset = (page - 1) * limit;
 
-  const filters = buildFilters(params);
-  const where = filters.length > 0 ? and(...filters) : undefined;
+  // Public list: proposed trails stay out until a super admin verifies them.
+  const where = and(eq(trails.verified, true), ...buildFilters(params));
 
   const [rows, totalResult] = await Promise.all([
     db
@@ -116,7 +116,9 @@ export async function getTrailRegions(): Promise<string[]> {
   const rows = await db
     .selectDistinct({ region: trails.region })
     .from(trails)
-    .where(isNotNull(trails.region))
+    // Only regions of published trails — an unverified proposal's region
+    // shouldn't appear as a public filter option.
+    .where(and(isNotNull(trails.region), eq(trails.verified, true)))
     .orderBy(asc(trails.region));
 
   return rows
