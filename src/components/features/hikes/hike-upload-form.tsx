@@ -15,7 +15,9 @@ import { parseGpxString } from "@/lib/gpx/parser";
 import { createHike } from "@/server/actions/hikes";
 import type { LinkableTrip } from "@/server/queries/hikes";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+/** Matches the GPX cap elsewhere: the text goes to a server action, and
+ * Vercel caps request bodies at 4.5MB. */
+const MAX_BYTES = 4 * 1024 * 1024;
 
 /**
  * Upload → confirm → save. The file is parsed and checked in the browser with
@@ -52,7 +54,9 @@ export function HikeUploadForm({
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError("Skedari tejkalon 5MB.");
+      setError(
+        "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.",
+      );
       return;
     }
     setBusy("parsing");
@@ -120,7 +124,7 @@ export function HikeUploadForm({
             {busy === "parsing" ? "Duke lexuar…" : "Zgjidh skedarin GPX të ecjes"}
           </span>
           <span className="text-forest/50 text-[10px]">
-            Gjurma e regjistruar nga ora ose aplikacioni GPS · .gpx · max 5MB
+            Gjurma e regjistruar nga ora ose aplikacioni GPS · .gpx · max 4 MB
           </span>
         </button>
       ) : (

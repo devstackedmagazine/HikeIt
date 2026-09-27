@@ -123,6 +123,33 @@ export default function PrivacyPage() {
             ]}
           />
           <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
+            Gjurmët e ecjeve personale
+          </p>
+          <p>
+            Kur ngarkoni një skedar GPX të një ecjeje, ne e lexojmë atë vetëm
+            për të llogaritur distancën, ngjitjen, kohëzgjatjen dhe datën e
+            ecjes, si dhe një vijë të thjeshtuar të gjurmës për ta shfaqur në
+            hartë.{" "}
+            <strong className="text-summit">
+              Vetë skedari GPX nuk ruhet
+            </strong>{" "}
+            — hidhet menjëherë pas llogaritjes. Ruajmë vetëm statistikat dhe
+            vijën në hartë, e cila është e dhënë vendndodhjeje dhe prandaj e
+            dhënë personale. I përpunojmë sepse ju zgjidhni t&apos;i ngarkoni,
+            për t&apos;ju shfaqur ecjet dhe totalin e kilometrave.
+          </p>
+          <p>
+            Ecjet janë private: askush tjetër — as klubet — nuk i sheh. Rreth
+            200 metrat e parë dhe të fundit të gjurmës nuk ruhen. Kjo e
+            zvogëlon, por nuk e eliminon, mundësinë që pika e nisjes (p.sh.
+            shtëpia juaj) të dallohet — veçanërisht te ecjet rrethore ose kur
+            nisni pak qindra metra larg shtëpisë.
+          </p>
+          <p>
+            Kur fshini një ecje, ajo fshihet menjëherë dhe përgjithmonë. Kur
+            fshini llogarinë, të gjitha ecjet tuaja fshihen menjëherë.
+          </p>
+          <p className="text-moss text-xs font-bold tracking-[0.15em] uppercase">
             Të dhëna teknike
           </p>
           <LegalList
@@ -226,6 +253,11 @@ export default function PrivacyPage() {
                   Pas fshirjes së llogarisë
                 </strong>{" "}
                 — 30 ditë periudhë rikthimi, pastaj fshirje e plotë.
+              </>,
+              <>
+                <strong className="text-summit">Ecjet personale</strong> — deri
+                sa t&apos;i fshini. Fshihen menjëherë kur fshini ecjen ose
+                llogarinë, pa periudhë rikthimi.
               </>,
               <>
                 <strong className="text-summit">Të dhënat e pagesave</strong> —
