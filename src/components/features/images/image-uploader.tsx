@@ -1,13 +1,14 @@
 "use client";
 
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, RotateCcw, X } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { env } from "@/config/env";
 import type { ImageEntityType } from "@/lib/cloudinary/config";
 import { getImageUrl } from "@/lib/cloudinary/urls";
+import { downscaleImage } from "@/lib/images/downscale-image";
 import { cn } from "@/lib/utils/cn";
 
 const ACCEPT = {
@@ -17,7 +18,39 @@ const ACCEPT = {
   "image/heic": [],
   "image/heif": [],
 };
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 const ALLOWED_EXTS = ["jpg", "jpeg", "png", "webp", "heic", "heif"];
+
+/** Longest side after shrinking. Leaves headroom over the largest delivery
+ * size (1200px gallery/cover) while keeping phone photos around 0.5–1.5MB. */
+const MAX_DIMENSION = 2048;
+/** Per-request ceiling, under Vercel's 4.5MB body limit with form overhead. */
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+/** Photos uploading at once. More gains little on phone networks. */
+const CONCURRENCY = 2;
+
+type ItemStatus = "queued" | "uploading" | "saving" | "done" | "error";
+
+interface QueueItem {
+  key: string;
+  file: File;
+  preview: string;
+  status: ItemStatus;
+  error?: string;
+}
+
+/** What a persistence hook reports back for one photo. */
+export interface AttachResult {
+  success: boolean;
+  error?: string;
+}
 
 export interface ImageUploaderProps {
   entityType: ImageEntityType;
@@ -25,34 +58,46 @@ export interface ImageUploaderProps {
   maxFiles?: number;
   existingImages?: string[];
   onUploadComplete: (publicIds: string[]) => void;
-  /** Fires with only the newly uploaded ids from a batch (persistence hook). */
-  onUploaded?: (newPublicIds: string[]) => void;
+  /**
+   * Persist ONE newly uploaded photo. Called once per photo as soon as it
+   * finishes uploading; a returned error marks just that photo as failed.
+   */
+  onUploaded?: (publicId: string) => Promise<AttachResult | void>;
   onUploadError?: (error: string) => void;
   label?: string;
   helpText?: string;
   disabled?: boolean;
 }
 
-function validateClientSide(file: File): string | null {
-  const allowed = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "image/heic",
-    "image/heif",
-  ];
-  if (!allowed.includes(file.type)) {
-    return `${file.name}: Lloji nuk lejohet (JPG, PNG, WebP, HEIC)`;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    return `${file.name}: Shumë i madh (maks. 10MB)`;
-  }
+function checkType(file: File): string | null {
   const ext = file.name.split(".").pop()?.toLowerCase();
-  if (!ext || !ALLOWED_EXTS.includes(ext)) {
-    return `${file.name}: Shtojca nuk lejohet`;
+  if (!ALLOWED_TYPES.includes(file.type) || !ext || !ALLOWED_EXTS.includes(ext)) {
+    return "Lloji nuk lejohet (JPG, PNG, WebP, HEIC)";
   }
   return null;
+}
+
+async function uploadOne(
+  file: File,
+  entityType: ImageEntityType,
+  entityId: string,
+): Promise<string> {
+  const fd = new FormData();
+  fd.set("entityType", entityType);
+  fd.set("entityId", entityId);
+  fd.append("files", file);
+
+  const res = await fetch("/api/upload", { method: "POST", body: fd });
+  if (res.status === 413) throw new Error("Foto është shumë e madhe.");
+  const data = (await res.json().catch(() => ({}))) as {
+    uploaded?: { publicId: string }[];
+    errors?: { error: string }[];
+    error?: string;
+  };
+  if (!res.ok) throw new Error(data.error ?? "Ngarkimi dështoi.");
+  const publicId = data.uploaded?.[0]?.publicId;
+  if (!publicId) throw new Error(data.errors?.[0]?.error ?? "Ngarkimi dështoi.");
+  return publicId;
 }
 
 export function ImageUploader({
@@ -69,92 +114,125 @@ export function ImageUploader({
 }: ImageUploaderProps) {
   const configured = Boolean(env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
   const [items, setItems] = useState<string[]>(existingImages);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
+  // Mirror of `items` for the async workers, which outlive a render. Every
+  // write to `items` updates it alongside setItems.
+  const itemsRef = useRef(items);
 
-  const onDrop = useCallback(
-    async (accepted: File[]) => {
-      setError(null);
-      setNotice(null);
-      const room = maxFiles - items.length;
-      if (room <= 0) {
-        setError(`Maksimumi ${maxFiles} foto.`);
-        return;
-      }
-      const batch = accepted.slice(0, room);
+  const busy = queue.some((q) => q.status === "uploading" || q.status === "saving");
+  const pending = queue.filter((q) => q.status !== "done" && q.status !== "error").length;
 
-      for (const file of batch) {
-        const clientError = validateClientSide(file);
-        if (clientError) {
-          setError(clientError);
-          onUploadError?.(clientError);
-          return;
-        }
-      }
+  const patch = useCallback((key: string, next: Partial<QueueItem>) => {
+    setQueue((q) => q.map((it) => (it.key === key ? { ...it, ...next } : it)));
+  }, []);
 
-      setUploading(true);
+  /** Shrink → upload → persist one photo. Never throws: failures land on the item. */
+  const processItem = useCallback(
+    async (item: QueueItem) => {
+      const fail = (error: string) => {
+        patch(item.key, { status: "error", error });
+        onUploadError?.(error);
+      };
+      patch(item.key, { status: "uploading", error: undefined });
       try {
-        const fd = new FormData();
-        fd.set("entityType", entityType);
-        fd.set("entityId", entityId);
-        batch.forEach((f) => fd.append("files", f));
+        const shrunk = await downscaleImage(item.file, MAX_DIMENSION, 0.85);
+        if (shrunk.size > MAX_UPLOAD_BYTES) {
+          // Typically HEIC outside Safari, which the browser can't shrink.
+          return fail("Foto është shumë e madhe. Provo JPG ose PNG.");
+        }
+        const publicId = await uploadOne(shrunk, entityType, entityId);
 
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        const data = (await res.json()) as {
-          uploaded?: { publicId: string; isDuplicate: boolean }[];
-          errors?: { fileName: string; error: string }[];
-          error?: string;
-        };
-        if (!res.ok) {
-          throw new Error(data.error ?? "Ngarkimi dështoi.");
+        if (onUploaded) {
+          patch(item.key, { status: "saving" });
+          const result = await onUploaded(publicId);
+          if (result && !result.success) {
+            return fail(result.error ?? "Ruajtja dështoi.");
+          }
         }
 
-        const newIds = (data.uploaded ?? []).map((u) => u.publicId);
-        if ((data.uploaded ?? []).some((u) => u.isDuplicate)) {
-          setNotice("Disa foto ishin ngarkuar më parë.");
-        }
-        if (data.errors && data.errors.length > 0) {
-          setError(data.errors[0]!.error);
-          onUploadError?.(data.errors[0]!.error);
-        }
-        if (newIds.length > 0) {
-          const merged = [...items, ...newIds].slice(0, maxFiles);
-          setItems(merged);
-          onUploadComplete(merged);
-          onUploaded?.(newIds);
-        }
+        const merged = [...itemsRef.current, publicId].slice(0, maxFiles);
+        itemsRef.current = merged;
+        setItems(merged);
+        onUploadComplete(merged);
+        URL.revokeObjectURL(item.preview);
+        patch(item.key, { status: "done" });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Ngarkimi dështoi.";
-        setError(msg);
-        onUploadError?.(msg);
-      } finally {
-        setUploading(false);
+        fail(e instanceof Error ? e.message : "Ngarkimi dështoi.");
       }
     },
-    [
-      entityType,
-      entityId,
-      items,
-      maxFiles,
-      onUploadComplete,
-      onUploaded,
-      onUploadError,
-    ],
+    [entityType, entityId, maxFiles, onUploaded, onUploadComplete, onUploadError, patch],
+  );
+
+  /** Run items through `process`, CONCURRENCY at a time. */
+  const run = useCallback(
+    async (batch: QueueItem[]) => {
+      let next = 0;
+      const worker = async () => {
+        while (next < batch.length) {
+          const item = batch[next++]!;
+          await processItem(item);
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(CONCURRENCY, batch.length) }, worker),
+      );
+    },
+    [processItem],
+  );
+
+  const onDrop = useCallback(
+    (accepted: File[]) => {
+      setNotice(null);
+      const inFlight = queue.filter((q) => q.status !== "done" && q.status !== "error").length;
+      const limit = maxFiles - itemsRef.current.length - inFlight;
+      if (limit <= 0) {
+        setNotice(`Maksimumi ${maxFiles} foto.`);
+        return;
+      }
+      if (accepted.length > limit) {
+        setNotice(`U morën vetëm ${limit} foto — maksimumi është ${maxFiles}.`);
+      }
+
+      const batch: QueueItem[] = accepted.slice(0, limit).map((file) => {
+        const typeError = checkType(file);
+        return {
+          key: crypto.randomUUID(),
+          file,
+          preview: URL.createObjectURL(file),
+          status: typeError ? "error" : "queued",
+          error: typeError ?? undefined,
+        };
+      });
+      setQueue((q) => [...q.filter((it) => it.status !== "done"), ...batch]);
+      void run(batch.filter((it) => it.status === "queued"));
+    },
+    [maxFiles, queue, run],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ACCEPT,
-    maxFiles,
-    disabled: disabled || uploading || !configured,
+    // Enforced in onDrop instead: react-dropzone rejects the WHOLE drop when
+    // it exceeds maxFiles, which would silently upload nothing.
+    maxFiles: 0,
+    disabled: disabled || !configured,
     multiple: maxFiles > 1,
   });
 
   function remove(publicId: string) {
     const next = items.filter((id) => id !== publicId);
+    itemsRef.current = next;
     setItems(next);
     onUploadComplete(next);
+  }
+
+  function dismiss(key: string) {
+    setQueue((q) => {
+      const item = q.find((it) => it.key === key);
+      if (item) URL.revokeObjectURL(item.preview);
+      return q.filter((it) => it.key !== key);
+    });
   }
 
   if (!configured) {
@@ -165,11 +243,16 @@ export function ImageUploader({
     );
   }
 
+  const visibleQueue = queue.filter((q) => q.status !== "done");
+  const canAddMore = items.length + pending < maxFiles;
+
   return (
     <div className="space-y-3">
       {label ? <p className="text-sm font-medium">{label}</p> : null}
 
-      {items.length > 0 ? (
+      {/* Single-image fields show their current image; multi-photo callers
+          render their own saved gallery and only use the per-photo queue. */}
+      {maxFiles === 1 && items.length > 0 ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
           {items.map((publicId) => (
             <div
@@ -196,28 +279,87 @@ export function ImageUploader({
         </div>
       ) : null}
 
-      {items.length < maxFiles ? (
+      {visibleQueue.length > 0 ? (
+        <ul className="space-y-1.5" aria-live="polite">
+          {visibleQueue.map((item) => (
+            <li
+              key={item.key}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg border p-1.5 text-xs",
+                item.status === "error" && "border-destructive/40 bg-destructive/5",
+              )}
+            >
+              <span className="relative size-10 shrink-0 overflow-hidden rounded bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
+                <img src={item.preview} alt="" className="size-full object-cover" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{item.file.name}</span>
+                <span
+                  className={cn(
+                    "block truncate",
+                    item.status === "error" ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {item.status === "queued"
+                    ? "Në pritje…"
+                    : item.status === "uploading"
+                      ? "Duke ngarkuar…"
+                      : item.status === "saving"
+                        ? "Duke ruajtur…"
+                        : item.error}
+                </span>
+              </span>
+              {item.status === "error" ? (
+                <>
+                  {!checkType(item.file) ? (
+                    <button
+                      type="button"
+                      onClick={() => void run([item])}
+                      className="flex items-center gap-1 rounded px-2 py-1 font-medium hover:bg-muted"
+                    >
+                      <RotateCcw className="size-3.5" />
+                      Provo sërish
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => dismiss(item.key)}
+                    aria-label="Hiq"
+                    className="rounded p-1 text-muted-foreground hover:bg-muted"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </>
+              ) : (
+                <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {queue.some((q) => q.status === "done") && !busy && visibleQueue.length === 0 ? (
+        <p className="flex items-center gap-1.5 text-xs text-primary">
+          <Check className="size-3.5" />
+          Të gjitha fotot u ngarkuan.
+        </p>
+      ) : null}
+
+      {canAddMore ? (
         <div
           {...getRootProps()}
           className={cn(
             "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-8 text-muted-foreground transition-colors hover:bg-muted",
             isDragActive && "border-primary bg-primary/5",
-            (disabled || uploading) && "pointer-events-none opacity-60",
+            disabled && "pointer-events-none opacity-60",
           )}
         >
           <input {...getInputProps()} />
-          {uploading ? (
-            <Loader2 className="size-6 animate-spin" />
-          ) : (
-            <ImagePlus className="size-6" />
-          )}
-          <span className="text-sm">
-            {uploading
-              ? "Duke ngarkuar…"
-              : "Tërhiq foto këtu ose kliko për të zgjedhur"}
-          </span>
+          <ImagePlus className="size-6" />
+          <span className="text-sm">Tërhiq foto këtu ose kliko për të zgjedhur</span>
           <span className="text-xs">
-            JPG, PNG, WebP, HEIC · maks. 10MB{maxFiles > 1 ? ` · deri ${maxFiles}` : ""}
+            JPG, PNG, WebP, HEIC{maxFiles > 1 ? ` · deri ${maxFiles}` : ""}
           </span>
         </div>
       ) : null}
@@ -226,7 +368,6 @@ export function ImageUploader({
         <p className="text-xs text-muted-foreground">{helpText}</p>
       ) : null}
       {notice ? <p className="text-xs text-muted-foreground">{notice}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }

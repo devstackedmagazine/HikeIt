@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,15 +24,17 @@ export function TripPhotosManager({
   manage?: boolean;
 }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  async function persist(newIds: string[]) {
-    setSaving(true);
-    await addTripPhotos(tripId, newIds);
-    setSaving(false);
-    setDone(true);
-    router.refresh();
+  // One call per photo: the uploader attaches each as soon as it lands, so a
+  // later failure never loses the ones already uploaded.
+  async function persist(publicId: string) {
+    const result = await addTripPhotos(tripId, [publicId]);
+    if (result.success) {
+      setDone(true);
+      router.refresh();
+    }
+    return result;
   }
 
   async function remove(photoId: string) {
@@ -79,12 +81,7 @@ export function TripPhotosManager({
         helpText="JPG, PNG, WebP, HEIC · deri 10 foto"
       />
 
-      {saving ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          Duke ruajtur…
-        </p>
-      ) : done ? (
+      {done ? (
         <p className="text-sm text-primary">Faleminderit! Kujtimet u shtuan.</p>
       ) : null}
     </div>

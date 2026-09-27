@@ -491,20 +491,33 @@ export const trailPhotos = pgTable(
   (t) => [index("trail_photos_trail_id_idx").on(t.trailId)],
 );
 
-export const imageHashes = pgTable("image_hashes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  hash: text("hash").unique().notNull(),
-  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
-  cloudinaryUrl: text("cloudinary_url").notNull(),
-  uploadedBy: uuid("uploaded_by").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  entityType: text("entity_type").notNull(),
-  entityId: uuid("entity_id").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+/**
+ * One row per Cloudinary asset, keyed for dedupe by (uploader, content hash).
+ * Dedupe is per user so an asset only ever belongs to the person who
+ * uploaded it — that's what makes ownership checks on attach and safe deletes
+ * possible (see src/lib/cloudinary/ownership.ts).
+ */
+export const imageHashes = pgTable(
+  "image_hashes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    hash: text("hash").notNull(),
+    cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+    cloudinaryUrl: text("cloudinary_url").notNull(),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    entityType: text("entity_type").notNull(),
+    entityId: uuid("entity_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("image_hashes_user_hash_unique").on(t.uploadedBy, t.hash),
+    index("image_hashes_public_id_idx").on(t.cloudinaryPublicId),
+  ],
+);
 
 export const weatherAlerts = pgTable(
   "weather_alerts",
