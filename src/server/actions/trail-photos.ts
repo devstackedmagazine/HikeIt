@@ -4,10 +4,9 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getOptionalSession } from "@/lib/auth/helpers";
-import { deleteImage } from "@/lib/cloudinary/upload";
+import { getOwnedImageUrls, releaseImage } from "@/lib/cloudinary/ownership";
 import { db } from "@/lib/db";
 import {
-  imageHashes,
   reviews,
   trailPhotos,
   trails,
@@ -67,21 +66,19 @@ export async function addTrailPhotos(
     };
   }
 
-  const hashes = await db
-    .select({
-      publicId: imageHashes.cloudinaryPublicId,
-      url: imageHashes.cloudinaryUrl,
-    })
-    .from(imageHashes)
-    .where(inArray(imageHashes.cloudinaryPublicId, publicIds));
-  const urlByPublicId = new Map(hashes.map((h) => [h.publicId, h.url]));
+  // Only images this user uploaded — never a publicId lifted from someone
+  // else's photo.
+  const urlByPublicId = await getOwnedImageUrls(session.user.id, publicIds);
+  if (!urlByPublicId) {
+    return { success: false, error: "Mund të shtoni vetëm foto që keni ngarkuar vetë." };
+  }
 
   await db.insert(trailPhotos).values(
     publicIds.map((publicId) => ({
       trailId,
       userId: session.user.id,
       cloudinaryPublicId: publicId,
-      url: urlByPublicId.get(publicId) ?? "",
+      url: urlByPublicId.get(publicId)!,
     })),
   );
 
@@ -102,6 +99,7 @@ export async function deleteTrailPhoto(photoId: string): Promise<ActionResult> {
   }
 
   await db.delete(trailPhotos).where(eq(trailPhotos.id, photoId));
-  await deleteImage(photo.cloudinaryPublicId, session.user.id);
+  // Only destroys the asset if no other record still uses it.
+  await releaseImage(photo.cloudinaryPublicId, session.user.id);
   return { success: true };
 }

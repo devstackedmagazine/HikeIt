@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
+import { canSetImageField } from "@/lib/cloudinary/ownership";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -586,6 +587,16 @@ export async function setClubImages(
 
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  // Each image must be one this admin uploaded, or the club's current value
+  // (a co-admin re-saving settings without touching the logo is fine).
+  const club = access.organization;
+  const allowed =
+    (await canSetImageField(session.user.id, images.logoUrl, club.logoUrl)) &&
+    (await canSetImageField(session.user.id, images.coverUrl, club.coverUrl));
+  if (!allowed) {
+    return { success: false, error: "Mund të përdorni vetëm foto që keni ngarkuar vetë." };
+  }
 
   await db
     .update(organizations)

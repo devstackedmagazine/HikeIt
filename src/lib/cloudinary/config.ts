@@ -21,8 +21,10 @@ export const MAGIC_BYTES: Record<string, number[][]> = {
 };
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-export const MAX_FILES_PER_UPLOAD = 10;
-export const MAX_UPLOADS_PER_HOUR = 20;
+/** One photo per request, so no request nears Vercel's 4.5MB body limit —
+ * the client sends a batch as parallel single-photo requests. */
+export const MAX_FILES_PER_UPLOAD = 1;
+export const MAX_UPLOADS_PER_HOUR = 60;
 
 export const MIN_DIMENSION = 100;
 export const MAX_DIMENSION = 20000;
