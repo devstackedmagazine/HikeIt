@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -50,9 +51,15 @@ export function DashboardShell({
         <NotificationsBell light={isLight} />
         {/* Abyss chip, not Forest/Pine: Moss only clears AA on Abyss (6.32:1;
             4.43 on Forest, 2.74 on Pine). */}
-        <span className="bg-abyss text-moss flex size-8 items-center justify-center text-xs font-bold">
+        {/* Links to the profile on every variant: on phones Profili sits
+            inside the bottom bar's "Më shumë" sheet. */}
+        <Link
+          href="/dashboard/profile"
+          aria-label="Profili"
+          className="bg-abyss text-moss hover:ring-moss/60 flex size-8 items-center justify-center text-xs font-bold transition-shadow hover:ring-2"
+        >
           {displayName.charAt(0).toUpperCase()}
-        </span>
+        </Link>
       </header>
 
       <main className="flex-1 px-6 py-5 pb-24 md:pb-5">{children}</main>
