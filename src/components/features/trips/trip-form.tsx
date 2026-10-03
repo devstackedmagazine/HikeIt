@@ -171,7 +171,7 @@ export function TripForm({
             {...register("description")}
           />
         </Field>
-        <div className="grid grid-cols-[1fr_auto] gap-3">
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <Field label="Shtegu (kërko)">
             <div className="border-summit/15 bg-summit/[0.05] relative h-10 border">
               <Search className="text-summit/30 pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2" />
