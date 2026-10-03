@@ -26,11 +26,13 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   // Club-management pages are light, except the create/edit trip forms; the
-  // profile page is dark for everyone.
+  // profile page and the trail proposal form are dark for everyone.
   const isForm = pathname.endsWith("/create") || pathname.endsWith("/edit");
-  const isProfile = pathname.startsWith("/dashboard/profile");
+  const isAlwaysDark =
+    pathname.startsWith("/dashboard/profile") ||
+    pathname === "/dashboard/trails/submit";
   const isLight =
-    !isProfile &&
+    !isAlwaysDark &&
     (variant === "hiker" ||
       (pathname.startsWith("/dashboard/club/") && !isForm));
 

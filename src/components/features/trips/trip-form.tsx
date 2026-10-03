@@ -1,17 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ChevronDown,
-  CreditCard,
-  Loader2,
-  Search,
-} from "lucide-react";
+import { ChevronDown, CreditCard, Loader2, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  BRUTAL_INPUT,
+  BRUTAL_INPUT_HEIGHT,
+  Field,
+  Section,
+} from "@/components/features/forms/brutal-form";
 import { CoverPhotoUploader } from "@/components/features/images/cover-photo-uploader";
 import { SUBMIT_TRAIL_PATH } from "@/components/features/trails/propose-trail-link";
 import {
@@ -34,8 +35,7 @@ const ClickableMap = dynamic(
   { ssr: false, loading: () => <div className="size-full" /> },
 );
 
-const INPUT =
-  "h-10 w-full border border-summit/40 bg-summit/[0.05] px-3.5 text-[13px] font-medium text-summit placeholder:text-summit/50 placeholder:italic focus:border-moss focus:outline-none";
+const INPUT = cn(BRUTAL_INPUT, BRUTAL_INPUT_HEIGHT);
 
 const EMPTY_VALUES: CreateTripInput = {
   title: "",
@@ -51,45 +51,6 @@ const EMPTY_VALUES: CreateTripInput = {
   included: "",
   publish: false,
 };
-
-function Section({
-  number,
-  title,
-  children,
-}: {
-  number: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="border-summit/10 bg-summit/[0.04] border p-5">
-      <p className="border-summit/[0.06] text-summit/30 mb-4 border-b pb-2.5 text-[9px] font-bold tracking-[0.15em] uppercase">
-        {number}. {title}
-      </p>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="text-summit/50 mb-1.5 block text-[10px] font-bold tracking-[0.1em] uppercase">
-        {label}
-      </label>
-      {children}
-      {error ? <p className="text-danger mt-1 text-[10px]">{error}</p> : null}
-    </div>
-  );
-}
 
 export function TripForm({
   clubSlug,
@@ -173,7 +134,7 @@ export function TripForm({
         </Field>
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <Field label="Shtegu (kërko)">
-            <div className="border-summit/15 bg-summit/[0.05] relative h-10 border">
+            <div className="border-summit/40 bg-summit/[0.05] relative h-10 border-2">
               <Search className="text-summit/30 pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2" />
               <select
                 className="text-summit h-full w-full appearance-none bg-transparent pr-9 pl-9 text-[13px] focus:outline-none"
@@ -314,7 +275,7 @@ export function TripForm({
         <p className="font-heading text-summit/60 text-sm font-extrabold uppercase">
           Kostoja për person
         </p>
-        <div className="border-summit/15 bg-summit/[0.05] flex h-11 items-center border">
+        <div className="border-summit/40 bg-summit/[0.05] flex h-11 items-center border-2">
           <span className="font-heading border-summit/10 text-summit/30 border-r px-3 text-base font-bold">
             €
           </span>
