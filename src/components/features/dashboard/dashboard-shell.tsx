@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -48,6 +49,26 @@ export function DashboardShell({
             : "border-summit/[0.08] bg-forest",
         )}
       >
+        {/* Phones only: the sidebar (with its logo) is hidden below md. On
+            the dark bar the wordmark is Sage, not Moss — the bar is Forest,
+            where Moss misses AA (4.43:1) and Sage clears it (7.09:1). */}
+        <Link href="/" className="mr-auto flex items-center gap-2 md:hidden">
+          <Image
+            src="/logos/Hikeit-pfp.png"
+            alt=""
+            width={24}
+            height={24}
+            className="size-6"
+          />
+          <span
+            className={cn(
+              "font-heading text-sm font-extrabold tracking-[-0.01em] uppercase",
+              isLight ? "text-forest" : "text-sage",
+            )}
+          >
+            HikeIt
+          </span>
+        </Link>
         <NotificationsBell light={isLight} />
         {/* Abyss chip, not Forest/Pine: Moss only clears AA on Abyss (6.32:1;
             4.43 on Forest, 2.74 on Pine). */}
