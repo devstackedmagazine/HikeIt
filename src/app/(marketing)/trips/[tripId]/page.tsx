@@ -103,6 +103,11 @@ export default async function PublicTripPage({
   ]);
 
   const isPast = trip.startDatetime < new Date();
+  // Participants may add photos once the trip is completed (the hourly
+  // complete-trips job sets that after it ends).
+  const isParticipant =
+    registration?.status === "confirmed" || registration?.status === "attended";
+  const photosOpen = trip.status === "completed";
   const trail = trip.trail;
   const meetingLat = trip.meetingLat ? Number(trip.meetingLat) : null;
   const meetingLng = trip.meetingLng ? Number(trip.meetingLng) : null;
@@ -319,6 +324,20 @@ export default async function PublicTripPage({
             </span>
           ) : null}
         </div>
+        {isParticipant && trip.status !== "canceled" ? (
+          <p className="text-summit/60 mb-3 text-xs">
+            {photosOpen ? (
+              <Link
+                href="/dashboard/my-trips"
+                className="text-moss font-semibold hover:underline"
+              >
+                Shto fotot e tua te Udhëtimet e mia → Të kaluara
+              </Link>
+            ) : (
+              "Fotot mund të shtohen pasi udhëtimi të përfundojë."
+            )}
+          </p>
+        ) : null}
         <TripGallery
           photos={photos.map((p) => ({
             id: p.id,

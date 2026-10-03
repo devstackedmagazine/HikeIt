@@ -195,13 +195,22 @@ function TripRow({
             </span>
           ) : null}
           {variant === "past" ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowUpload((v) => !v)}
-            >
-              Shto Kujtimet Tuaja
-            </Button>
+            // "Past" means the start time has passed; uploads open only once
+            // the trip is marked completed, so don't offer a button the server
+            // will refuse.
+            item.trip.status === "completed" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowUpload((v) => !v)}
+              >
+                Shto Kujtimet Tuaja
+              </Button>
+            ) : (
+              <span className="text-muted-foreground text-xs">
+                Fotot mund të shtohen pasi udhëtimi të përfundojë.
+              </span>
+            )
           ) : (
             <Button
               variant="outline"
