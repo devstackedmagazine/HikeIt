@@ -31,10 +31,18 @@ export function DashboardShell({
   const isAlwaysDark =
     pathname.startsWith("/dashboard/profile") ||
     pathname === "/dashboard/trails/submit";
+  // Personal pages built with light-surface ink: light for every role, or a
+  // club admin gets dark text on the dark surface.
+  const isAlwaysLight = [
+    "/dashboard/hikes",
+    "/dashboard/trails",
+    "/dashboard/admin",
+  ].includes(pathname);
   const isLight =
-    !isAlwaysDark &&
-    (variant === "hiker" ||
-      (pathname.startsWith("/dashboard/club/") && !isForm));
+    isAlwaysLight ||
+    (!isAlwaysDark &&
+      (variant === "hiker" ||
+        (pathname.startsWith("/dashboard/club/") && !isForm)));
 
   return (
     <div
