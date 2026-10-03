@@ -13,6 +13,7 @@ import { ClubTripsFilter } from "@/components/features/trips/club-trips-filter";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
 import { clubTripsParsers } from "@/lib/search-params/club-trips";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
 import { getClubStats } from "@/server/queries/clubs";
 import { getClubTripsAdmin } from "@/server/queries/dashboard";
@@ -86,10 +87,7 @@ export default async function ClubTripsPage({
     <div>
       {/* Header */}
       <p className="text-forest/40 mb-2 text-[10px] font-medium tracking-[0.08em] uppercase">
-        <Link
-          href="/dashboard"
-          className="hover:text-forest"
-        >
+        <Link href="/dashboard" className="hover:text-forest">
           Paneli i klubit
         </Link>
       </p>
@@ -155,7 +153,7 @@ export default async function ClubTripsPage({
           </p>
         ) : (
           rows.map(({ trip, trailName, confirmedCount }) => {
-            const badge = STATUS_BADGE[trip.status];
+            const badge = STATUS_BADGE[displayTripStatus(trip)];
             const viewHref = `/dashboard/club/${club.slug}/trips/${trip.slug}`;
             return (
               // Stretched link: the title's ::after covers the whole row, so
@@ -165,7 +163,7 @@ export default async function ClubTripsPage({
                 key={trip.id}
                 className={cn(
                   GRID,
-                  "border-forest/[0.06] hover:bg-forest/[0.03] focus-within:ring-forest relative border-b px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-inset last:border-b-0",
+                  "border-forest/[0.06] hover:bg-forest/[0.03] focus-within:ring-forest relative border-b px-4 py-3 transition-colors last:border-b-0 focus-within:ring-2 focus-within:ring-inset",
                 )}
               >
                 <Link

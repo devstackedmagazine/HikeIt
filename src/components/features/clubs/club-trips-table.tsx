@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import type { Trip } from "@/lib/db/schema";
 import { tripStatusLabels } from "@/lib/i18n/labels";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { formatTripDate } from "@/lib/utils/datetime";
 
 const STATUS_FILTERS = [
@@ -45,7 +46,7 @@ export function ClubTripsTable({
           onChange={(e) =>
             setStatus(e.target.value as (typeof STATUS_FILTERS)[number])
           }
-          className="h-9 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-lg border bg-transparent px-2.5 text-sm outline-none focus-visible:ring-3"
         >
           <option value="all">Të gjitha</option>
           {STATUS_FILTERS.slice(1).map((s) => (
@@ -64,7 +65,7 @@ export function ClubTripsTable({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-xl border border-dashed px-6 py-10 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
           Asnjë udhëtim.
         </p>
       ) : (
@@ -95,7 +96,7 @@ export function ClubTripsTable({
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {tripStatusLabels[trip.status]}
+                      {tripStatusLabels[displayTripStatus(trip)]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

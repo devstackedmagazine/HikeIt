@@ -2,10 +2,8 @@ import { and, eq, gte, ilike, isNull, or, type SQL } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { organizations, trails, trips } from "@/lib/db/schema";
-import {
-  difficultyLabels,
-  tripStatusLabels,
-} from "@/lib/i18n/labels";
+import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
+import { displayTripStatus } from "@/lib/trips/display-status";
 
 export interface SearchResult {
   type: "trail" | "club" | "trip";
@@ -50,7 +48,10 @@ export async function globalSearch(
     ilike(organizations.description, term),
     ilike(organizations.city, term),
   );
-  const tripMatch = or(ilike(trips.title, term), ilike(trips.description, term));
+  const tripMatch = or(
+    ilike(trips.title, term),
+    ilike(trips.description, term),
+  );
 
   const tripFilters: SQL[] = [
     eq(trips.status, "open"),
@@ -101,7 +102,7 @@ export async function globalSearch(
     id: t.id,
     slug: t.slug,
     title: t.title,
-    subtitle: tripStatusLabels[t.status] ?? "Udhëtim",
+    subtitle: tripStatusLabels[displayTripStatus(t)] ?? "Udhëtim",
     metadata: {},
   }));
 

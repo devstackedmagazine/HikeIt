@@ -19,6 +19,7 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 import type { Trail, Trip } from "@/lib/db/schema";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
 import type { ClubWithStats } from "@/server/queries/clubs";
 import { getClubs, getClubStats } from "@/server/queries/clubs";
@@ -447,7 +448,7 @@ async function ClubAdminHome({
                   <span className="text-summit/60 text-[11px] font-semibold">
                     {confirmedCount}/{trip.maxParticipants ?? "∞"}
                   </span>
-                  <StatusDot status={trip.status} />
+                  <StatusDot status={displayTripStatus(trip)} />
                   <Link
                     href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
                     aria-label="Ndrysho"
@@ -490,10 +491,14 @@ async function ClubAdminHome({
                     {reg.waitlisted || reg.isReregistration ? (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {reg.waitlisted ? (
-                          <RegistrationTag tone="alert">Listë pritje</RegistrationTag>
+                          <RegistrationTag tone="alert">
+                            Listë pritje
+                          </RegistrationTag>
                         ) : null}
                         {reg.isReregistration ? (
-                          <RegistrationTag tone="muted">Ri-regjistrim</RegistrationTag>
+                          <RegistrationTag tone="muted">
+                            Ri-regjistrim
+                          </RegistrationTag>
                         ) : null}
                       </div>
                     ) : null}

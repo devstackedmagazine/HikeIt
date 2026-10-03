@@ -10,6 +10,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { captureError } from "@/lib/sentry";
+import { displayStatusFilter } from "@/server/queries/trip-status-sql";
 
 export interface ClubWithStats extends Organization {
   memberCount: number;
@@ -76,7 +77,8 @@ export async function getClubs(
   const offset = (page - 1) * limit;
 
   const filters = [isNull(organizations.deletedAt)];
-  if (params.search) filters.push(ilike(organizations.name, `%${params.search}%`));
+  if (params.search)
+    filters.push(ilike(organizations.name, `%${params.search}%`));
   if (params.city) filters.push(eq(organizations.city, params.city));
   const where = and(...filters);
 
@@ -191,7 +193,8 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(trips.status, "open"),
+            // Past trips the cron hasn't completed yet aren't active.
+            displayStatusFilter("open"),
             isNull(trips.deletedAt),
           ),
         ),
@@ -201,7 +204,7 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(trips.status, "completed"),
+            displayStatusFilter("completed"),
             isNull(trips.deletedAt),
           ),
         ),

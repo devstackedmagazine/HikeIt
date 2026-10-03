@@ -21,6 +21,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { getPersonalTotals } from "@/server/queries/personal-stats";
+import { displayStatusFilter } from "@/server/queries/trip-status-sql";
 
 export interface HikerStats {
   /** Hikes done: logged hikes + completed trips no hike replaces. */
@@ -196,7 +197,8 @@ export async function getClubTripsAdmin(
   const where = and(
     eq(trips.organizationId, organizationId),
     isNull(trips.deletedAt),
-    params.status ? eq(trips.status, params.status) : undefined,
+    // Filter by the status the table shows (past open/full → completed).
+    params.status ? displayStatusFilter(params.status) : undefined,
   );
 
   const [rows, totalResult] = await Promise.all([
