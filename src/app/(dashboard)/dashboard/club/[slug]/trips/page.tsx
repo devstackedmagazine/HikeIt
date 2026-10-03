@@ -156,17 +156,24 @@ export default async function ClubTripsPage({
         ) : (
           rows.map(({ trip, trailName, confirmedCount }) => {
             const badge = STATUS_BADGE[trip.status];
+            const viewHref = `/dashboard/club/${club.slug}/trips/${trip.slug}`;
             return (
+              // Stretched link: the title's ::after covers the whole row, so
+              // the row opens the trip (keyboard and touch included) while
+              // the icons above it (z-10) keep their own targets.
               <div
                 key={trip.id}
                 className={cn(
                   GRID,
-                  "border-forest/[0.06] hover:bg-forest/[0.03] border-b px-4 py-3 transition-colors last:border-b-0",
+                  "border-forest/[0.06] hover:bg-forest/[0.03] focus-within:ring-forest relative border-b px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-inset last:border-b-0",
                 )}
               >
-                <span className="font-heading text-forest text-xs leading-[1.2] font-bold tracking-[-0.01em] uppercase">
+                <Link
+                  href={viewHref}
+                  className="font-heading text-forest text-xs leading-[1.2] font-bold tracking-[-0.01em] uppercase outline-none after:absolute after:inset-0"
+                >
                   {trip.title}
-                </span>
+                </Link>
                 <span className="text-forest/55 text-[11px] leading-[1.3] italic">
                   {trailName ?? "—"}
                 </span>
@@ -189,18 +196,19 @@ export default async function ClubTripsPage({
                 <span className="font-heading text-forest text-xs font-bold">
                   €{Number(trip.priceEur).toFixed(2)}
                 </span>
-                <span className="flex justify-end gap-1.5">
+                <span className="relative z-10 flex justify-end gap-0.5">
                   <Link
-                    href={`/dashboard/club/${club.slug}/trips/${trip.slug}`}
+                    href={viewHref}
                     aria-label="Shiko"
-                    className="text-forest/40 hover:text-forest"
+                    tabIndex={-1}
+                    className="text-forest/40 hover:text-forest flex size-8 items-center justify-center"
                   >
                     <Eye className="size-3.5" />
                   </Link>
                   <Link
-                    href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
+                    href={`${viewHref}/edit`}
                     aria-label="Ndrysho"
-                    className="text-forest/40 hover:text-forest"
+                    className="text-forest/40 hover:text-forest focus-visible:ring-forest flex size-8 items-center justify-center outline-none focus-visible:ring-2"
                   >
                     <Pencil className="size-3.5" />
                   </Link>
