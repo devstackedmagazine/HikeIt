@@ -13,6 +13,7 @@ import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
 import { hikes, users } from "@/lib/db/schema";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/sentry";
 
 export interface ActionResult {
   success: boolean;
@@ -117,6 +118,12 @@ export async function updateAvatar(formData: FormData): Promise<AvatarResult> {
       .where(eq(users.id, session.user.id));
     return { success: true, avatarUrl };
   } catch (error) {
+    // Report only what KIND of failure this was — never the message (it can
+    // echo file details), the file, or who uploaded it. No userId is passed,
+    // so no user is attached to the event.
+    captureError(new Error(`updateAvatar failed: ${avatarErrorKind(error)}`), {
+      action: "updateAvatar",
+    });
     // uploadImage throws user-facing Albanian messages for validation, the
     // rate limit and missing config; anything else is unexpected.
     return {
@@ -124,6 +131,16 @@ export async function updateAvatar(formData: FormData): Promise<AvatarResult> {
       error: error instanceof Error ? error.message : "Ngarkimi dështoi.",
     };
   }
+}
+
+/** Failure category for Sentry: Cloudinary API errors carry `http_code`;
+ * everything else is reported by its constructor name. */
+function avatarErrorKind(error: unknown): string {
+  if (error && typeof error === "object" && "http_code" in error) {
+    return `cloudinary_${String((error as { http_code: unknown }).http_code)}`;
+  }
+  if (error instanceof Error) return error.name;
+  return typeof error;
 }
 
 export async function changePassword(data: {
