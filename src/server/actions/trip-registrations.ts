@@ -98,6 +98,11 @@ export async function registerForTrip(
   if (trip.status !== "open") {
     return { success: false, error: "Ky udhëtim nuk është i hapur." };
   }
+  // The cron only completes a trip hours after it ends, so `open` alone
+  // would still accept sign-ups once the group has left.
+  if (trip.startDatetime <= new Date()) {
+    return { success: false, error: "Ky udhëtim ka filluar." };
+  }
 
   const existing = await db.query.tripRegistrations.findFirst({
     where: and(

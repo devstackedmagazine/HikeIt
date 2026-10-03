@@ -21,6 +21,7 @@ import { TripSocialActions } from "@/components/features/trips/trip-social-actio
 import { TripWeatherWidget } from "@/components/features/weather/trip-weather-widget";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { getClubStats } from "@/server/queries/clubs";
 import { isTripFavorited } from "@/server/queries/favorites";
 import { getTripPhotos } from "@/server/queries/photos";
@@ -161,7 +162,7 @@ export default async function PublicTripPage({
             {trip.title}
           </h1>
           <span className="border-moss/40 bg-moss/15 text-moss border px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] uppercase">
-            {tripStatusLabels[trip.status]}
+            {tripStatusLabels[displayTripStatus(trip)]}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">

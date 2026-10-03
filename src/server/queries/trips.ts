@@ -21,6 +21,7 @@ import {
   trips,
   users,
 } from "@/lib/db/schema";
+import { displayStatusFilter } from "@/server/queries/trip-status-sql";
 
 /** Upcoming, open, non-deleted trips on a given trail (soonest first). */
 export async function getUpcomingTripsByTrail(
@@ -79,7 +80,9 @@ const confirmedCountSql = sql<number>`(
   where tr.trip_id = ${trips.id} and tr.status = 'confirmed'
 )`;
 
-function dateRangeUpperBound(range?: "week" | "month" | "quarter"): Date | null {
+function dateRangeUpperBound(
+  range?: "week" | "month" | "quarter",
+): Date | null {
   if (!range) return null;
   const now = new Date();
   const days = range === "week" ? 7 : range === "month" ? 30 : 90;
@@ -224,7 +227,10 @@ export async function getClubTrips(
     eq(trips.organizationId, organizationId),
     isNull(trips.deletedAt),
   ];
-  if (status) filters.push(eq(trips.status, status));
+  if (status) {
+    const statusFilter = displayStatusFilter(status);
+    if (statusFilter) filters.push(statusFilter);
+  }
   const where = and(...filters);
 
   const [rows, totalResult] = await Promise.all([

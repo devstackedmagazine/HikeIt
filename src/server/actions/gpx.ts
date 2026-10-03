@@ -1,53 +1,98 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { organizations, trails, trips, users } from "@/lib/db/schema";
 import { downsampleTrack, parseGpxString } from "@/lib/gpx/parser";
-import {
-  enforceRateLimit,
-  getClientIp,
-} from "@/lib/security/rate-limit";
+import { enforceRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import { isGpxStorageConfigured, uploadGpx } from "@/lib/storage/gpx-storage";
 import { generateSlug } from "@/lib/utils/slug";
+import {
+  OTHER_REGION,
+  type SubmitTrailField,
+  type SubmitTrailInput,
+  submitTrailSchema,
+} from "@/lib/validations/trail-submit";
+import { createNotification } from "@/server/queries/notifications";
+import { getTrailRegions } from "@/server/queries/trails";
 
 export interface SubmitTrailResult {
   success: boolean;
   slug?: string;
   error?: string;
+  /** Per-field messages, shown next to the field. */
+  fieldErrors?: Partial<Record<SubmitTrailField, string>>;
 }
 
-export async function submitTrail(data: {
-  name: string;
-  region?: string;
-  city?: string;
-  difficulty: "easy" | "moderate" | "hard" | "expert";
-  description?: string;
-  gpxContent: string;
-}): Promise<SubmitTrailResult> {
+/** Propose a trail (any signed-in user). Unverified until a super admin
+ * approves it; every super admin gets an in-app notification. */
+export async function submitTrail(
+  data: SubmitTrailInput & { gpxContent: string },
+): Promise<SubmitTrailResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
-  if (!data.name.trim()) return { success: false, error: "Emri është i detyrueshëm." };
+
+  const ip = await getClientIp();
+  const limited = await enforceRateLimit("ratelimit.trail.submit", {
+    userId: session.user.id,
+    ip,
+  });
+  if (limited) return { success: false, error: limited };
+
+  const input = submitTrailSchema.safeParse(data);
+  if (!input.success) {
+    const fieldErrors: SubmitTrailResult["fieldErrors"] = {};
+    for (const issue of input.error.issues) {
+      const key = issue.path[0] as SubmitTrailField | undefined;
+      if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+    }
+    return {
+      success: false,
+      error: "Kontrollo fushat e shënuara.",
+      fieldErrors,
+    };
+  }
+
+  // Only a region already used by a published trail (what the /trails filter
+  // lists), or "Tjetër" with typed text — so approved trails show up under
+  // the filter instead of a near-duplicate spelling.
+  let region: string;
+  if (input.data.region === OTHER_REGION) {
+    region = input.data.regionOther ?? "";
+  } else {
+    const regions = await getTrailRegions();
+    if (!regions.includes(input.data.region)) {
+      return {
+        success: false,
+        error: "Kontrollo fushat e shënuara.",
+        fieldErrors: { region: "Zgjidh një rajon nga lista." },
+      };
+    }
+    region = input.data.region;
+  }
+  const { name, city, difficulty, description } = input.data;
 
   if (!isGpxStorageConfigured()) {
-    return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
+    return {
+      success: false,
+      error: "Ruajtja e skedarëve nuk është konfiguruar.",
+    };
   }
 
   let parsed;
   try {
     parsed = await parseGpxString(data.gpxContent);
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "GPX i pavlefshëm.",
-    };
+    const message =
+      error instanceof Error ? error.message : "GPX i pavlefshëm.";
+    return { success: false, error: message, fieldErrors: { gpx: message } };
   }
 
-  const slug = `${generateSlug(data.name)}-${crypto.randomUUID().slice(0, 6)}`;
+  const slug = `${generateSlug(name)}-${crypto.randomUUID().slice(0, 6)}`;
   const trailId = crypto.randomUUID();
 
   // Storage upload first — an orphaned file on DB failure is fine;
@@ -56,7 +101,10 @@ export async function submitTrail(data: {
   try {
     gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, data.gpxContent);
   } catch (error) {
-    captureError(error, { action: "submitTrail", extra: { phase: "storageUpload" } });
+    captureError(error, {
+      action: "submitTrail",
+      extra: { phase: "storageUpload" },
+    });
     return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
   }
 
@@ -67,11 +115,11 @@ export async function submitTrail(data: {
     .values({
       id: trailId,
       slug,
-      name: data.name.trim(),
-      description: data.description || null,
-      region: data.region || null,
-      city: data.city || null,
-      difficulty: data.difficulty,
+      name,
+      description: description || null,
+      region,
+      city: city || null,
+      difficulty,
       distanceKm: String(parsed.totalDistanceKm),
       elevationGainM: parsed.totalElevationGainM,
       trailType: parsed.trackType,
@@ -101,8 +149,34 @@ export async function submitTrail(data: {
 
   if (!trail) return { success: false, error: "Diçka shkoi keq." };
 
+  await notifySuperAdmins(name);
+
   revalidatePath("/trails");
   return { success: true, slug: trail.slug };
+}
+
+/** Tell every super admin a proposal is waiting. Best effort: the trail is
+ * already saved, so a failure here is reported, not returned. */
+async function notifySuperAdmins(trailName: string): Promise<void> {
+  try {
+    const admins = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.role, "super_admin"), isNull(users.deletedAt)));
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "trail.submitted",
+          title: "Shteg i ri për shqyrtim",
+          body: trailName,
+          link: "/dashboard/admin?tab=trails",
+        }),
+      ),
+    );
+  } catch (error) {
+    captureError(error, { action: "submitTrail", extra: { phase: "notify" } });
+  }
 }
 
 export interface ActionResult {
@@ -119,7 +193,10 @@ export async function uploadTrailGpx(
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
 
   if (!isGpxStorageConfigured()) {
-    return { success: false, error: "Ruajtja e skedarëve nuk është konfiguruar." };
+    return {
+      success: false,
+      error: "Ruajtja e skedarëve nuk është konfiguruar.",
+    };
   }
 
   const ip = await getClientIp();

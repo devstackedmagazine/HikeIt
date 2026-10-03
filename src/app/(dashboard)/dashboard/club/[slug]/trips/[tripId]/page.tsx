@@ -8,19 +8,14 @@ import { TripPhotosManager } from "@/components/features/trips/trip-photos-manag
 import { TripRegistrationsPanel } from "@/components/features/trips/trip-registrations-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import { tripStatusLabels } from "@/lib/i18n/labels";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { getTripPhotos } from "@/server/queries/photos";
-import {
-  getTripById,
-  getTripRegistrations,
-} from "@/server/queries/trips";
+import { getTripById, getTripRegistrations } from "@/server/queries/trips";
 
 export const metadata: Metadata = { title: "Udhëtimi" };
 
@@ -50,8 +45,10 @@ export default async function AdminTripDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{trip.title}</h1>
-          <p className="mt-1 flex items-center gap-2 text-muted-foreground">
-            <Badge variant="secondary">{tripStatusLabels[trip.status]}</Badge>
+          <p className="text-muted-foreground mt-1 flex items-center gap-2">
+            <Badge variant="secondary">
+              {tripStatusLabels[displayTripStatus(trip)]}
+            </Badge>
             {formatTripDateTime(trip.startDatetime)}
           </p>
         </div>
@@ -88,8 +85,8 @@ export default async function AdminTripDetailPage({
           ) : null}
 
           <Card>
-            <CardContent className="flex items-center gap-3 py-4 text-sm text-muted-foreground">
-              <CloudSun className="size-5 text-accent" />
+            <CardContent className="text-muted-foreground flex items-center gap-3 py-4 text-sm">
+              <CloudSun className="text-accent size-5" />
               Statusi i motit — së shpejti
             </CardContent>
           </Card>
@@ -116,15 +113,13 @@ export default async function AdminTripDetailPage({
         <TabsContent value="settings" className="space-y-4 pt-6">
           <Button
             render={
-              <Link
-                href={`/dashboard/club/${slug}/trips/${trip.slug}/edit`}
-              />
+              <Link href={`/dashboard/club/${slug}/trips/${trip.slug}/edit`} />
             }
           >
             <Pencil />
             Ndrysho Udhëtimin
           </Button>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Për të anuluar udhëtimin, përdor butonin lart në faqe.
           </p>
         </TabsContent>
@@ -137,7 +132,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-xl border p-4 text-center">
       <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
     </div>
   );
 }

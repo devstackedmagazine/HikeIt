@@ -1,5 +1,6 @@
 "use client";
 
+import { difficultyLabels } from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
 
 export type Difficulty = "easy" | "moderate" | "hard" | "expert";
@@ -39,12 +40,13 @@ export function DifficultySelector({
             key={d.value}
             type="button"
             aria-pressed={active}
+            aria-label={difficultyLabels[d.value]}
             onClick={() => onChange(d.value)}
             className={cn(
-              "font-heading flex size-9 items-center justify-center border text-[13px] font-extrabold uppercase transition-colors",
+              "font-heading flex size-9 items-center justify-center border-2 text-[13px] font-extrabold uppercase transition-colors",
               active
                 ? d.active
-                : "border-summit/40 bg-summit/[0.06] text-summit/50 hover:text-summit/80",
+                : "border-summit/40 bg-summit/[0.06] text-summit/70 hover:text-summit",
             )}
           >
             {d.label}
