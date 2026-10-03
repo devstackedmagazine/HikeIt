@@ -147,23 +147,22 @@ export function DashboardSidebar({
       {/* Logo */}
       <div className="border-summit/[0.06] flex flex-col items-center border-b px-2.5 py-3.5 text-center">
         {isAdmin ? (
-          <>
-            <Link href="/dashboard" aria-label="Përmbledhje">
-              <Image
-                src="/logos/Hikeit-pfp.png"
-                alt=""
-                width={28}
-                height={28}
-                className="mb-1.5 size-7"
-              />
-            </Link>
-            <p className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
+          // The whole block is the home link, not just the image.
+          <Link href="/dashboard" className="flex flex-col items-center">
+            <Image
+              src="/logos/Hikeit-pfp.png"
+              alt=""
+              width={28}
+              height={28}
+              className="mb-1.5 size-7"
+            />
+            <span className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
               Balkan Clubs
-            </p>
-            <p className="text-summit/50 mt-0.5 text-[8px] tracking-[0.04em]">
+            </span>
+            <span className="text-summit/50 mt-0.5 text-[8px] tracking-[0.04em]">
               Peak Control v1.2
-            </p>
-          </>
+            </span>
+          </Link>
         ) : (
           <Link href="/dashboard" className="flex flex-col items-center gap-1">
             <Image
