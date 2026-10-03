@@ -11,7 +11,6 @@ import {
   MoreHorizontal,
   Settings,
   ShieldCheck,
-  Sparkles,
   User,
   Users,
   X,
@@ -29,12 +28,6 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   exact?: boolean;
-  /**
-   * false for shortcuts into another item's page (e.g. Përmirëso → the
-   * invite-code section of Settings). They never take the active state, so
-   * exactly one item is highlighted.
-   */
-  activeMatch?: boolean;
 }
 
 export type DashboardVariant = "hiker" | "admin";
@@ -71,13 +64,6 @@ function buildItems(
       },
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
-      {
-        href: `${club}?tab=settings#invite-code`,
-        label: "Përmirëso",
-        icon: Sparkles,
-        // Lands inside Settings, which owns the active state there.
-        activeMatch: false,
-      },
       { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
       ...platformAdmin,
     ];
@@ -106,7 +92,6 @@ function isActive(
   currentTab: string | null,
   item: NavItem,
 ): boolean {
-  if (item.activeMatch === false) return false;
   const [path, query] = item.href.split("?");
   const onPath = item.exact
     ? pathname === path
