@@ -5,30 +5,49 @@ import { useRef, useState } from "react";
 
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { Button } from "@/components/ui/button";
-import { type ParsedGpx, parseGpxFile } from "@/lib/gpx/parser";
+import {
+  GPX_TOO_LARGE_MESSAGE,
+  MAX_GPX_BYTES,
+  type ParsedGpx,
+  parseGpxFile,
+} from "@/lib/gpx/parser";
 import { trailTypeLabels } from "@/lib/i18n/labels";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+function formatBytes(bytes: number): string {
+  return bytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function GpxUploader({
   onParsed,
+  onCleared,
+  tone = "light",
+  error: externalError,
 }: {
   onParsed: (content: string, parsed: ParsedGpx) => void;
+  onCleared?: () => void;
+  /** "dark" for the Forest form surface (trail proposal). */
+  tone?: "light" | "dark";
+  /** An error from outside (e.g. the server rejecting the file). */
+  error?: string;
 }) {
+  const dark = tone === "dark";
   const fileRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedGpx | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<{ name: string; size: number } | null>(null);
 
   async function handleFile(file: File) {
     setError(null);
+    // Checked here, before anything is read or sent.
     if (!file.name.toLowerCase().endsWith(".gpx")) {
       setError("Vetëm skedarë .gpx lejohen.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError("Skedari tejkalon 5MB.");
+    if (file.size > MAX_GPX_BYTES) {
+      setError(GPX_TOO_LARGE_MESSAGE);
       return;
     }
     setParsing(true);
@@ -36,10 +55,11 @@ export function GpxUploader({
       const content = await file.text();
       const result = await parseGpxFile(file);
       setParsed(result);
-      setFileName(file.name);
+      setFile({ name: file.name, size: file.size });
       onParsed(content, result);
     } catch (e) {
       setError(e instanceof Error ? e.message : "GPX i pavlefshëm.");
+      if (fileRef.current) fileRef.current.value = "";
     } finally {
       setParsing(false);
     }
@@ -47,10 +67,13 @@ export function GpxUploader({
 
   function clear() {
     setParsed(null);
-    setFileName(null);
+    setFile(null);
     setError(null);
     if (fileRef.current) fileRef.current.value = "";
+    onCleared?.();
   }
+
+  const shownError = error ?? externalError;
 
   return (
     <div className="space-y-3">
@@ -70,34 +93,93 @@ export function GpxUploader({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={parsing}
-          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 text-muted-foreground transition-colors hover:bg-muted"
+          aria-describedby={shownError ? "gpx-error" : undefined}
+          className={
+            dark
+              ? "border-summit/40 bg-summit/[0.05] text-summit hover:border-sage hover:bg-summit/[0.08] focus-visible:border-sage flex min-h-36 w-full flex-col items-center justify-center gap-2 border-2 border-dashed px-4 py-10 transition-colors outline-none"
+              : "text-muted-foreground hover:bg-muted flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-10 transition-colors"
+          }
         >
           {parsing ? (
             <Loader2 className="size-6 animate-spin" />
           ) : (
             <FileUp className="size-6" />
           )}
-          <span className="text-sm">
-            {parsing ? "Duke lexuar…" : "Zgjidh një skedar GPX (.gpx, max 5MB)"}
+          <span className={dark ? "text-sm font-semibold" : "text-sm"}>
+            {parsing
+              ? "Duke lexuar…"
+              : "Zgjidh një skedar GPX (.gpx, max 4 MB)"}
           </span>
         </button>
       ) : (
-        <div className="space-y-3 rounded-xl border p-4">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-sm font-medium">
-              <Mountain className="size-4 text-primary" />
-              {fileName}
+        <div
+          className={
+            dark
+              ? "border-summit/40 text-summit space-y-3 border-2 p-4"
+              : "space-y-3 rounded-xl border p-4"
+          }
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+              <Mountain
+                className={
+                  dark
+                    ? "text-sage size-4 shrink-0"
+                    : "text-primary size-4 shrink-0"
+                }
+              />
+              <span className="truncate">{file?.name}</span>
+              {file ? (
+                <span
+                  className={
+                    dark
+                      ? "text-summit/70 shrink-0 text-xs"
+                      : "text-muted-foreground shrink-0 text-xs"
+                  }
+                >
+                  {formatBytes(file.size)}
+                </span>
+              ) : null}
             </span>
-            <Button variant="ghost" size="icon-sm" onClick={clear} aria-label="Hiq">
-              <X />
-            </Button>
+            {dark ? (
+              <button
+                type="button"
+                onClick={clear}
+                className="border-summit/40 text-summit hover:border-sage flex h-9 shrink-0 items-center gap-1 border-2 px-3 text-[10px] font-bold tracking-[0.08em] uppercase"
+              >
+                <X className="size-3.5" />
+                Hiq
+              </button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={clear}
+                aria-label="Hiq"
+              >
+                <X />
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <Stat label="Distanca" value={`${parsed.totalDistanceKm} km`} />
-            <Stat label="Ngjitje" value={`${parsed.totalElevationGainM} m`} />
-            <Stat label="Pika" value={String(parsed.points.length)} />
             <Stat
+              dark={dark}
+              label="Distanca"
+              value={`${parsed.totalDistanceKm} km`}
+            />
+            <Stat
+              dark={dark}
+              label="Ngjitje"
+              value={`${parsed.totalElevationGainM} m`}
+            />
+            <Stat
+              dark={dark}
+              label="Pika"
+              value={String(parsed.points.length)}
+            />
+            <Stat
+              dark={dark}
               label="Lloji"
               value={trailTypeLabels[parsed.trackType] ?? parsed.trackType}
             />
@@ -114,16 +196,46 @@ export function GpxUploader({
         </div>
       )}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {shownError ? (
+        <p
+          id="gpx-error"
+          role="alert"
+          className={
+            dark ? "text-alert text-[11px]" : "text-destructive text-sm"
+          }
+        >
+          {shownError}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  dark,
+}: {
+  label: string;
+  value: string;
+  dark: boolean;
+}) {
   return (
-    <div className="rounded-lg bg-muted/50 p-2 text-center">
+    <div
+      className={
+        dark
+          ? "bg-summit/[0.06] p-2 text-center"
+          : "bg-muted/50 rounded-lg p-2 text-center"
+      }
+    >
       <p className="font-semibold">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p
+        className={
+          dark ? "text-summit/70 text-xs" : "text-muted-foreground text-xs"
+        }
+      >
+        {label}
+      </p>
     </div>
   );
 }

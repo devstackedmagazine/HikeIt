@@ -1,5 +1,5 @@
 import type { UploadApiResponse } from "cloudinary";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { cloudinary, isCloudinaryConfigured } from "@/lib/cloudinary/client";
 import {
@@ -56,10 +56,15 @@ export async function uploadImage(
     throw new Error(validation.error);
   }
 
-  // 3. SHA-256 deduplication.
+  // 3. SHA-256 deduplication, scoped to the uploader: re-uploading your own
+  // photo returns your existing asset, but another user's identical file is
+  // never handed back — every asset belongs to exactly one user.
   const hash = hashFileContent(buffer);
   const existing = await db.query.imageHashes.findFirst({
-    where: eq(imageHashes.hash, hash),
+    where: and(
+      eq(imageHashes.hash, hash),
+      eq(imageHashes.uploadedBy, options.userId),
+    ),
   });
   if (existing) {
     return {

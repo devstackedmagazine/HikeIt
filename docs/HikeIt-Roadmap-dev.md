@@ -28,7 +28,8 @@ HikeIt is a complete, production-ready SaaS application. Everything below has be
 | Components | shadcn/ui (base-nova) | All overridden to Alpine Brutalism design |
 | Database | PostgreSQL on Supabase (Frankfurt, EU) | Drizzle ORM |
 | Auth | Better Auth (self-hosted) | Email/password + Google OAuth |
-| Images | Cloudinary | Security-grade upload system |
+| Images | Cloudinary | Security-grade upload system (photos, logos, covers, avatars) |
+| Files | Supabase Storage (public `gpx` bucket) | Trail/trip GPX via the S3-compatible API — no extra SDK |
 | Maps | Leaflet + OpenStreetMap → Thunderforest Outdoors | Free, domain-restricted API key |
 | Weather | Open-Meteo | No API key needed, 10K calls/day |
 | Email | Resend | Verified domain hello@hikeit.app |
@@ -43,7 +44,8 @@ HikeIt is a complete, production-ready SaaS application. Everything below has be
 - Better Auth over Clerk (self-hosted, no vendor lock-in)
 - Leaflet+Thunderforest over Mapbox (no credit card, better hiking tiles)
 - Open-Meteo over OpenWeatherMap (no API key, completely free)
-- Cloudinary over R2 (auto optimization, no card for free tier)
+- Cloudinary for all images (auto optimization, no card for free tier)
+- Supabase Storage for GPX files (already on Supabase; S3 API reuses @aws-sdk/client-s3)
 - pnpm over npm/yarn (faster, disk efficient)
 - Server Components by default, 'use client' only when needed
 - nuqs for URL-persisted filter state (shareable, back-button friendly)
@@ -143,6 +145,12 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=[cloud name]
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=hikeit_uploads
 CLOUDINARY_API_KEY=[key]
 CLOUDINARY_API_SECRET=[secret]
+SUPABASE_STORAGE_S3_ENDPOINT=https://[project_ref].storage.supabase.co/storage/v1/s3
+SUPABASE_STORAGE_REGION=eu-central-1
+SUPABASE_STORAGE_ACCESS_KEY_ID=[S3 access key — bypasses RLS, server-only]
+SUPABASE_STORAGE_SECRET_ACCESS_KEY=[S3 secret]
+SUPABASE_STORAGE_GPX_BUCKET=gpx
+SUPABASE_STORAGE_PUBLIC_URL=https://[project_ref].supabase.co/storage/v1/object/public
 RESEND_API_KEY=[key]
 EMAIL_FROM=hello@hikeit.app
 GOOGLE_CLIENT_ID=171813834814-vgqd7va5n4lphp4ubsu1f9cb2afkbugj.apps.googleusercontent.com
@@ -297,7 +305,7 @@ image_hashes          — SHA-256 hashes for Cloudinary deduplication
 - Alert sensitivity preferences (E ULËT/MESME/E LARTË)
 
 ### GPX
-- Upload to trails (admin)
+- Upload to trails (admin) — stored in Supabase Storage (public `gpx` bucket)
 - Download button on trail detail
 - Elevation bar chart (recharts BarChart, green bars varying heights)
 
@@ -458,6 +466,16 @@ Google Analytics:   Not yet set up
 - [ ] Blog content: 5 Albanian trail guide posts for SEO
 - [ ] Outreach to 5 Kosovo hiking clubs (message template ready in Albanian)
 - [ ] Wire Share button = copy URL clipboard on trail/trip detail pages
+
+### Post-launch
+- [ ] **Club credit on proposed trails — "Propozuar nga [klubi]".** Decided 2026-09-27: worth doing, not before launch. A trail proposed from a club dashboard is publicly credited to the club. Design:
+  - **Schema:** `trails.proposed_by_organization_id uuid NULL REFERENCES organizations(id) ON DELETE SET NULL` (idempotent SQL file under `sql/`, schema.ts to match).
+  - **Setting it:** the club UDHËTIMET "Propozo shteg" button and the trip-form "Propozo një të ri" link pass `?club=<slug>` to `/dashboard/trails/submit`; `submitTrail` records it **only** after `requireClubAdmin(user, slug)` passes — otherwise ignored, so no one can credit a club they don't run.
+  - **Where it shows:** trail detail page, **only once the trail is verified**, linking to `/clubs/[slug]`; also in the super-admin review queue as context for the reviewer. Not on trail cards.
+  - **Club deleted:** clubs are soft-deleted (`organizations.deleted_at`), so the FK's `SET NULL` won't fire — the display query must also require `organizations.deleted_at IS NULL` and simply show nothing otherwise. A hard delete nulls the column. The trail itself is never affected.
+  - **Abuse:** clubs proposing trails for visibility is gated by the existing review queue; no extra control needed.
+
+- [ ] **Known duplication — club page tab strip.** `/dashboard/club/[slug]` still renders its own tab strip (Udhëtimet · Anëtarët · Cilësimet) that repeats the club sidebar, and its Udhëtimet tab is a second trips list beside the dedicated `/dashboard/club/[slug]/trips` page (the one the sidebar links to). The overview tab was removed 2026-09-27 (the club home is `/dashboard`); the rest was deliberately left. Cleanup: drop the tab strip and the trips tab, keep Anëtarët/Cilësimet as the page's content driven by `?tab=` (the sidebar already links there), and redirect `?tab=trips` to the trips page. Old-style shadcn styling on this page should move to Alpine Brutalism at the same time.
 
 ### Nice to have
 - [ ] Legal review of privacy policy and terms

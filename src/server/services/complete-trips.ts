@@ -2,6 +2,7 @@ import { and, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { trips } from "@/lib/db/schema";
+import { tripOverCutovers } from "@/lib/trips/display-status";
 
 /**
  * Auto-completion of trips that are clearly over.
@@ -25,11 +26,8 @@ import { trips } from "@/lib/db/schema";
  * terminal or not-yet-live and are never touched.
  */
 
-/** Grace period after a trip's stated end time before it counts as over. */
-const END_GRACE_MINUTES = 90;
-
-/** Assumed duration for a trip that never declared an end time. */
-const NO_END_DURATION_HOURS = 12;
+// Cutover constants live in `@/lib/trips/display-status`, shared with the
+// status shown in the UI.
 
 export interface CompleteTripsResult {
   completed: number;
@@ -39,10 +37,7 @@ export interface CompleteTripsResult {
 export async function runCompleteTrips(
   now: Date = new Date(),
 ): Promise<CompleteTripsResult> {
-  const endCutover = new Date(now.getTime() - END_GRACE_MINUTES * 60 * 1000);
-  const startCutover = new Date(
-    now.getTime() - NO_END_DURATION_HOURS * 60 * 60 * 1000,
-  );
+  const { endCutover, startCutover } = tripOverCutovers(now);
 
   const completed = await db
     .update(trips)

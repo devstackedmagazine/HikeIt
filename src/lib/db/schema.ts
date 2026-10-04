@@ -98,6 +98,12 @@ export const weatherSeverityEnum = pgEnum("weather_severity", [
   "danger",
 ]);
 
+/**
+ * Who can see a personal hike. Only `private` exists today — sharing isn't
+ * built. Adding a value later is a one-line `ALTER TYPE … ADD VALUE`.
+ */
+export const hikeVisibilityEnum = pgEnum("hike_visibility", ["private"]);
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
@@ -491,20 +497,33 @@ export const trailPhotos = pgTable(
   (t) => [index("trail_photos_trail_id_idx").on(t.trailId)],
 );
 
-export const imageHashes = pgTable("image_hashes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  hash: text("hash").unique().notNull(),
-  cloudinaryPublicId: text("cloudinary_public_id").notNull(),
-  cloudinaryUrl: text("cloudinary_url").notNull(),
-  uploadedBy: uuid("uploaded_by").references(() => users.id, {
-    onDelete: "set null",
-  }),
-  entityType: text("entity_type").notNull(),
-  entityId: uuid("entity_id").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+/**
+ * One row per Cloudinary asset, keyed for dedupe by (uploader, content hash).
+ * Dedupe is per user so an asset only ever belongs to the person who
+ * uploaded it — that's what makes ownership checks on attach and safe deletes
+ * possible (see src/lib/cloudinary/ownership.ts).
+ */
+export const imageHashes = pgTable(
+  "image_hashes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    hash: text("hash").notNull(),
+    cloudinaryPublicId: text("cloudinary_public_id").notNull(),
+    cloudinaryUrl: text("cloudinary_url").notNull(),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    entityType: text("entity_type").notNull(),
+    entityId: uuid("entity_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("image_hashes_user_hash_unique").on(t.uploadedBy, t.hash),
+    index("image_hashes_public_id_idx").on(t.cloudinaryPublicId),
+  ],
+);
 
 export const weatherAlerts = pgTable(
   "weather_alerts",
@@ -792,6 +811,55 @@ export const tripFavorites = pgTable(
   ],
 );
 
+/**
+ * A hike the user recorded themselves and uploaded as GPX — solo or on a club
+ * trip. Counts toward personal km; a hike linked to a trip registration
+ * replaces that trip's trail distance in the totals (see
+ * `src/server/queries/personal-stats.ts`).
+ *
+ * The uploaded GPX is never stored: it's parsed in memory, and only the
+ * derived stats and `gpx_track` — the render cache, downsampled with ~200m
+ * trimmed off each end — are kept.
+ *
+ * Hikes are hard-deleted: a deleted hike leaves nothing behind, since even
+ * its name/date/stats are location-derived.
+ */
+export const hikes = pgTable(
+  "hikes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    hikedAt: timestamp("hiked_at", { withTimezone: true }).notNull(),
+    distanceKm: numeric("distance_km", { precision: 7, scale: 2 }).notNull(),
+    elevationGainM: integer("elevation_gain_m").notNull(),
+    durationMin: integer("duration_min").notNull(),
+    gpxTrack: jsonb("gpx_track").$type<[number, number][]>().notNull(),
+    trailId: uuid("trail_id").references(() => trails.id, {
+      onDelete: "set null",
+    }),
+    tripRegistrationId: uuid("trip_registration_id").references(
+      () => tripRegistrations.id,
+      { onDelete: "set null" },
+    ),
+    visibility: hikeVisibilityEnum("visibility").notNull().default("private"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("hikes_user_hiked_at_idx").on(t.userId, t.hikedAt.desc()),
+    // One hike per trip registration — the database-level guarantee that a
+    // trip is never counted twice. (Postgres allows many NULLs in a unique
+    // index, so unlinked hikes are unaffected.)
+    uniqueIndex("hikes_trip_registration_unique").on(t.tripRegistrationId),
+    check("hikes_distance_km_positive", sql`${t.distanceKm} > 0`),
+    check("hikes_duration_min_positive", sql`${t.durationMin} > 0`),
+  ],
+);
+
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 
@@ -800,3 +868,6 @@ export type NewTrailFavorite = typeof trailFavorites.$inferInsert;
 
 export type TripFavorite = typeof tripFavorites.$inferSelect;
 export type NewTripFavorite = typeof tripFavorites.$inferInsert;
+
+export type Hike = typeof hikes.$inferSelect;
+export type NewHike = typeof hikes.$inferInsert;

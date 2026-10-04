@@ -96,7 +96,8 @@ export function ClubWizard() {
       setCreatedSlug(result.slug);
       return;
     }
-    router.push(`/dashboard/club/${result.slug}`);
+    // The club home is /dashboard; the role flips to club_admin on create.
+    router.push("/dashboard");
   }
 
   return (
@@ -392,7 +393,7 @@ export function ClubWizard() {
               // Club already exists — the only thing left is to go to it.
               <Button
                 type="button"
-                onClick={() => router.push(`/dashboard/club/${createdSlug}`)}
+                onClick={() => router.push("/dashboard")}
               >
                 Vazhdo te klubi →
               </Button>

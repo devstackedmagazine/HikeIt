@@ -46,9 +46,10 @@ export function TrailPhotoSection({
           entityId={trailId}
           maxFiles={10}
           onUploadComplete={() => undefined}
-          onUploaded={async (ids) => {
-            await addTrailPhotos(trailId, ids);
-            router.refresh();
+          onUploaded={async (publicId) => {
+            const result = await addTrailPhotos(trailId, [publicId]);
+            if (result.success) router.refresh();
+            return result;
           }}
         />
       ) : null}

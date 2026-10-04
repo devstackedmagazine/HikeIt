@@ -4,6 +4,8 @@ export interface GpxPoint {
   lat: number;
   lng: number;
   elevation?: number;
+  /** Epoch ms from the point's `<time>`, when present. Planned routes have none. */
+  time?: number;
 }
 
 export interface ElevationSample {
@@ -35,12 +37,20 @@ export class GpxError extends Error {
 }
 
 const EARTH_RADIUS_M = 6_371_000;
-const MAX_GPX_BYTES = 5 * 1024 * 1024;
+/**
+ * 4MB, not higher: the GPX text travels to a server action, and Vercel caps
+ * every request body at 4.5MB — anything bigger would fail with an opaque
+ * platform error instead of this message.
+ */
+export const MAX_GPX_BYTES = 4 * 1024 * 1024;
+
+export const GPX_TOO_LARGE_MESSAGE =
+  "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.";
 const MAX_POINTS = 50_000;
 const DOWNSAMPLE_TARGET = 5_000;
 
 /** Great-circle distance between two coordinates, in meters. */
-function haversine(a: GpxPoint, b: GpxPoint): number {
+export function haversine(a: GpxPoint, b: GpxPoint): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.lat - a.lat);
   const dLng = toRad(b.lng - a.lng);
@@ -67,11 +77,12 @@ function sanitizeXml(content: string): string {
 interface RawTrkpt {
   $: { lat: string; lon: string };
   ele?: string[];
+  time?: unknown[];
 }
 
 export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
   if (gpxContent.length > MAX_GPX_BYTES) {
-    throw new GpxError("Skedari GPX tejkalon 5MB.");
+    throw new GpxError(GPX_TOO_LARGE_MESSAGE);
   }
 
   const sanitized = sanitizeXml(gpxContent);
@@ -102,7 +113,11 @@ export async function parseGpxString(gpxContent: string): Promise<ParsedGpx> {
       const lng = Number(pt.$.lon);
       if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
       const elevation = pt.ele?.[0] ? Number(pt.ele[0]) : undefined;
-      points.push({ lat, lng, elevation });
+      const rawTime = pt.time?.[0];
+      const parsedTime =
+        typeof rawTime === "string" ? Date.parse(rawTime) : Number.NaN;
+      const time = Number.isNaN(parsedTime) ? undefined : parsedTime;
+      points.push({ lat, lng, elevation, time });
     }
   }
 

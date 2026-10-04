@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CloudImage } from "@/components/features/images/cloud-image";
+import { ProposeTrailLink } from "@/components/features/trails/propose-trail-link";
 import { TrailFavoriteButton } from "@/components/features/trails/trail-favorite-button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getRequiredUser } from "@/lib/auth/helpers";
@@ -28,9 +29,13 @@ export default async function SavedTrailsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="font-heading text-xl font-black tracking-[-0.01em] text-forest uppercase">
-        Shtigjet e Ruajtura
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-heading text-xl font-black tracking-[-0.01em] text-forest uppercase">
+          Shtigjet e Ruajtura
+        </h1>
+        {/* This page requires a session, so the viewer is always logged in. */}
+        <ProposeTrailLink isLoggedIn />
+      </div>
 
       {trails.length === 0 ? (
         <EmptyState

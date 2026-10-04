@@ -1,13 +1,16 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getOptionalSession } from "@/lib/auth/helpers";
-import { deleteImage } from "@/lib/cloudinary/upload";
+import {
+  canSetImageField,
+  getOwnedImageUrls,
+  releaseImage,
+} from "@/lib/cloudinary/ownership";
 import { db } from "@/lib/db";
 import {
-  imageHashes,
   organizationMembers,
   tripPhotos,
   tripRegistrations,
@@ -58,10 +61,13 @@ export async function setTripCover(
 
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, tripId),
-    columns: { organizationId: true, slug: true },
+    columns: { organizationId: true, slug: true, coverImageUrl: true },
   });
   if (!trip || !(await isClubManager(session.user.id, trip.organizationId))) {
     return { success: false, error: "Nuk keni qasje." };
+  }
+  if (!(await canSetImageField(session.user.id, publicId, trip.coverImageUrl))) {
+    return { success: false, error: "Mund të përdorni vetëm foto që keni ngarkuar vetë." };
   }
 
   await db
@@ -69,7 +75,9 @@ export async function setTripCover(
     .set({ coverImageUrl: publicId })
     .where(eq(trips.id, tripId));
   revalidatePath(`/trips/${trip.slug}`);
-  revalidatePath(`/dashboard/club/${trip.organizationId}`);
+  // Route pattern: this used the organization's UUID where the club slug
+  // belongs, so it matched no page.
+  revalidatePath("/dashboard/club/[slug]", "layout");
   return { success: true };
 }
 
@@ -94,21 +102,27 @@ export async function addTripPhotos(
     return { success: false, error: "Nuk keni qasje për të shtuar foto." };
   }
 
-  const hashes = await db
-    .select({
-      publicId: imageHashes.cloudinaryPublicId,
-      url: imageHashes.cloudinaryUrl,
-    })
-    .from(imageHashes)
-    .where(inArray(imageHashes.cloudinaryPublicId, publicIds));
-  const urlByPublicId = new Map(hashes.map((h) => [h.publicId, h.url]));
+  // Only images this user uploaded — never a publicId lifted from someone
+  // else's photo.
+  const urlByPublicId = await getOwnedImageUrls(session.user.id, publicIds);
+  if (!urlByPublicId) {
+    return { success: false, error: "Mund të shtoni vetëm foto që keni ngarkuar vetë." };
+  }
+
+  // Append after the photos already on the trip; photos now arrive one per
+  // call, so a per-call index would give every photo sortOrder 0.
+  const [last] = await db
+    .select({ max: sql<number>`coalesce(max(${tripPhotos.sortOrder}), -1)` })
+    .from(tripPhotos)
+    .where(eq(tripPhotos.tripId, tripId));
+  const base = Number(last?.max ?? -1) + 1;
 
   const values = publicIds.map((publicId, i) => ({
     tripId,
     userId: session.user.id,
     cloudinaryPublicId: publicId,
-    url: urlByPublicId.get(publicId) ?? "",
-    sortOrder: i,
+    url: urlByPublicId.get(publicId)!,
+    sortOrder: base + i,
   }));
 
   await db.insert(tripPhotos).values(values);
@@ -140,7 +154,8 @@ export async function deleteTripPhoto(photoId: string): Promise<ActionResult> {
   }
 
   await db.delete(tripPhotos).where(eq(tripPhotos.id, photoId));
-  await deleteImage(photo.cloudinaryPublicId, session.user.id);
+  // Only destroys the asset if no other record still uses it.
+  await releaseImage(photo.cloudinaryPublicId, session.user.id);
   revalidatePath(`/trips/${trip.slug}`);
   return { success: true };
 }

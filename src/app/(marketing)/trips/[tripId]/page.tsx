@@ -21,6 +21,7 @@ import { TripSocialActions } from "@/components/features/trips/trip-social-actio
 import { TripWeatherWidget } from "@/components/features/weather/trip-weather-widget";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { getClubStats } from "@/server/queries/clubs";
 import { isTripFavorited } from "@/server/queries/favorites";
 import { getTripPhotos } from "@/server/queries/photos";
@@ -103,6 +104,11 @@ export default async function PublicTripPage({
   ]);
 
   const isPast = trip.startDatetime < new Date();
+  // Participants may add photos once the trip is completed (the hourly
+  // complete-trips job sets that after it ends).
+  const isParticipant =
+    registration?.status === "confirmed" || registration?.status === "attended";
+  const photosOpen = trip.status === "completed";
   const trail = trip.trail;
   const meetingLat = trip.meetingLat ? Number(trip.meetingLat) : null;
   const meetingLng = trip.meetingLng ? Number(trip.meetingLng) : null;
@@ -156,7 +162,7 @@ export default async function PublicTripPage({
             {trip.title}
           </h1>
           <span className="border-moss/40 bg-moss/15 text-moss border px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] uppercase">
-            {tripStatusLabels[trip.status]}
+            {tripStatusLabels[displayTripStatus(trip)]}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -319,6 +325,20 @@ export default async function PublicTripPage({
             </span>
           ) : null}
         </div>
+        {isParticipant && trip.status !== "canceled" ? (
+          <p className="text-summit/60 mb-3 text-xs">
+            {photosOpen ? (
+              <Link
+                href="/dashboard/my-trips"
+                className="text-moss font-semibold hover:underline"
+              >
+                Shto fotot e tua te Udhëtimet e mia → Të kaluara
+              </Link>
+            ) : (
+              "Fotot mund të shtohen pasi udhëtimi të përfundojë."
+            )}
+          </p>
+        ) : null}
         <TripGallery
           photos={photos.map((p) => ({
             id: p.id,

@@ -38,7 +38,7 @@ export default async function EditTripPage({
   return (
     <div className="-mx-6 -my-5 min-h-svh max-w-[688px] space-y-6 bg-abyss px-6 py-5 pb-24 md:pb-12">
       <nav className="flex items-center gap-1 text-xs text-summit/40">
-        <Link href={`/dashboard/club/${slug}`} className="hover:text-summit">
+        <Link href="/dashboard" className="hover:text-summit">
           {access.organization.name}
         </Link>
         <ChevronRight className="size-3.5" />

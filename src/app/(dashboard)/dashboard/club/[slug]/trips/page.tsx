@@ -8,10 +8,12 @@ import {
   type SearchParams,
 } from "nuqs/server";
 
+import { ProposeTrailLink } from "@/components/features/trails/propose-trail-link";
 import { ClubTripsFilter } from "@/components/features/trips/club-trips-filter";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
 import { clubTripsParsers } from "@/lib/search-params/club-trips";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
 import { getClubStats } from "@/server/queries/clubs";
 import { getClubTripsAdmin } from "@/server/queries/dashboard";
@@ -85,10 +87,7 @@ export default async function ClubTripsPage({
     <div>
       {/* Header */}
       <p className="text-forest/40 mb-2 text-[10px] font-medium tracking-[0.08em] uppercase">
-        <Link
-          href={`/dashboard/club/${club.slug}`}
-          className="hover:text-forest"
-        >
+        <Link href="/dashboard" className="hover:text-forest">
           Paneli i klubit
         </Link>
       </p>
@@ -114,12 +113,21 @@ export default async function ClubTripsPage({
           </h2>
           <ClubTripsFilter />
         </div>
-        <Link
-          href={createHref}
-          className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors"
-        >
-          Krijo udhëtim të ri →
-        </Link>
+        {/* Stacked full-width on phones so neither label truncates; side by
+            side from `sm`, with the trail proposal as the secondary action. */}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-stretch">
+          <ProposeTrailLink
+            isLoggedIn
+            label="Propozo shteg"
+            className="px-5 py-3 text-xs"
+          />
+          <Link
+            href={createHref}
+            className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-center text-xs font-extrabold tracking-[0.08em] whitespace-nowrap uppercase transition-colors"
+          >
+            Krijo udhëtim të ri →
+          </Link>
+        </div>
       </div>
 
       {/* Table */}
@@ -145,18 +153,25 @@ export default async function ClubTripsPage({
           </p>
         ) : (
           rows.map(({ trip, trailName, confirmedCount }) => {
-            const badge = STATUS_BADGE[trip.status];
+            const badge = STATUS_BADGE[displayTripStatus(trip)];
+            const viewHref = `/dashboard/club/${club.slug}/trips/${trip.slug}`;
             return (
+              // Stretched link: the title's ::after covers the whole row, so
+              // the row opens the trip (keyboard and touch included) while
+              // the icons above it (z-10) keep their own targets.
               <div
                 key={trip.id}
                 className={cn(
                   GRID,
-                  "border-forest/[0.06] hover:bg-forest/[0.03] border-b px-4 py-3 transition-colors last:border-b-0",
+                  "border-forest/[0.06] hover:bg-forest/[0.03] focus-within:ring-forest relative border-b px-4 py-3 transition-colors last:border-b-0 focus-within:ring-2 focus-within:ring-inset",
                 )}
               >
-                <span className="font-heading text-forest text-xs leading-[1.2] font-bold tracking-[-0.01em] uppercase">
+                <Link
+                  href={viewHref}
+                  className="font-heading text-forest text-xs leading-[1.2] font-bold tracking-[-0.01em] uppercase outline-none after:absolute after:inset-0"
+                >
                   {trip.title}
-                </span>
+                </Link>
                 <span className="text-forest/55 text-[11px] leading-[1.3] italic">
                   {trailName ?? "—"}
                 </span>
@@ -179,18 +194,19 @@ export default async function ClubTripsPage({
                 <span className="font-heading text-forest text-xs font-bold">
                   €{Number(trip.priceEur).toFixed(2)}
                 </span>
-                <span className="flex justify-end gap-1.5">
+                <span className="relative z-10 flex justify-end gap-0.5">
                   <Link
-                    href={`/dashboard/club/${club.slug}/trips/${trip.slug}`}
+                    href={viewHref}
                     aria-label="Shiko"
-                    className="text-forest/40 hover:text-forest"
+                    tabIndex={-1}
+                    className="text-forest/40 hover:text-forest flex size-8 items-center justify-center"
                   >
                     <Eye className="size-3.5" />
                   </Link>
                   <Link
-                    href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
+                    href={`${viewHref}/edit`}
                     aria-label="Ndrysho"
-                    className="text-forest/40 hover:text-forest"
+                    className="text-forest/40 hover:text-forest focus-visible:ring-forest flex size-8 items-center justify-center outline-none focus-visible:ring-2"
                   >
                     <Pencil className="size-3.5" />
                   </Link>

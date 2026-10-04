@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -145,6 +146,24 @@ export function ClubSettings({
       </Card>
 
       <ClubInviteCode club={club} />
+
+      {/* The billing page had no link anywhere in the app. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plani dhe faturimi</CardTitle>
+          <CardDescription>
+            Plani aktual i klubit dhe periudha provuese.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/dashboard/billing"
+            className="text-sm font-semibold underline-offset-4 hover:underline"
+          >
+            Shiko planin dhe faturimin →
+          </Link>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

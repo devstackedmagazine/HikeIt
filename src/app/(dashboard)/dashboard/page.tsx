@@ -6,6 +6,7 @@ import {
   Mountain,
   Pencil,
   PersonStanding,
+  Plus,
   Share2,
 } from "lucide-react";
 import Image from "next/image";
@@ -18,6 +19,7 @@ import { CloudImage } from "@/components/features/images/cloud-image";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 import type { Trail, Trip } from "@/lib/db/schema";
+import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
 import type { ClubWithStats } from "@/server/queries/clubs";
 import { getClubs, getClubStats } from "@/server/queries/clubs";
@@ -199,8 +201,28 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
         <WelcomeCard firstName={getFirstName(name)} />
 
         {/* Stats */}
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-forest text-[11px] font-bold tracking-[0.06em] uppercase">
+            Ecjet e tua
+          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/hikes"
+              className="text-pine text-[10px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-70"
+            >
+              Shiko të gjitha →
+            </Link>
+            <Link
+              href="/dashboard/hikes?shto=1"
+              className="border-moss bg-moss text-abyss hover:bg-pine hover:text-summit flex items-center gap-1.5 border-2 px-3 py-1.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
+            >
+              <Plus className="size-3.5" />
+              Shto një ecje
+            </Link>
+          </div>
+        </div>
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Udhëtime" value={stats.tripsJoined} />
+          <StatCard label="Ecje" value={stats.hikesCount} />
           <StatCard label="Klube" value={stats.clubsJoined} />
           <StatCard label="Vlerësime" value={stats.trailsReviewed} />
           <StatCard label="Distancë" value={`${stats.totalKm} KM`} />
@@ -426,7 +448,7 @@ async function ClubAdminHome({
                   <span className="text-summit/60 text-[11px] font-semibold">
                     {confirmedCount}/{trip.maxParticipants ?? "∞"}
                   </span>
-                  <StatusDot status={trip.status} />
+                  <StatusDot status={displayTripStatus(trip)} />
                   <Link
                     href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
                     aria-label="Ndrysho"
@@ -466,6 +488,20 @@ async function ClubAdminHome({
                     <p className="text-summit/60 truncate text-[9px] uppercase">
                       {reg.tripTitle}
                     </p>
+                    {reg.waitlisted || reg.isReregistration ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {reg.waitlisted ? (
+                          <RegistrationTag tone="alert">
+                            Listë pritje
+                          </RegistrationTag>
+                        ) : null}
+                        {reg.isReregistration ? (
+                          <RegistrationTag tone="muted">
+                            Ri-regjistrim
+                          </RegistrationTag>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                   <span className="text-summit/60 shrink-0 text-[9px] font-medium uppercase">
                     {timeAgo(reg.registeredAt)}
@@ -481,6 +517,27 @@ async function ClubAdminHome({
         </div>
       </div>
     </div>
+  );
+}
+
+function RegistrationTag({
+  tone,
+  children,
+}: {
+  tone: "alert" | "muted";
+  children: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "border px-1.5 py-px text-[8px] font-bold tracking-[0.08em] uppercase",
+        tone === "alert"
+          ? "border-alert/40 bg-alert/10 text-alert"
+          : "border-summit/20 bg-summit/[0.06] text-summit/70",
+      )}
+    >
+      {children}
+    </span>
   );
 }
 

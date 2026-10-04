@@ -1,16 +1,20 @@
 "use client";
 
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import {
   Calendar,
+  Footprints,
   Heart,
   LayoutDashboard,
   type LucideIcon,
   Map,
+  MoreHorizontal,
   Settings,
   ShieldCheck,
   Sparkles,
   User,
   Users,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,7 +55,14 @@ function buildItems(
   if (variant === "admin" && adminClubSlug) {
     const club = `/dashboard/club/${adminClubSlug}`;
     return [
-      { href: club, label: "Përmbledhje", icon: LayoutDashboard, exact: true },
+      // The club's home is /dashboard (the page club admins land on after
+      // login); /dashboard/club/[slug] only hosts the members/settings tabs.
+      {
+        href: "/dashboard",
+        label: "Përmbledhje",
+        icon: LayoutDashboard,
+        exact: true,
+      },
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
       {
@@ -66,6 +77,7 @@ function buildItems(
   return [
     { href: "/dashboard", label: "Paneli", icon: LayoutDashboard, exact: true },
     { href: "/dashboard/my-trips", label: "Udhëtimet e mia", icon: Calendar },
+    { href: "/dashboard/hikes", label: "Ecjet e mia", icon: Footprints },
     { href: "/dashboard/trails", label: "Të ruajtura", icon: Heart },
     { href: "/clubs", label: "Klubet", icon: Users },
     { href: "/trails", label: "Shtigjet", icon: Map },
@@ -126,23 +138,22 @@ export function DashboardSidebar({
       {/* Logo */}
       <div className="border-summit/[0.06] flex flex-col items-center border-b px-2.5 py-3.5 text-center">
         {isAdmin ? (
-          <>
-            <Link href={"/"}>
-              <Image
-                src="/logos/Hikeit-pfp.png"
-                alt=""
-                width={28}
-                height={28}
-                className="mb-1.5 size-7"
-              />
-            </Link>
-            <p className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
+          // The whole block is the home link, not just the image.
+          <Link href="/dashboard" className="flex flex-col items-center">
+            <Image
+              src="/logos/Hikeit-pfp.png"
+              alt=""
+              width={28}
+              height={28}
+              className="mb-1.5 size-7"
+            />
+            <span className="font-heading text-summit text-[11px] font-extrabold tracking-[0.02em] uppercase">
               Balkan Clubs
-            </p>
-            <p className="text-summit/50 mt-0.5 text-[8px] tracking-[0.04em]">
+            </span>
+            <span className="text-summit/50 mt-0.5 text-[8px] tracking-[0.04em]">
               Peak Control v1.2
-            </p>
-          </>
+            </span>
+          </Link>
         ) : (
           <Link href="/dashboard" className="flex flex-col items-center gap-1">
             <Image
@@ -208,7 +219,17 @@ export function DashboardSidebar({
   );
 }
 
-/** Mobile bottom tab bar (sidebar is hidden on small screens). */
+/** Most slots the mobile bar shows before it needs an overflow button. */
+const MOBILE_SLOTS = 5;
+
+/**
+ * Mobile bottom tab bar (sidebar is hidden on small screens).
+ *
+ * Five slots fit a phone. With five items or fewer every item gets one; with
+ * more, the first four stay and the fifth slot becomes "Më shumë", opening a
+ * sheet with the rest — nothing is ever silently dropped. "Më shumë" takes
+ * the active state when the current page is one of the items inside it.
+ */
 export function DashboardMobileTabs({
   variant,
   adminClubSlug,
@@ -220,26 +241,89 @@ export function DashboardMobileTabs({
 }) {
   const pathname = usePathname();
   const currentTab = useSearchParams().get("tab");
-  const items = buildItems(variant, adminClubSlug, showAdminPanel).slice(0, 5);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const items = buildItems(variant, adminClubSlug, showAdminPanel);
+
+  const overflows = items.length > MOBILE_SLOTS;
+  const bar = overflows ? items.slice(0, MOBILE_SLOTS - 1) : items;
+  const more = overflows ? items.slice(MOBILE_SLOTS - 1) : [];
+  const moreActive = more.some((item) => isActive(pathname, currentTab, item));
 
   return (
-    <nav className="border-summit/[0.06] bg-abyss fixed inset-x-0 bottom-0 z-40 flex border-t md:hidden">
-      {items.map((item) => {
+    <nav
+      aria-label="Navigimi"
+      className="border-summit/[0.06] bg-abyss fixed inset-x-0 bottom-0 z-40 flex border-t pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+    >
+      {bar.map((item) => {
         const active = isActive(pathname, currentTab, item);
         return (
           <Link
             key={item.label}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-semibold uppercase",
+              "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-center text-[9px] leading-tight font-semibold uppercase",
               active ? "text-moss" : "text-summit/50",
             )}
           >
-            <item.icon className="size-5" />
+            <item.icon className="size-5 shrink-0" />
             {item.label}
           </Link>
         );
       })}
+
+      {overflows ? (
+        <DialogPrimitive.Root open={moreOpen} onOpenChange={setMoreOpen}>
+          <DialogPrimitive.Trigger
+            className={cn(
+              "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-0.5 py-2 text-center text-[9px] leading-tight font-semibold uppercase",
+              moreActive || moreOpen ? "text-moss" : "text-summit/50",
+            )}
+          >
+            <MoreHorizontal className="size-5 shrink-0" />
+            Më shumë
+          </DialogPrimitive.Trigger>
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Backdrop className="bg-abyss/70 fixed inset-0 z-50 md:hidden" />
+            <DialogPrimitive.Popup className="border-moss bg-abyss fixed inset-x-0 bottom-0 z-50 border-t-2 pb-[env(safe-area-inset-bottom,0px)] md:hidden">
+              <div className="border-summit/[0.06] flex items-center justify-between border-b px-4 py-3">
+                <DialogPrimitive.Title className="text-summit text-[11px] font-bold tracking-[0.1em] uppercase">
+                  Më shumë
+                </DialogPrimitive.Title>
+                <DialogPrimitive.Close
+                  aria-label="Mbyll"
+                  className="text-summit/60 hover:text-summit -mr-1 p-1"
+                >
+                  <X className="size-4" />
+                </DialogPrimitive.Close>
+              </div>
+              <ul className="py-1">
+                {more.map((item) => {
+                  const active = isActive(pathname, currentTab, item);
+                  return (
+                    <li key={item.label}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setMoreOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 border-l-4 px-4 py-3.5 text-[11px] font-bold tracking-[0.08em] uppercase",
+                          active
+                            ? "border-moss bg-moss/10 text-moss"
+                            : "text-summit/70 hover:bg-summit/[0.04] border-transparent",
+                        )}
+                      >
+                        <item.icon className="size-[18px] shrink-0" />
+                        {item.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </DialogPrimitive.Popup>
+          </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
+      ) : null}
     </nav>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { downscaleImage } from "@/lib/images/downscale-image";
 import { updateAvatar, updateProfile } from "@/server/actions/profile";
 
 interface ProfileFormValues {
@@ -40,6 +41,10 @@ export function ProfileForm({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [avatar, setAvatar] = useState(avatarUrl);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  // Shown next to the button, not at the bottom of the form where it was
+  // easy to miss on a phone.
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof ProfileFormValues>(
@@ -75,15 +80,37 @@ export function ProfileForm({
 
   async function onAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    // Reset so picking the same file again after an error re-fires onChange.
+    e.target.value = "";
     if (!file) return;
+    setAvatarError(null);
+    setAvatarUploading(true);
+    try {
+      await uploadAvatar(file);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function uploadAvatar(file: File) {
     const fd = new FormData();
-    fd.set("avatar", file);
-    const result = await updateAvatar(fd);
+    // Avatars render at 200×200; 1024px keeps plenty of headroom while
+    // keeping the request well under the platform body limit.
+    fd.set("avatar", await downscaleImage(file, 1024));
+    let result;
+    try {
+      result = await updateAvatar(fd);
+    } catch {
+      // The action never ran — typically the body was over the size limit
+      // (a format the browser couldn't shrink, e.g. HEIC outside Safari).
+      setAvatarError("Imazhi është shumë i madh. Provo një foto JPG ose PNG.");
+      return;
+    }
     if (result.success && result.avatarUrl) {
       setAvatar(result.avatarUrl);
       router.refresh();
     } else {
-      setMessage(result.error ?? "Ngarkimi dështoi.");
+      setAvatarError(result.error ?? "Ngarkimi dështoi.");
     }
   }
 
@@ -136,14 +163,22 @@ export function ProfileForm({
             className="hidden"
             onChange={onAvatarChange}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Upload />
-            Ngarko foto
-          </Button>
+          <div className="min-w-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={avatarUploading}
+            >
+              {avatarUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+              {avatarUploading ? "Duke ngarkuar…" : "Ngarko foto"}
+            </Button>
+            {avatarError ? (
+              <p role="alert" className="text-destructive mt-1.5 text-xs">
+                {avatarError}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <Field label="Emri i plotë">

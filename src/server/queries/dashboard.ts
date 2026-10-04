@@ -20,9 +20,12 @@ import {
   trips,
   users,
 } from "@/lib/db/schema";
+import { getPersonalTotals } from "@/server/queries/personal-stats";
+import { displayStatusFilter } from "@/server/queries/trip-status-sql";
 
 export interface HikerStats {
-  tripsJoined: number;
+  /** Hikes done: logged hikes + completed trips no hike replaces. */
+  hikesCount: number;
   clubsJoined: number;
   trailsReviewed: number;
   totalKm: number;
@@ -30,16 +33,8 @@ export interface HikerStats {
 
 /** Headline counters for the hiker dashboard. */
 export async function getHikerStats(userId: string): Promise<HikerStats> {
-  const [tripsJoined, clubsJoined, trailsReviewed, km] = await Promise.all([
-    db
-      .select({ value: count() })
-      .from(tripRegistrations)
-      .where(
-        and(
-          eq(tripRegistrations.userId, userId),
-          inArray(tripRegistrations.status, ["confirmed", "attended"]),
-        ),
-      ),
+  const [totals, clubsJoined, trailsReviewed] = await Promise.all([
+    getPersonalTotals(userId),
     db
       .select({ value: count() })
       .from(organizationMembers)
@@ -53,26 +48,13 @@ export async function getHikerStats(userId: string): Promise<HikerStats> {
       .select({ value: count() })
       .from(reviews)
       .where(eq(reviews.userId, userId)),
-    db
-      .select({
-        value: sql<number>`coalesce(sum(${trails.distanceKm}), 0)`,
-      })
-      .from(tripRegistrations)
-      .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
-      .innerJoin(trails, eq(trails.id, trips.trailId))
-      .where(
-        and(
-          eq(tripRegistrations.userId, userId),
-          inArray(tripRegistrations.status, ["confirmed", "attended"]),
-        ),
-      ),
   ]);
 
   return {
-    tripsJoined: tripsJoined[0]?.value ?? 0,
+    hikesCount: totals.hikesCount,
     clubsJoined: clubsJoined[0]?.value ?? 0,
     trailsReviewed: trailsReviewed[0]?.value ?? 0,
-    totalKm: Math.round(Number(km[0]?.value ?? 0)),
+    totalKm: totals.totalKm,
   };
 }
 
@@ -87,6 +69,11 @@ export interface RecentRegistration {
   userAvatarUrl: string | null;
   tripTitle: string;
   registeredAt: Date;
+  /** Shown as a LISTË PRITJE tag. */
+  waitlisted: boolean;
+  /** The person had canceled this trip before — shown as RI-REGJISTRIM, so
+   * roster churn stays visible now that canceled rows are hidden. */
+  isReregistration: boolean;
 }
 
 export interface ClubDashboard {
@@ -141,11 +128,25 @@ export async function getClubDashboard(
         userAvatarUrl: users.avatarUrl,
         tripTitle: trips.title,
         registeredAt: tripRegistrations.registeredAt,
+        status: tripRegistrations.status,
+        isReregistration: tripRegistrations.isReregistration,
       })
       .from(tripRegistrations)
       .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
       .innerJoin(users, eq(users.id, tripRegistrations.userId))
-      .where(eq(trips.organizationId, organizationId))
+      .where(
+        and(
+          eq(trips.organizationId, organizationId),
+          // Live registrations only. A canceled row next to the same person's
+          // re-registration read as a duplicate sign-up; the churn it hinted
+          // at is carried by the RI-REGJISTRIM tag instead.
+          inArray(tripRegistrations.status, [
+            "confirmed",
+            "attended",
+            "waitlisted",
+          ]),
+        ),
+      )
       .orderBy(desc(tripRegistrations.registeredAt))
       .limit(5),
   ]);
@@ -157,7 +158,10 @@ export async function getClubDashboard(
       trip,
       confirmedCount: countMap.get(trip.id) ?? 0,
     })),
-    recentRegistrations: recent,
+    recentRegistrations: recent.map(({ status, ...r }) => ({
+      ...r,
+      waitlisted: status === "waitlisted",
+    })),
   };
 }
 
@@ -193,7 +197,8 @@ export async function getClubTripsAdmin(
   const where = and(
     eq(trips.organizationId, organizationId),
     isNull(trips.deletedAt),
-    params.status ? eq(trips.status, params.status) : undefined,
+    // Filter by the status the table shows (past open/full → completed).
+    params.status ? displayStatusFilter(params.status) : undefined,
   );
 
   const [rows, totalResult] = await Promise.all([

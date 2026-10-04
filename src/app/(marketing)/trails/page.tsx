@@ -5,10 +5,14 @@ import {
   createSerializer,
   type SearchParams,
 } from "nuqs/server";
+import { Suspense } from "react";
 
+import { ProposeTrailLink } from "@/components/features/trails/propose-trail-link";
 import { TrailCard } from "@/components/features/trails/trail-card";
 import { TrailFilters } from "@/components/features/trails/trail-filters";
 import { TrailSearch } from "@/components/features/trails/trail-search";
+import { TrailSubmittedDialog } from "@/components/features/trails/trail-submitted-dialog";
+import { getOptionalSession } from "@/lib/auth/helpers";
 import type { Trail } from "@/lib/db/schema";
 import { trailsParsers } from "@/lib/search-params/trails";
 import { cn } from "@/lib/utils/cn";
@@ -38,8 +42,11 @@ export default async function TrailsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const filters = await cache.parse(searchParams);
+  // Set by the trail proposal form after a successful submit.
+  const submitted = (await searchParams).submitted === "1";
 
-  const [regions, { trails, total }] = await Promise.all([
+  const [session, regions, { trails, total }] = await Promise.all([
+    getOptionalSession(),
     getTrailRegions(),
     getTrails({
       search: filters.search || undefined,
@@ -57,19 +64,29 @@ export default async function TrailsPage({
 
   return (
     <div className="bg-abyss">
+      {submitted ? (
+        <Suspense>
+          <TrailSubmittedDialog initialOpen />
+        </Suspense>
+      ) : null}
       {/* Page header */}
       <div className="flex flex-col justify-between gap-4 px-6 pt-6 sm:flex-row sm:items-start">
         <div>
-          <p className="mb-1.5 text-[10px] font-bold tracking-[0.15em] text-moss uppercase">
+          <p className="text-moss mb-1.5 text-[10px] font-bold tracking-[0.15em] uppercase">
             Eksploro
           </p>
-          <h1 className="font-heading mb-2 text-[32px] font-extrabold tracking-[-0.02em] text-summit uppercase">
+          <h1 className="font-heading text-summit mb-2 text-[32px] font-extrabold tracking-[-0.02em] uppercase">
             Shtigjet e Kosovës
           </h1>
-          <p className="text-xs font-normal text-summit/45">
+          <p className="text-summit/45 text-xs font-normal">
             [{total}] shtigje të verifikuara nga komuniteti i ekspertëve të
             HIKEIT.
           </p>
+          <ProposeTrailLink
+            isLoggedIn={Boolean(session)}
+            tone="dark"
+            className="mt-4"
+          />
         </div>
         <TrailSearch />
       </div>
@@ -82,11 +99,11 @@ export default async function TrailsPage({
 
         <div className="min-w-0 flex-1">
           {trails.length === 0 ? (
-            <div className="flex min-h-[240px] flex-col items-center justify-center border border-summit/10 bg-summit/[0.03] p-10 text-center">
-              <p className="font-heading text-base font-extrabold text-summit uppercase">
+            <div className="border-summit/10 bg-summit/[0.03] flex min-h-[240px] flex-col items-center justify-center border p-10 text-center">
+              <p className="font-heading text-summit text-base font-extrabold uppercase">
                 Asnjë shteg nuk u gjet
               </p>
-              <p className="mt-2 text-xs text-summit/45">
+              <p className="text-summit/45 mt-2 text-xs">
                 Provoni të ndryshoni filtrat ose pastrojini ato.
               </p>
             </div>

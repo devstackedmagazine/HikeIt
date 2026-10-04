@@ -1,9 +1,8 @@
-import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNull, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { AuditLog, Organization } from "@/lib/db/schema";
+import type { Organization } from "@/lib/db/schema";
 import {
-  auditLogs,
   organizationMembers,
   organizations,
   tripRegistrations,
@@ -11,6 +10,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import { captureError } from "@/lib/sentry";
+import { displayStatusFilter } from "@/server/queries/trip-status-sql";
 
 export interface ClubWithStats extends Organization {
   memberCount: number;
@@ -77,7 +77,8 @@ export async function getClubs(
   const offset = (page - 1) * limit;
 
   const filters = [isNull(organizations.deletedAt)];
-  if (params.search) filters.push(ilike(organizations.name, `%${params.search}%`));
+  if (params.search)
+    filters.push(ilike(organizations.name, `%${params.search}%`));
   if (params.city) filters.push(eq(organizations.city, params.city));
   const where = and(...filters);
 
@@ -192,7 +193,8 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(trips.status, "open"),
+            // Past trips the cron hasn't completed yet aren't active.
+            displayStatusFilter("open"),
             isNull(trips.deletedAt),
           ),
         ),
@@ -202,7 +204,7 @@ export async function getClubStats(organizationId: string): Promise<ClubStats> {
         .where(
           and(
             eq(trips.organizationId, organizationId),
-            eq(trips.status, "completed"),
+            displayStatusFilter("completed"),
             isNull(trips.deletedAt),
           ),
         ),
@@ -331,22 +333,4 @@ export async function getClubExpectedRevenue(
       ),
     );
   return Number(row?.value ?? 0);
-}
-
-/** Recent audit-log activity for a club (trip + club events). */
-export async function getClubActivity(
-  organizationId: string,
-  limit = 10,
-): Promise<AuditLog[]> {
-  return db
-    .select()
-    .from(auditLogs)
-    .where(
-      or(
-        sql`${auditLogs.metadata}->>'organizationId' = ${organizationId}`,
-        eq(auditLogs.entityId, organizationId),
-      ),
-    )
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(limit);
 }

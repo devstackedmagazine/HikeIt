@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+  experimental: {
+    serverActions: {
+      // GPX files are sent to server actions as text and the parser accepts
+      // up to 5MB. Next's default 1MB cap would reject a recorded hike of a
+      // few hours (1-second sampling ≈ 1–2MB) before the parser ever sees it.
+      bodySizeLimit: "6mb",
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {
