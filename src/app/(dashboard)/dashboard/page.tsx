@@ -17,6 +17,7 @@ import { StatCard } from "@/components/features/dashboard/stat-card";
 import { WelcomeCard } from "@/components/features/dashboard/welcome-card";
 import { CloudImage } from "@/components/features/images/cloud-image";
 import { EmptyState } from "@/components/shared/empty-state";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 import type { Trail, Trip } from "@/lib/db/schema";
 import { displayTripStatus } from "@/lib/trips/display-status";
@@ -478,9 +479,13 @@ async function ClubAdminHome({
                   key={reg.id}
                   className="border-summit/[0.05] flex items-center gap-2.5 border-b py-2 last:border-b-0"
                 >
-                  <span className="bg-pine text-moss flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold">
-                    {initials(reg.userName)}
-                  </span>
+                  <UserAvatar
+                    name={reg.userName}
+                    src={reg.userAvatarUrl}
+                    initials={initials(reg.userName)}
+                    px={56}
+                    className="bg-pine size-7 text-[10px]"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-summit truncate text-[11px] font-bold">
                       {reg.userName ?? "Anëtar"}

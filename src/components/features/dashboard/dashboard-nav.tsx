@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { authClient } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 
@@ -36,6 +37,7 @@ export type DashboardVariant = "hiker" | "admin";
 export interface DashboardNavProps {
   variant: DashboardVariant;
   userName: string;
+  avatarUrl: string | null;
   /** Secondary line under the name: email for hikers, club name for admins. */
   secondaryLine: string;
   adminClubSlug: string | null;
@@ -115,6 +117,7 @@ function isActive(
 export function DashboardSidebar({
   variant,
   userName,
+  avatarUrl,
   secondaryLine,
   adminClubSlug,
   showAdminPanel = false,
@@ -197,9 +200,11 @@ export function DashboardSidebar({
       {/* User */}
       <div className="border-summit/[0.06] flex flex-col items-center gap-1.5 border-t p-3">
         {/* Abyss chip, not Forest/Pine: Moss only clears AA on Abyss. */}
-        <span className="border-moss/30 text-moss bg-abyss flex size-8 items-center justify-center border text-xs font-bold">
-          {userName.charAt(0).toUpperCase()}
-        </span>
+        <UserAvatar
+          name={userName}
+          src={avatarUrl}
+          className="border-moss/30 border"
+        />
         <p className="text-summit/60 text-center text-[9px] font-semibold tracking-[0.04em] uppercase">
           {isAdmin ? "Admin" : userName}
         </p>
@@ -232,10 +237,14 @@ const MOBILE_SLOTS = 5;
  */
 export function DashboardMobileTabs({
   variant,
+  userName,
+  avatarUrl,
   adminClubSlug,
   showAdminPanel = false,
 }: {
   variant: DashboardVariant;
+  userName: string;
+  avatarUrl: string | null;
   adminClubSlug: string | null;
   showAdminPanel?: boolean;
 }) {
@@ -297,6 +306,16 @@ export function DashboardMobileTabs({
                   <X className="size-4" />
                 </DialogPrimitive.Close>
               </div>
+              <Link
+                href="/dashboard/profile"
+                onClick={() => setMoreOpen(false)}
+                className="border-summit/[0.06] flex items-center gap-3 border-b px-4 py-3"
+              >
+                <UserAvatar name={userName} src={avatarUrl} />
+                <span className="text-summit truncate text-[11px] font-bold tracking-[0.08em] uppercase">
+                  {userName}
+                </span>
+              </Link>
               <ul className="py-1">
                 {more.map((item) => {
                   const active = isActive(pathname, currentTab, item);

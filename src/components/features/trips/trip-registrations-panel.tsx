@@ -5,6 +5,7 @@ import { Download, Loader2, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,7 +74,7 @@ export function TripRegistrationsPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {registrations.length} regjistrime
         </p>
         <div className="flex gap-2">
@@ -86,7 +87,7 @@ export function TripRegistrationsPanel({
       </div>
 
       {registrations.length === 0 ? (
-        <p className="rounded-xl border border-dashed px-6 py-10 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
           Asnjë regjistrim ende.
         </p>
       ) : (
@@ -104,7 +105,14 @@ export function TripRegistrationsPanel({
               {registrations.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">
-                    {r.userName ?? "Anëtar"}
+                    <span className="flex items-center gap-2.5">
+                      <UserAvatar
+                        name={r.userName}
+                        src={r.userAvatarUrl}
+                        className="size-7 text-[10px]"
+                      />
+                      {r.userName ?? "Anëtar"}
+                    </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {r.userEmail}
@@ -167,7 +175,7 @@ function RegistrationActions({
   // Terminal state: nothing to do.
   if (r.status === "canceled") {
     return (
-      <Badge className="border-2 border-summit/20 bg-summit/10 text-summit/50">
+      <Badge className="border-summit/20 bg-summit/10 text-summit/50 border-2">
         I HEQUR
       </Badge>
     );
@@ -179,7 +187,7 @@ function RegistrationActions({
         <div className="flex gap-1">
           <Button
             size="xs"
-            className="border-2 border-moss bg-moss/20 font-bold text-moss uppercase hover:bg-moss/30"
+            className="border-moss bg-moss/20 text-moss hover:bg-moss/30 border-2 font-bold uppercase"
             onClick={() => onSetStatus(r.id, "confirmed")}
           >
             Konfirmo
@@ -214,7 +222,7 @@ function RegistrationActions({
 
 function ActionError({ message }: { message: string }) {
   return (
-    <p className="text-[11px] text-danger" role="alert">
+    <p className="text-danger text-[11px]" role="alert">
       {message}
     </p>
   );
@@ -253,19 +261,19 @@ function ConfirmRemoveDialog({
         render={
           <Button
             size="xs"
-            className="border-2 border-danger bg-danger/15 font-bold text-danger uppercase hover:bg-danger hover:text-summit"
+            className="border-danger bg-danger/15 text-danger hover:bg-danger hover:text-summit border-2 font-bold uppercase"
           />
         }
       >
         {triggerLabel}
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
-        <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 border-forest bg-abyss p-6 text-summit outline-none sm:max-w-md">
-          <AlertDialog.Title className="font-heading text-[16px] font-extrabold tracking-[0.04em] text-summit uppercase">
+        <AlertDialog.Backdrop className="bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 z-50" />
+        <AlertDialog.Popup className="border-forest bg-abyss text-summit fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 border-2 p-6 outline-none sm:max-w-md">
+          <AlertDialog.Title className="font-heading text-summit text-[16px] font-extrabold tracking-[0.04em] uppercase">
             {title}
           </AlertDialog.Title>
-          <AlertDialog.Description className="mt-3 text-[13px] leading-relaxed text-summit/70">
+          <AlertDialog.Description className="text-summit/70 mt-3 text-[13px] leading-relaxed">
             {description}
           </AlertDialog.Description>
           <div className="mt-6 flex justify-end gap-2">
@@ -273,7 +281,7 @@ function ConfirmRemoveDialog({
               render={
                 <Button
                   disabled={loading}
-                  className="border-2 border-forest bg-transparent font-bold tracking-[0.04em] text-summit uppercase hover:bg-forest disabled:opacity-50"
+                  className="border-forest text-summit hover:bg-forest border-2 bg-transparent font-bold tracking-[0.04em] uppercase disabled:opacity-50"
                 />
               }
             >
@@ -282,7 +290,7 @@ function ConfirmRemoveDialog({
             <Button
               onClick={confirm}
               disabled={loading}
-              className="border-2 border-danger bg-danger font-bold tracking-[0.04em] text-summit uppercase hover:bg-red-900 hover:border-red-900 disabled:opacity-50"
+              className="border-danger bg-danger text-summit border-2 font-bold tracking-[0.04em] uppercase hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
               Hiq
@@ -345,7 +353,9 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          {done ? <p className="text-sm text-muted-foreground">{done}</p> : null}
+          {done ? (
+            <p className="text-muted-foreground text-sm">{done}</p>
+          ) : null}
           <Button
             onClick={send}
             disabled={loading || !subject || !message}
