@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Settings,
   ShieldCheck,
+  Sparkles,
   User,
   Users,
   X,
@@ -64,6 +65,11 @@ function buildItems(
       },
       { href: `${club}/trips`, label: "Udhëtimet", icon: Calendar },
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
+      {
+        href: `${club}?tab=settings#invite-code`,
+        label: "Përmirëso",
+        icon: Sparkles,
+      },
       { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
       ...platformAdmin,
     ];
