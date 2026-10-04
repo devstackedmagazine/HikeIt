@@ -180,7 +180,7 @@ export default async function ProfilePage({
           column stacks clubs, trips, details and the Llogaria sidebar spans
           all three rows. */}
       <div className="grid items-start gap-4 lg:grid-cols-[1fr_220px] lg:grid-rows-[auto_auto_1fr]">
-        <div className="lg:col-start-1 lg:row-start-3">
+        <div className="lg:col-start-1 lg:row-start-3 lg:self-start">
           <ProfileForm
             avatarUrl={profile.avatarUrl}
             initial={{
