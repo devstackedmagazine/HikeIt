@@ -176,11 +176,26 @@ export default async function ProfilePage({
         />
       </div>
 
-      {/* Two-column */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
-        {/* Left */}
-        <div>
-          {/* Clubs */}
+      {/* One column on phones (DOM order = phone order); from lg the left
+          column stacks clubs, trips, details and the Llogaria sidebar spans
+          all three rows. */}
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_220px] lg:grid-rows-[auto_auto_1fr]">
+        <div className="lg:col-start-1 lg:row-start-3 lg:self-start">
+          <ProfileForm
+            avatarUrl={profile.avatarUrl}
+            initial={{
+              name: profile.name ?? "",
+              bio: profile.bio ?? "",
+              phone: profile.phone ?? "",
+              dateOfBirth: profile.dateOfBirth ?? "",
+              emergencyContactName: profile.emergencyContactName ?? "",
+              emergencyContactPhone: profile.emergencyContactPhone ?? "",
+            }}
+          />
+        </div>
+
+        {/* Clubs */}
+        <div className="lg:col-start-1 lg:row-start-1">
           <AccentHeader>Klubet e mia</AccentHeader>
           {profile.clubs.length > 0 ? (
             <div className="grid gap-2.5 sm:grid-cols-2">
@@ -220,9 +235,11 @@ export default async function ProfilePage({
               Nuk je anëtar i asnjë klubi ende.
             </p>
           )}
+        </div>
 
-          {/* Recent trips */}
-          <div className="mt-4">
+        {/* Recent trips */}
+        <div className="lg:col-start-1 lg:row-start-2">
+          <div>
             <AccentHeader>Udhëtime të fundit</AccentHeader>
             {profile.recentTrips.length > 0 ? (
               <div className="border-summit/8 bg-summit/[0.03] border">
@@ -264,8 +281,8 @@ export default async function ProfilePage({
           </div>
         </div>
 
-        {/* Right — account */}
-        <aside className="border-summit/8 bg-summit/[0.03] flex flex-col gap-4 border p-4">
+        {/* Account: last on phones, right sidebar spanning all rows on lg */}
+        <aside className="border-summit/8 bg-summit/[0.03] flex flex-col gap-4 border p-4 lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <div className="flex items-center gap-2">
             <Shield className="text-moss size-3.5" />
             <span className="text-summit text-[11px] font-bold tracking-[0.1em] uppercase">
@@ -285,27 +302,6 @@ export default async function ProfilePage({
           <LogoutButton variant="brutalist" />
           <DeleteAccountButton email={profile.email} />
         </aside>
-      </div>
-
-      {/* Edit profile (existing form) */}
-      <div
-        id="edit-profile"
-        className="border-summit/8 bg-summit/[0.03] border p-4"
-      >
-        <AccentHeader>Ndrysho profilin</AccentHeader>
-        <ProfileForm
-          avatarUrl={profile.avatarUrl}
-          initial={{
-            name: profile.name ?? "",
-            bio: profile.bio ?? "",
-            phone: profile.phone ?? "",
-            dateOfBirth: profile.dateOfBirth ?? "",
-            emergencyContactName: profile.emergencyContactName ?? "",
-            emergencyContactPhone: profile.emergencyContactPhone ?? "",
-            language: profile.preferences?.language ?? "sq",
-            alertSensitivity: profile.preferences?.alertSensitivity ?? "low",
-          }}
-        />
       </div>
     </div>
   );

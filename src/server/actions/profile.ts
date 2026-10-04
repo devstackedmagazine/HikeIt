@@ -31,12 +31,6 @@ const updateProfileSchema = z.object({
     .or(z.literal("")),
   emergencyContactName: z.string().trim().max(100).optional(),
   emergencyContactPhone: z.string().trim().max(30).optional(),
-  preferences: z
-    .object({
-      language: z.enum(["sq", "en"]).optional(),
-      alertSensitivity: z.enum(["low", "medium", "high"]).optional(),
-    })
-    .optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
@@ -55,14 +49,22 @@ export async function updateProfile(
 
   await db
     .update(users)
+    // Partial update: only fields the caller sent are written (an empty
+    // string clears a field). Preferences are never touched here — they have
+    // their own merge-based action, `updatePreferences`.
     .set({
-      name: d.name,
-      bio: d.bio || null,
-      phone: d.phone || null,
-      dateOfBirth: d.dateOfBirth || null,
-      emergencyContactName: d.emergencyContactName || null,
-      emergencyContactPhone: d.emergencyContactPhone || null,
-      preferences: d.preferences,
+      ...(d.name !== undefined && { name: d.name }),
+      ...(d.bio !== undefined && { bio: d.bio || null }),
+      ...(d.phone !== undefined && { phone: d.phone || null }),
+      ...(d.dateOfBirth !== undefined && {
+        dateOfBirth: d.dateOfBirth || null,
+      }),
+      ...(d.emergencyContactName !== undefined && {
+        emergencyContactName: d.emergencyContactName || null,
+      }),
+      ...(d.emergencyContactPhone !== undefined && {
+        emergencyContactPhone: d.emergencyContactPhone || null,
+      }),
     })
     .where(eq(users.id, session.user.id));
 
@@ -150,7 +152,10 @@ export async function changePassword(data: {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
   if (data.newPassword.length < 10) {
-    return { success: false, error: "Fjalëkalimi duhet të ketë 10+ karaktere." };
+    return {
+      success: false,
+      error: "Fjalëkalimi duhet të ketë 10+ karaktere.",
+    };
   }
 
   // This action verifies `currentPassword`, so it's an online guessing target
