@@ -12,6 +12,7 @@ import { TrailGpxSection } from "@/components/features/trails/trail-gpx-section"
 import { TrailMap } from "@/components/features/trails/trail-map-loader";
 import { WeatherWidget } from "@/components/features/weather/weather-widget";
 import { ShareButton } from "@/components/shared/share-button";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import type { Trail } from "@/lib/db/schema";
@@ -583,9 +584,13 @@ export default async function TrailDetailPage({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-2.5">
-                    <span className="bg-forest text-moss flex size-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold">
-                      {initials(review.userName)}
-                    </span>
+                    <UserAvatar
+                      name={review.userName}
+                      src={review.userAvatarUrl}
+                      initials={initials(review.userName)}
+                      px={72}
+                      className="bg-forest size-9 text-[13px]"
+                    />
                     <div>
                       <p className="text-summit text-[13px] font-semibold">
                         {review.userName ?? "Anëtar"}

@@ -32,23 +32,30 @@ export default async function DashboardLayout({
   const variant = isAdmin ? "admin" : "hiker";
 
   return (
-    <div className="min-h-svh bg-abyss">
+    <div className="bg-abyss min-h-svh">
       <SentryUserContext id={user.id} email={user.email} name={user.name} />
 
       <DashboardSidebar
         variant={variant}
         userName={displayName}
+        avatarUrl={user.avatarUrl}
         secondaryLine={isAdmin ? (adminClub?.name ?? "") : user.email}
         adminClubSlug={adminClub?.slug ?? null}
         showAdminPanel={isSuperAdmin}
       />
 
-      <DashboardShell variant={variant} displayName={displayName}>
+      <DashboardShell
+        variant={variant}
+        displayName={displayName}
+        avatarUrl={user.avatarUrl}
+      >
         {children}
       </DashboardShell>
 
       <DashboardMobileTabs
         variant={variant}
+        userName={displayName}
+        avatarUrl={user.avatarUrl}
         adminClubSlug={adminClub?.slug ?? null}
         showAdminPanel={isSuperAdmin}
       />

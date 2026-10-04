@@ -4,6 +4,7 @@ import { Loader2, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -124,7 +125,14 @@ export function ClubMembersTable({
               return (
                 <TableRow key={m.membershipId}>
                   <TableCell className="font-medium">
-                    {m.name ?? "Anëtar"}
+                    <span className="flex items-center gap-2.5">
+                      <UserAvatar
+                        name={m.name}
+                        src={m.avatarUrl}
+                        className="size-7 text-[10px]"
+                      />
+                      {m.name ?? "Anëtar"}
+                    </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {m.email}
