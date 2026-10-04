@@ -1,6 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -118,6 +119,9 @@ export async function updateAvatar(formData: FormData): Promise<AvatarResult> {
       .update(users)
       .set({ avatarUrl })
       .where(eq(users.id, session.user.id));
+    // The header, sidebar and public navbar render this column from server
+    // components; drop their cached output so the new photo shows at once.
+    revalidatePath("/", "layout");
     return { success: true, avatarUrl };
   } catch (error) {
     // Report only what KIND of failure this was — never the message (it can

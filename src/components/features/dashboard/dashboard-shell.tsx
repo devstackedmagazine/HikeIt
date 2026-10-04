@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { NotificationsBell } from "@/components/features/notifications/notifications-bell";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { cn } from "@/lib/utils/cn";
 
 import type { DashboardVariant } from "./dashboard-nav";
@@ -18,10 +19,12 @@ import type { DashboardVariant } from "./dashboard-nav";
 export function DashboardShell({
   variant,
   displayName,
+  avatarUrl,
   children,
 }: {
   variant: DashboardVariant;
   displayName: string;
+  avatarUrl: string | null;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -87,9 +90,9 @@ export function DashboardShell({
         <Link
           href="/dashboard/profile"
           aria-label="Profili"
-          className="bg-abyss text-moss hover:ring-moss/60 flex size-8 items-center justify-center text-xs font-bold transition-shadow hover:ring-2"
+          className="hover:ring-moss/60 flex transition-shadow hover:ring-2"
         >
-          {displayName.charAt(0).toUpperCase()}
+          <UserAvatar name={displayName} src={avatarUrl} />
         </Link>
       </header>
 

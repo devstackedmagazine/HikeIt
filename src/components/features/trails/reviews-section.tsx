@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { ReviewForm } from "@/components/features/trails/review-form";
 import { StarRating } from "@/components/features/trails/star-rating";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 import { conditionLabels } from "@/lib/validations/reviews";
 import type { TrailReview } from "@/server/queries/reviews";
@@ -38,7 +39,7 @@ export function ReviewsSection({
           {count > 0 ? (
             <div className="mt-1 flex items-center gap-2">
               <StarRating value={average} />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {average.toFixed(1)} · {count} vlerësime
               </span>
             </div>
@@ -55,7 +56,7 @@ export function ReviewsSection({
       {isLoggedIn ? <ReviewForm trailId={trailId} /> : null}
 
       {count === 0 ? (
-        <p className="rounded-xl border border-dashed px-6 py-10 text-center text-muted-foreground">
+        <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center">
           Bëhu i pari që vlerëson këtë shteg.
         </p>
       ) : (
@@ -63,9 +64,13 @@ export function ReviewsSection({
           {reviews.map((review) => (
             <li key={review.id} className="rounded-xl border p-4">
               <div className="flex items-center gap-3">
-                <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  {initials(review.userName)}
-                </span>
+                <UserAvatar
+                  name={review.userName}
+                  src={review.userAvatarUrl}
+                  initials={initials(review.userName)}
+                  px={72}
+                  className="bg-primary/10 text-primary size-9 text-sm font-semibold"
+                />
                 <div className="flex-1">
                   <p className="text-sm font-medium">
                     {review.userName ?? "Anëtar"}
@@ -73,14 +78,14 @@ export function ReviewsSection({
                   <StarRating value={review.rating} />
                 </div>
                 {review.conditionReport ? (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs">
                     {conditionLabels[review.conditionReport] ??
                       review.conditionReport}
                   </span>
                 ) : null}
               </div>
               {review.comment ? (
-                <p className="mt-3 text-sm text-muted-foreground">
+                <p className="text-muted-foreground mt-3 text-sm">
                   {review.comment}
                 </p>
               ) : null}

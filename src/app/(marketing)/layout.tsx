@@ -7,6 +7,7 @@ import {
   type MarketingNavItem,
 } from "@/components/shared/marketing-nav";
 import { MobileNav, type NavLink } from "@/components/shared/mobile-nav";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { getOptionalSession } from "@/lib/auth/helpers";
 
 const NAV_LINKS: MarketingNavItem[] = [
@@ -91,6 +92,15 @@ export default async function MarketingLayout({
           <MarketingNav items={NAV_LINKS} />
 
           <div className="hidden items-center gap-5 md:flex">
+            {session ? (
+              <Link
+                href="/dashboard/profile"
+                aria-label="Profili"
+                className="hover:ring-sage/60 flex transition-shadow hover:ring-2"
+              >
+                <UserAvatar name={session.user.name} src={session.user.image} />
+              </Link>
+            ) : null}
             {isLoggedIn ? (
               <Link
                 href="/dashboard"
@@ -116,7 +126,12 @@ export default async function MarketingLayout({
             )}
           </div>
 
-          <MobileNav links={NAV_LINKS} isLoggedIn={isLoggedIn} />
+          <MobileNav
+            links={NAV_LINKS}
+            isLoggedIn={isLoggedIn}
+            userName={session?.user.name ?? null}
+            avatarUrl={session?.user.image ?? null}
+          />
         </div>
       </header>
 
