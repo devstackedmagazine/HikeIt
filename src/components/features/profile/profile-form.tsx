@@ -4,17 +4,11 @@ import { Loader2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { downscaleImage } from "@/lib/images/downscale-image";
+import { cn } from "@/lib/utils/cn";
 import { updateAvatar, updateProfile } from "@/server/actions/profile";
 
 interface ProfileFormValues {
@@ -24,8 +18,6 @@ interface ProfileFormValues {
   dateOfBirth: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
-  language: "sq" | "en";
-  alertSensitivity: "low" | "medium" | "high";
 }
 
 export function ProfileForm({
@@ -64,10 +56,6 @@ export function ProfileForm({
       dateOfBirth: values.dateOfBirth,
       emergencyContactName: values.emergencyContactName,
       emergencyContactPhone: values.emergencyContactPhone,
-      preferences: {
-        language: values.language,
-        alertSensitivity: values.alertSensitivity,
-      },
     });
     setSaving(false);
     if (!result.success) {
@@ -114,44 +102,49 @@ export function ProfileForm({
     }
   }
 
+  const inputCls =
+    "h-9 border-summit/15 bg-summit/[0.05] text-summit placeholder:text-summit/30";
+
   if (!editing) {
     return (
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
+      <section id="edit-profile" className={cardCls}>
+        <div className="mb-3 flex items-center justify-between gap-3">
           <CardTitle>Detajet e profilit</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-            Ndrysho Profilin
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className={cn(btnCls, "border-sage/40 text-sage hover:border-sage")}
+          >
+            Ndrysho
+          </button>
+        </div>
+        <div className="space-y-2 text-sm">
           <Detail label="Bio" value={values.bio} />
           <Detail label="Telefon" value={values.phone} />
-          <Detail label="Kontakti i emergjencës" value={values.emergencyContactName} />
-          <Detail label="Gjuha" value={values.language === "en" ? "English" : "Shqip"} />
           <Detail
-            label="Ndjeshmëria e alarmeve"
-            value={
-              { low: "E ulët", medium: "Mesatare", high: "E lartë" }[
-                values.alertSensitivity
-              ]
-            }
+            label="Kontakti i emergjencës"
+            value={values.emergencyContactName}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ndrysho Profilin</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <section id="edit-profile" className={cardCls}>
+      <div className="mb-3">
+        <CardTitle>Ndrysho profilin</CardTitle>
+      </div>
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
-          <span className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-primary-foreground">
+          <span className="bg-abyss text-sage font-heading flex size-16 shrink-0 items-center justify-center overflow-hidden text-xl font-bold">
             {avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="Avatar" className="size-full object-cover" />
+              <img
+                src={avatar}
+                alt="Avatar"
+                className="size-full object-cover"
+              />
             ) : (
               (values.name || "?").charAt(0).toUpperCase()
             )}
@@ -164,17 +157,24 @@ export function ProfileForm({
             onChange={onAvatarChange}
           />
           <div className="min-w-0">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={() => fileRef.current?.click()}
               disabled={avatarUploading}
+              className={cn(
+                btnCls,
+                "border-sage/40 text-sage hover:border-sage flex items-center gap-1.5 disabled:opacity-50",
+              )}
             >
-              {avatarUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+              {avatarUploading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Upload className="size-3.5" />
+              )}
               {avatarUploading ? "Duke ngarkuar…" : "Ngarko foto"}
-            </Button>
+            </button>
             {avatarError ? (
-              <p role="alert" className="text-destructive mt-1.5 text-xs">
+              <p role="alert" className="mt-1.5 text-xs text-red-300">
                 {avatarError}
               </p>
             ) : null}
@@ -183,7 +183,7 @@ export function ProfileForm({
 
         <Field label="Emri i plotë">
           <Input
-            className="h-9"
+            className={inputCls}
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
           />
@@ -192,6 +192,7 @@ export function ProfileForm({
           <Textarea
             rows={3}
             maxLength={500}
+            className="border-summit/15 bg-summit/[0.05] text-summit placeholder:text-summit/30"
             value={values.bio}
             onChange={(e) => set("bio", e.target.value)}
           />
@@ -199,14 +200,14 @@ export function ProfileForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Telefon">
             <Input
-              className="h-9"
+              className={inputCls}
               value={values.phone}
               onChange={(e) => set("phone", e.target.value)}
             />
           </Field>
           <Field label="Data e lindjes">
             <Input
-              className="h-9"
+              className={cn(inputCls, "scheme-dark")}
               type="date"
               value={values.dateOfBirth}
               onChange={(e) => set("dateOfBirth", e.target.value)}
@@ -216,65 +217,63 @@ export function ProfileForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Kontakti i emergjencës">
             <Input
-              className="h-9"
+              className={inputCls}
               value={values.emergencyContactName}
               onChange={(e) => set("emergencyContactName", e.target.value)}
             />
           </Field>
           <Field label="Telefoni i emergjencës">
             <Input
-              className="h-9"
+              className={inputCls}
               value={values.emergencyContactPhone}
               onChange={(e) => set("emergencyContactPhone", e.target.value)}
             />
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Gjuha">
-            <select
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-              value={values.language}
-              onChange={(e) =>
-                set("language", e.target.value as "sq" | "en")
-              }
-            >
-              <option value="sq">Shqip</option>
-              <option value="en">English</option>
-            </select>
-          </Field>
-          <Field label="Ndjeshmëria e alarmeve">
-            <select
-              className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-              value={values.alertSensitivity}
-              onChange={(e) =>
-                set(
-                  "alertSensitivity",
-                  e.target.value as "low" | "medium" | "high",
-                )
-              }
-            >
-              <option value="low">E ulët (vetëm rrezik)</option>
-              <option value="medium">Mesatare</option>
-              <option value="high">E lartë (të gjitha)</option>
-            </select>
-          </Field>
-        </div>
 
-        {message ? (
-          <p className="text-sm text-muted-foreground">{message}</p>
-        ) : null}
+        {message ? <p className="text-summit/60 text-sm">{message}</p> : null}
 
         <div className="flex gap-2">
-          <Button onClick={save} disabled={saving}>
-            {saving ? <Loader2 className="animate-spin" /> : null}
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className={cn(
+              btnCls,
+              "bg-moss text-abyss border-moss flex items-center gap-1.5 disabled:opacity-50",
+            )}
+          >
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
             Ruaj
-          </Button>
-          <Button variant="ghost" onClick={() => setEditing(false)}>
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className={cn(
+              btnCls,
+              "border-summit/20 text-summit/70 hover:text-summit",
+            )}
+          >
             Anulo
-          </Button>
+          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
+  );
+}
+
+const cardCls = "border-summit/8 bg-summit/[0.03] scroll-mt-4 border p-4";
+const btnCls =
+  "border px-3 py-1.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors";
+
+function CardTitle({ children }: { children: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="bg-moss h-[18px] w-[3px]" />
+      <h2 className="text-summit text-[11px] font-bold tracking-[0.08em] uppercase">
+        {children}
+      </h2>
+    </div>
   );
 }
 
@@ -287,7 +286,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label>{label}</Label>
+      <Label className="text-summit/60">{label}</Label>
       {children}
     </div>
   );
@@ -295,9 +294,11 @@ function Field({
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b pb-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value || "—"}</span>
+    <div className="border-summit/8 flex justify-between gap-4 border-b pb-2 last:border-b-0 last:pb-0">
+      <span className="text-summit/45">{label}</span>
+      <span className="text-summit text-right font-medium break-words">
+        {value || "—"}
+      </span>
     </div>
   );
 }
