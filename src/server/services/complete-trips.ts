@@ -34,12 +34,17 @@ export interface CompleteTripsResult {
   tripIds: string[];
 }
 
+/** `db` itself or a transaction handle, so the caller can commit the update
+ * together with its audit row. */
+type Executor = Pick<typeof db, "update">;
+
 export async function runCompleteTrips(
   now: Date = new Date(),
+  executor: Executor = db,
 ): Promise<CompleteTripsResult> {
   const { endCutover, startCutover } = tripOverCutovers(now);
 
-  const completed = await db
+  const completed = await executor
     .update(trips)
     .set({ status: "completed" })
     .where(
