@@ -1,4 +1,4 @@
-import { and, isNull, sql } from "drizzle-orm";
+import { and, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { trips } from "@/lib/db/schema";
@@ -57,11 +57,13 @@ export async function runCompleteTrips(
         // both indexes silently drop out in favour of a seq scan.
         sql`${trips.status} in ('open', 'full')`,
         isNull(trips.deletedAt),
-        sql`(
-          (${trips.endDatetime} is not null and ${trips.endDatetime} <= ${endCutover})
-          or
-          (${trips.endDatetime} is null and ${trips.startDatetime} <= ${startCutover})
-        )`,
+        // Column operators, not a raw `sql` fragment: `lte` binds the Date
+        // through the column's encoder, while a Date interpolated into raw
+        // `sql` reaches postgres-js unencoded and throws.
+        or(
+          and(isNotNull(trips.endDatetime), lte(trips.endDatetime, endCutover)),
+          and(isNull(trips.endDatetime), lte(trips.startDatetime, startCutover)),
+        ),
       ),
     )
     .returning({ id: trips.id });
