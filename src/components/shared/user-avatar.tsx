@@ -7,8 +7,19 @@ import { cn } from "@/lib/utils/cn";
  * (`…/upload/c_fill,w_200,h_200,g_face,…/<id>`) so small chips don't download
  * the 200px version. Other hosts (e.g. a Google profile photo) pass through.
  */
+/** Whether `url` is served from Cloudinary. Compares the parsed hostname, not
+ * a substring, so `https://evil.example/?res.cloudinary.com` doesn't pass.
+ * An unparseable URL counts as not Cloudinary. */
+export function isCloudinaryUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname === "res.cloudinary.com";
+  } catch {
+    return false;
+  }
+}
+
 export function avatarSrc(url: string, px: number): string {
-  if (!url.includes("res.cloudinary.com")) return url;
+  if (!isCloudinaryUrl(url)) return url;
   return url.replace(/w_\d+,h_\d+/, `w_${px},h_${px}`);
 }
 
@@ -51,7 +62,7 @@ export function UserAvatar({
     );
   }
 
-  const isCloudinary = src.includes("res.cloudinary.com");
+  const isCloudinary = isCloudinaryUrl(src);
   return (
     <span className={box}>
       {isCloudinary ? (
