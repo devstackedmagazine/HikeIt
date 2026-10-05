@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 import { env } from "@/config/env";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
@@ -26,12 +28,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const result = await runCompleteTrips();
-
-    await db.insert(auditLogs).values({
-      action: "cron.complete_trips",
-      entityType: "system",
-      metadata: { ...result } as Record<string, unknown>,
+    // One transaction so a failed audit insert rolls back the completions
+    // instead of leaving them committed behind a 500.
+    const result = await db.transaction(async (tx) => {
+      const result = await runCompleteTrips(new Date(), tx);
+      await tx.insert(auditLogs).values({
+        action: "cron.complete_trips",
+        entityType: "system",
+        metadata: { ...result } as Record<string, unknown>,
+      });
+      return result;
     });
 
     captureMessage("cron.complete_trips", "info", {
@@ -44,10 +50,20 @@ export async function GET(request: Request) {
   } catch (error) {
     // Non-200 on purpose: cron-job.org's own failure alerting is the monitor
     // for this job, so swallowing the error would leave it silently dead.
-    captureError(error, { action: "cron.complete_trips" });
-    return Response.json(
-      { error: "Complete-trips cron failed" },
-      { status: 500 },
-    );
+    // Postgres SQLSTATE (e.g. 42703 undefined_column, 42P01 undefined_table) —
+    // safe to expose, and enough to tell which kind of schema drift it is.
+    const pgCode =
+      (error as { code?: string })?.code ??
+      (error as { cause?: { code?: string } })?.cause?.code;
+
+    console.error("[cron.complete_trips] failed", error);
+    captureError(error, {
+      action: "cron.complete_trips",
+      extra: { pgCode },
+    });
+    // Serverless can freeze before the queued event is sent.
+    await Sentry.flush(2000);
+
+    return Response.json({ code: pgCode ?? "unknown" }, { status: 500 });
   }
 }
