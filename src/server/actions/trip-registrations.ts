@@ -179,8 +179,11 @@ async function createRegistration(
 }
 
 /** Count of confirmed registrations for a trip. */
-async function confirmedCountFor(tripId: string): Promise<number> {
-  const [row] = await db
+async function confirmedCountFor(
+  tripId: string,
+  executor: Pick<typeof db, "select"> = db,
+): Promise<number> {
+  const [row] = await executor
     .select({ value: count() })
     .from(tripRegistrations)
     .where(
@@ -191,6 +194,56 @@ async function confirmedCountFor(tripId: string): Promise<number> {
     );
   return row?.value ?? 0;
 }
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Read the trip and hold a row lock on it until the transaction ends. Every
+ * roster change that reads the confirmed count and then writes takes this
+ * lock first, so two admins acting at once are serialized instead of both
+ * seeing the last free spot.
+ */
+async function lockTrip(tx: Tx, tripId: string) {
+  const [trip] = await tx
+    .select({
+      id: trips.id,
+      status: trips.status,
+      startDatetime: trips.startDatetime,
+      maxParticipants: trips.maxParticipants,
+    })
+    .from(trips)
+    .where(eq(trips.id, tripId))
+    .for("update");
+  return trip;
+}
+
+/**
+ * After a registration has left `confirmed`, put a trip marked full back to
+ * open — but only if a spot really is free now and the trip hasn't started.
+ * A full trip refuses new sign-ups, so without this it stays closed forever.
+ */
+async function reopenIfSpotFreed(
+  tx: Tx,
+  trip: NonNullable<Awaited<ReturnType<typeof lockTrip>>>,
+): Promise<void> {
+  if (trip.status !== "full" || trip.startDatetime <= new Date()) return;
+  if (trip.maxParticipants !== null) {
+    const confirmed = await confirmedCountFor(trip.id, tx);
+    if (confirmed >= trip.maxParticipants) return;
+  }
+  await tx.update(trips).set({ status: "open" }).where(eq(trips.id, trip.id));
+}
+
+/** Postgres unique_violation, unwrapped from Drizzle's query error if needed. */
+function isUniqueViolation(error: unknown): boolean {
+  const code =
+    (error as { code?: string })?.code ??
+    (error as { cause?: { code?: string } })?.cause?.code;
+  return code === "23505";
+}
+
+const ALREADY_ACTIVE_ERROR =
+  "Ky person ka tashmë një regjistrim aktiv në këtë udhëtim. Menaxhoni atë regjistrim në vend të këtij të anuluar.";
 
 async function sendConfirmation(
   userId: string,
@@ -261,10 +314,22 @@ export async function cancelMyRegistration(
   });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
 
-  await db
-    .update(tripRegistrations)
-    .set({ status: "canceled", canceledAt: new Date() })
-    .where(eq(tripRegistrations.id, registrationId));
+  await db.transaction(async (tx) => {
+    const locked = await lockTrip(tx, registration.tripId);
+    const current = await tx.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.id, registrationId),
+      columns: { status: true },
+    });
+
+    await tx
+      .update(tripRegistrations)
+      .set({ status: "canceled", canceledAt: new Date() })
+      .where(eq(tripRegistrations.id, registrationId));
+
+    if (locked && current?.status === "confirmed") {
+      await reopenIfSpotFreed(tx, locked);
+    }
+  });
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -300,16 +365,85 @@ export async function updateRegistrationStatus(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
-    .update(tripRegistrations)
-    .set({
-      status,
-      canceledAt: status === "canceled" ? new Date() : null,
-    })
-    .where(eq(tripRegistrations.id, registrationId));
+  let result: ActionResult;
+  try {
+    result = await db.transaction(async (tx): Promise<ActionResult> => {
+      const locked = await lockTrip(tx, registration.tripId);
+      if (!locked) return { success: false, error: "Udhëtimi nuk u gjet." };
 
-  revalidateClubRosterViews(trip.slug);
-  return { success: true };
+      // Re-read under the lock: another admin may have changed this row
+      // between the read above and the lock being granted.
+      const current = await tx.query.tripRegistrations.findFirst({
+        where: eq(tripRegistrations.id, registrationId),
+        columns: { status: true, userId: true },
+      });
+      if (!current) return { success: false, error: "Nuk u gjet." };
+      if (current.status === status) return { success: true };
+
+      // Reviving a canceled row would collide with the one-active-row
+      // unique index if the hiker has since registered again.
+      if (current.status === "canceled") {
+        const active = await tx.query.tripRegistrations.findFirst({
+          where: and(
+            eq(tripRegistrations.tripId, locked.id),
+            eq(tripRegistrations.userId, current.userId),
+            ne(tripRegistrations.status, "canceled"),
+          ),
+          columns: { id: true },
+        });
+        if (active) return { success: false, error: ALREADY_ACTIVE_ERROR };
+      }
+
+      const confirmed =
+        status === "confirmed" ? await confirmedCountFor(locked.id, tx) : 0;
+      if (
+        status === "confirmed" &&
+        locked.maxParticipants !== null &&
+        confirmed >= locked.maxParticipants
+      ) {
+        return {
+          success: false,
+          error: `Udhëtimi është plot: ${confirmed} nga ${locked.maxParticipants} vende janë të konfirmuara. Hiqni një pjesëmarrës para se të konfirmoni një tjetër.`,
+        };
+      }
+
+      await tx
+        .update(tripRegistrations)
+        .set({
+          status,
+          canceledAt: status === "canceled" ? new Date() : null,
+        })
+        .where(eq(tripRegistrations.id, registrationId));
+
+      if (status === "confirmed") {
+        // Same rule as self-registration: taking the last spot fills the trip.
+        if (
+          locked.status === "open" &&
+          locked.maxParticipants !== null &&
+          confirmed + 1 >= locked.maxParticipants
+        ) {
+          await tx
+            .update(trips)
+            .set({ status: "full" })
+            .where(eq(trips.id, locked.id));
+        }
+      } else if (current.status === "confirmed") {
+        await reopenIfSpotFreed(tx, locked);
+      }
+
+      return { success: true };
+    });
+  } catch (error) {
+    // The pre-check above runs under the trip lock, but self-registration
+    // doesn't take that lock, so a hiker can still re-register in between.
+    if (isUniqueViolation(error)) {
+      return { success: false, error: ALREADY_ACTIVE_ERROR };
+    }
+    throw error;
+  }
+
+  if (result.success) revalidateClubRosterViews(trip.slug);
+  return result;
 }
 
 /**
@@ -338,10 +472,22 @@ export async function removeRegistration(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
-    .update(tripRegistrations)
-    .set({ status: "canceled", canceledAt: new Date() })
-    .where(eq(tripRegistrations.id, registrationId));
+  await db.transaction(async (tx) => {
+    const locked = await lockTrip(tx, trip.id);
+    const current = await tx.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.id, registrationId),
+      columns: { status: true },
+    });
+
+    await tx
+      .update(tripRegistrations)
+      .set({ status: "canceled", canceledAt: new Date() })
+      .where(eq(tripRegistrations.id, registrationId));
+
+    if (locked && current?.status === "confirmed") {
+      await reopenIfSpotFreed(tx, locked);
+    }
+  });
 
   // In-app notification (best-effort — the removal itself has already committed).
   try {
