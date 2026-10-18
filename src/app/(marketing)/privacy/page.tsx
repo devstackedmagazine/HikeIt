@@ -39,8 +39,8 @@ const PROCESSORS: {
     purpose:
       "Hosting i aplikacionit dhe analitika e vizitave pa cookies (Vercel Analytics)",
     region:
-      "SHBA (Washington D.C.) dhe rrjet global shpërndarjeje — me masa mbrojtëse adekuate",
-    eu: false,
+      "Frankfurt, BE (serverët e aplikacionit); skedarët statikë shpërndahen nga rrjeti global i Vercel",
+    eu: true,
   },
   {
     name: "Cloudinary",
@@ -57,8 +57,7 @@ const PROCESSORS: {
   },
   {
     name: "Sentry",
-    purpose:
-      "Monitorimi i gabimeve teknike dhe regjistrime të seancave me tekst të maskuar",
+    purpose: "Monitorimi i gabimeve teknike",
     region: "Gjermani, BE",
     eu: true,
   },
@@ -204,7 +203,7 @@ export default function PrivacyPage() {
               "Adresa IP — për kufizimin e kërkesave (kyçje, regjistrim, ngarkime) dhe në regjistrat e sigurisë; Vercel Analytics e përdor për të nxjerrë shtetin, pa e ruajtur",
               "Lloji i shfletuesit dhe i pajisjes",
               "Faqet e vizituara, në formë të grumbulluar dhe pa identifikues të qëndrueshëm (Vercel Analytics)",
-              "Gabimet teknike dhe, për rreth 5% të seancave dhe për çdo seancë me gabim, një regjistrim i seancës (klikimet, lëvizja nëpër faqe) me gjithë tekstin të maskuar (Sentry)",
+              "Gabimet teknike: mesazhi i gabimit, faqja dhe shfletuesi (Sentry)",
             ]}
           />
         </LegalSection>
@@ -331,8 +330,10 @@ export default function PrivacyPage() {
                 , pa periudhë rikthimi. Fshihen: emri, email-i, telefoni,
                 datëlindja, kontakti i emergjencës, fotoja e profilit,
                 biografia, preferencat, mënyrat e kyçjes dhe seancat, ecjet
-                personale, fotot që keni ngarkuar (edhe skedarët te Cloudinary),
-                shtigjet e preferuara dhe njoftimet. Regjistrimet në udhëtime që
+                personale, fotot që keni ngarkuar (edhe skedarët te Cloudinary,
+                përveç kur i njëjti skedar përdoret ende diku tjetër, p.sh. si
+                kopertinë e një udhëtimi ose logo e një klubi), shtigjet e
+                preferuara dhe njoftimet. Regjistrimet në udhëtime që
                 s&apos;kanë filluar anulohen dhe anëtarësimet në klube
                 përfundojnë.
               </>,
@@ -439,6 +440,11 @@ export default function PrivacyPage() {
             të njëjtin email mund të krijoni një llogari të re.
           </p>
           <p>
+            Nëse jeni administratori i vetëm i një klubi, fillimisht caktoni një
+            administrator tjetër ose fshini klubin — një klub nuk mbetet kurrë
+            pa administrator.
+          </p>
+          <p>
             Nëse nuk mund të kyçeni ose preferoni që fshirjen ta bëjmë ne, na
             shkruani nga adresa e email-it e llogarisë suaj në{" "}
             <LegalLink href="mailto:hello@hikeit.app">
@@ -541,10 +547,8 @@ export default function PrivacyPage() {
             </strong>{" "}
             shfletuesi juaj mban në{" "}
             <code className="text-moss">localStorage</code> nëse e keni mbyllur
-            njoftimin për cookies dhe ftesën për të instaluar aplikacionin, dhe
-            Sentry përdor <code className="text-moss">sessionStorage</code> për
-            regjistrimin e seancave të përshkruar në seksionin 2. Asnjëra prej
-            tyre nuk është cookie dhe nuk përdoret për reklama.
+            njoftimin për cookies dhe ftesën për të instaluar aplikacionin. Kjo
+            nuk është cookie dhe nuk përdoret për analitikë apo reklama.
           </p>
           <p>
             Cookies mund t&apos;i fshini ose bllokoni nga cilësimet e
@@ -554,10 +558,16 @@ export default function PrivacyPage() {
 
         <LegalSection heading="10. Ndryshimet e Politikës">
           <p>
-            Kjo politikë mund të përditësohet. Për ndryshime thelbësore, ju
-            njoftojmë me email të paktën{" "}
-            <strong className="text-summit">30 ditë</strong> përpara hyrjes së
-            tyre në fuqi.
+            Kjo politikë mund të përditësohet. Ndryshimet që i kufizojnë të
+            drejtat tuaja ju njoftohen me email dhe hyjnë në fuqi{" "}
+            <strong className="text-summit">
+              të paktën 30 ditë pas njoftimit
+            </strong>
+            .
+          </p>
+          <p>
+            Përditësimet e tjera hyjnë në fuqi në momentin e publikimit. Data e
+            përditësimit të fundit shfaqet në krye të kësaj faqeje.
           </p>
         </LegalSection>
 

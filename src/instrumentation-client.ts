@@ -11,19 +11,8 @@ Sentry.init({
   // 10% of transactions — enough signal without burning the free quota.
   tracesSampleRate: 0.1,
 
-  // Session Replay: 5% of normal sessions, 100% of sessions with an error.
-  replaysSessionSampleRate: 0.05,
-  replaysOnErrorSampleRate: 1.0,
-
-  integrations: [
-    Sentry.replayIntegration({
-      // Mask all text and inputs by default — this app carries auth/billing
-      // flows, so err on the side of privacy.
-      maskAllText: true,
-      blockAllMedia: false,
-    }),
-    Sentry.browserTracingIntegration(),
-  ],
+  // No Session Replay: it records user behaviour and would need consent.
+  integrations: [Sentry.browserTracingIntegration()],
 
   beforeSend(event, hint) {
     const error = hint.originalException;
