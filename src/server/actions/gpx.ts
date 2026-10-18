@@ -7,6 +7,7 @@ import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { organizations, trails, trips, users } from "@/lib/db/schema";
 import { downsampleTrack, parseGpxString } from "@/lib/gpx/parser";
+import { sanitizeGpx } from "@/lib/gpx/sanitize";
 import { enforceRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import { isGpxStorageConfigured, uploadGpx } from "@/lib/storage/gpx-storage";
@@ -83,9 +84,13 @@ export async function submitTrail(
     };
   }
 
+  // Stats come from the uploaded file; the published copy is the sanitized
+  // one (no timestamps, device or author data — see `sanitizeGpx`).
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(data.gpxContent);
+    storedGpx = await sanitizeGpx(data.gpxContent, name);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "GPX i pavlefshëm.";
@@ -99,7 +104,7 @@ export async function submitTrail(
   // a DB row pointing at a nonexistent URL is not.
   let gpxUrl: string;
   try {
-    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, data.gpxContent);
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, storedGpx);
   } catch (error) {
     captureError(error, {
       action: "submitTrail",
@@ -222,8 +227,10 @@ export async function uploadTrailGpx(
   }
 
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(gpxContent);
+    storedGpx = await sanitizeGpx(gpxContent, trail.name);
   } catch (error) {
     return {
       success: false,
@@ -233,7 +240,7 @@ export async function uploadTrailGpx(
 
   let gpxUrl: string;
   try {
-    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, gpxContent);
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, storedGpx);
   } catch (error) {
     captureError(error, { action: "uploadTrailGpx", extra: { trailId } });
     return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
@@ -298,8 +305,10 @@ export async function uploadTripGpx(
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(gpxContent);
+    storedGpx = await sanitizeGpx(gpxContent, trip.title);
   } catch (error) {
     return {
       success: false,
@@ -308,7 +317,7 @@ export async function uploadTripGpx(
   }
 
   try {
-    const url = await uploadGpx(`trips/${tripId}/gpx.gpx`, gpxContent);
+    const url = await uploadGpx(`trips/${tripId}/gpx.gpx`, storedGpx);
     await db
       .update(trips)
       .set({

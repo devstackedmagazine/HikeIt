@@ -15,6 +15,7 @@ import {
 } from "@/lib/cloudinary/validation";
 import { db } from "@/lib/db";
 import { auditLogs, imageHashes } from "@/lib/db/schema";
+import { stripImageMetadata } from "@/lib/images/strip-metadata";
 
 export interface UploadResult {
   publicId: string;
@@ -56,10 +57,16 @@ export async function uploadImage(
     throw new Error(validation.error);
   }
 
-  // 3. SHA-256 deduplication, scoped to the uploader: re-uploading your own
+  // 3. Drop EXIF/GPS/XMP/IPTC before the file leaves our server. Lossless —
+  // pixels are untouched and orientation is kept. HEIC/HEIF isn't parsed
+  // here; it's converted to JPEG by Cloudinary in step 5 instead.
+  const isHeic = mimeType === "image/heic" || mimeType === "image/heif";
+  const clean = isHeic ? buffer : stripImageMetadata(buffer);
+
+  // 4. SHA-256 deduplication, scoped to the uploader: re-uploading your own
   // photo returns your existing asset, but another user's identical file is
   // never handed back — every asset belongs to exactly one user.
-  const hash = hashFileContent(buffer);
+  const hash = hashFileContent(clean);
   const existing = await db.query.imageHashes.findFirst({
     where: and(
       eq(imageHashes.hash, hash),
@@ -74,16 +81,16 @@ export async function uploadImage(
       width: 0,
       height: 0,
       format: "unknown",
-      bytes: buffer.length,
+      bytes: clean.length,
       isDuplicate: true,
     };
   }
 
-  // 4. Safe key + folder isolation.
+  // 5. Safe key + folder isolation.
   const folder = CLOUDINARY_FOLDERS[options.entityType](options.entityId);
   const publicId = `${folder}/${generateSafeKey(options.entityId, options.index ?? 0)}`;
 
-  // 5. Upload (EXIF stripped, smart quality/format, image-only, format allowlist).
+  // 6. Upload (smart quality/format, image-only, format allowlist).
   const result = await new Promise<UploadApiResponse>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -93,7 +100,11 @@ export async function uploadImage(
           { quality: "auto:good" },
           { fetch_format: "auto" },
         ],
-        // EXIF/metadata is dropped by default on transformed delivery; force it.
+        // Store HEIC/HEIF as a re-encoded JPEG, which carries none of the
+        // original's metadata (and displays in every browser).
+        ...(isHeic ? { format: "jpg" } : {}),
+        // Only stops Cloudinary returning metadata in this API response; the
+        // stripping itself happens in step 3.
         image_metadata: false,
         tags: ["hikeit", options.entityType, options.entityId],
         overwrite: false,
@@ -105,10 +116,10 @@ export async function uploadImage(
         else reject(new Error("Upload failed"));
       },
     );
-    stream.end(buffer);
+    stream.end(clean);
   });
 
-  // 6. Persist hash for dedup.
+  // 7. Persist hash for dedup.
   await db.insert(imageHashes).values({
     hash,
     cloudinaryPublicId: result.public_id,
@@ -118,7 +129,7 @@ export async function uploadImage(
     entityId: options.entityId,
   });
 
-  // 7. Audit log (also powers the rate limiter).
+  // 8. Audit log (also powers the rate limiter).
   await db.insert(auditLogs).values({
     userId: options.userId,
     action: "image.upload",

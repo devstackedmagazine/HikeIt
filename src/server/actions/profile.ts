@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,10 +9,26 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { isCloudinaryConfigured } from "@/lib/cloudinary/client";
-import { uploadImage } from "@/lib/cloudinary/upload";
+import { deleteImage, uploadImage } from "@/lib/cloudinary/upload";
 import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
-import { hikes, users } from "@/lib/db/schema";
+import {
+  accounts,
+  hikes,
+  imageHashes,
+  notifications,
+  organizationMembers,
+  organizations,
+  sessions,
+  trailFavorites,
+  trailPhotos,
+  tripFavorites,
+  tripPhotos,
+  tripRegistrations,
+  trips,
+  users,
+  verifications,
+} from "@/lib/db/schema";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 
@@ -199,18 +215,114 @@ export async function deleteAccount(confirmation: string): Promise<void> {
     return;
   }
 
-  // The user row is only soft-deleted, which cascades nothing, so hikes —
-  // personal location data — are hard-deleted explicitly, in the same
-  // transaction: both happen or neither does.
+  const userId = session.user.id;
+  const now = new Date();
+
+  // Photos the user posted to trips and trails; their files are removed from
+  // Cloudinary once the transaction has committed.
+  const photoIds = [
+    ...(await db
+      .select({ id: tripPhotos.cloudinaryPublicId })
+      .from(tripPhotos)
+      .where(eq(tripPhotos.userId, userId))),
+    ...(await db
+      .select({ id: trailPhotos.cloudinaryPublicId })
+      .from(trailPhotos)
+      .where(eq(trailPhotos.userId, userId))),
+    ...(await db
+      .select({ id: imageHashes.cloudinaryPublicId })
+      .from(imageHashes)
+      .where(
+        and(
+          eq(imageHashes.uploadedBy, userId),
+          eq(imageHashes.entityType, "avatar"),
+        ),
+      )),
+  ].map((r) => r.id);
+
+  // Immediate and permanent, all in one transaction. The user row itself is
+  // kept — past registrations, reviews and trail proposals point at it — but
+  // every personal field is wiped and the login methods are deleted, so the
+  // account can't be signed into or restored. The email is freed for a new
+  // sign-up.
   await db.transaction(async (tx) => {
-    await tx.delete(hikes).where(eq(hikes.userId, session.user.id));
+    await tx.delete(hikes).where(eq(hikes.userId, userId));
+    await tx.delete(tripPhotos).where(eq(tripPhotos.userId, userId));
+    await tx.delete(trailPhotos).where(eq(trailPhotos.userId, userId));
+    await tx.delete(trailFavorites).where(eq(trailFavorites.userId, userId));
+    await tx.delete(tripFavorites).where(eq(tripFavorites.userId, userId));
+    await tx.delete(notifications).where(eq(notifications.userId, userId));
+    await tx.delete(sessions).where(eq(sessions.userId, userId));
+    await tx.delete(accounts).where(eq(accounts.userId, userId));
+    // Pending password-reset tokens store the user id as their value; a
+    // leftover one could otherwise recreate a password login.
+    await tx.delete(verifications).where(eq(verifications.value, userId));
+
+    // Free the seat on trips that haven't started; past ones stay as history.
+    const upcoming = tx
+      .select({ id: trips.id })
+      .from(trips)
+      .where(gt(trips.startDatetime, now));
+    await tx
+      .update(tripRegistrations)
+      .set({ status: "canceled", canceledAt: now })
+      .where(
+        and(
+          eq(tripRegistrations.userId, userId),
+          inArray(tripRegistrations.status, [
+            "confirmed",
+            "waitlisted",
+            "pending",
+          ]),
+          inArray(tripRegistrations.tripId, upcoming),
+        ),
+      );
+    await tx
+      .update(organizationMembers)
+      .set({ leftAt: now })
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          isNull(organizationMembers.leftAt),
+        ),
+      );
+    await tx
+      .update(organizations)
+      .set({ ownerId: null })
+      .where(eq(organizations.ownerId, userId));
+
     await tx
       .update(users)
-      .set({ deletedAt: new Date() })
-      .where(eq(users.id, session.user.id));
+      .set({
+        email: `deleted-${userId}@deleted.invalid`,
+        emailVerified: false,
+        name: "Përdorues i fshirë",
+        avatarUrl: null,
+        bio: null,
+        phone: null,
+        dateOfBirth: null,
+        emergencyContactName: null,
+        emergencyContactPhone: null,
+        preferences: null,
+        deletedAt: now,
+      })
+      .where(eq(users.id, userId));
   });
 
-  await auth.api.signOut({ headers: await headers() });
+  // Best effort: the rows are already gone, so a file Cloudinary fails to
+  // delete is unreachable from the app; it's reported, not retried.
+  const results = await Promise.allSettled(
+    [...new Set(photoIds)].map((id) => deleteImage(id, userId)),
+  );
+  const failures = results.filter((r) => r.status === "rejected").length;
+  if (failures > 0) {
+    captureError(
+      new Error(`deleteAccount: ${failures} Cloudinary deletes failed`),
+    );
+  }
+
+  // The session row is already deleted; this clears the browser cookie.
+  await auth.api.signOut({ headers: await headers() }).catch(() => undefined);
   redirect("/");
 }
 

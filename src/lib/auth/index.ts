@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, getOAuthState } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 
 import { env } from "@/config/env";
@@ -111,10 +112,15 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
   },
 
+  // Social providers never create an account implicitly: only the register
+  // page's buttons send `requestSignUp` (with the 18+ confirmation, checked
+  // in `databaseHooks` below). From the login page, a new Google/Facebook
+  // user gets `signup_disabled` and is sent to register instead.
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
+      disableImplicitSignUp: true,
     },
     // Optional until the Meta app exists — social sign-in just omits the
     // provider (no runtime error) when these aren't set yet.
@@ -123,9 +129,45 @@ export const auth = betterAuth({
           facebook: {
             clientId: env.FACEBOOK_CLIENT_ID,
             clientSecret: env.FACEBOOK_CLIENT_SECRET,
+            disableImplicitSignUp: true,
           },
         }
       : {}),
+  },
+
+  /**
+   * Minimum age 18, enforced where the user row is created — so it holds no
+   * matter which client calls the API. Email sign-up must send
+   * `ageConfirmed: true` in the body; a social sign-up must carry it in the
+   * OAuth state (`additionalData` on `signIn.social`), which only the
+   * register page sets. Any other creation path is refused.
+   */
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user, ctx) => {
+          if (ctx?.path === "/sign-up/email") {
+            if (ctx.body?.ageConfirmed !== true) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Duhet të konfirmoni që jeni 18 vjeç ose më shumë.",
+              });
+            }
+            return { data: user };
+          }
+          if (ctx?.path?.startsWith("/callback")) {
+            const state = await getOAuthState();
+            if (state?.ageConfirmed !== true) {
+              // Becomes `?error=age_not_confirmed` on the error page.
+              throw new APIError("BAD_REQUEST", {
+                message: "age not confirmed",
+              });
+            }
+            return { data: user };
+          }
+          throw new APIError("FORBIDDEN", { message: "signup not allowed" });
+        },
+      },
+    },
   },
 
   user: {

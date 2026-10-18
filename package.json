@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/lib/db/seeds/run-seeds.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "gpx:sanitize": "tsx scripts/sanitize-gpx-files.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1068.0",

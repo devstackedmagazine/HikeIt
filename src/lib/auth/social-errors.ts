@@ -23,6 +23,18 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
     message:
       "Një llogari me këtë email ekziston tashmë në HikeIt — e krijuar me email/fjalëkalim ose me një ofrues tjetër social. Kyçu me metodën origjinale, pastaj lidh këtë llogari shtesë nga Cilësimet e profilit.",
   },
+  // Social providers don't create accounts implicitly (see lib/auth): a new
+  // user who picks Google/Facebook on the login page lands here.
+  signup_disabled: {
+    title: "Nuk keni ende llogari",
+    message:
+      "Nuk ka llogari HikeIt për këtë ofrues. Krijoni një nga faqja e regjistrimit, ku konfirmoni gjithashtu që jeni 18 vjeç ose më shumë.",
+  },
+  age_not_confirmed: {
+    title: "Konfirmoni moshën",
+    message:
+      "Për të krijuar llogari duhet të konfirmoni që jeni 18 vjeç ose më shumë. Provoni sërish nga faqja e regjistrimit.",
+  },
   email_not_found: {
     title: "Mungon email-i",
     message:
