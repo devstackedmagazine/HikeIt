@@ -21,9 +21,10 @@ const TIER_LABEL: Record<EntitlementTier, string> = {
   team: "Team",
 };
 
-/** Moss for anything above the free tier, plain Forest for free. */
+/** Full Forest above the free tier, faded Forest for free (Moss fails
+ * contrast on the light admin surface). */
 function sourceTone(source: EntitlementSource): string {
-  return source === "free" ? "text-forest/60" : "text-moss";
+  return source === "free" ? "text-forest/60" : "text-forest";
 }
 
 export function AdminClubsTable({ clubs }: { clubs: AdminClubRow[] }) {

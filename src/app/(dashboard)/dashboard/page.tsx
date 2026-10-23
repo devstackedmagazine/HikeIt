@@ -50,7 +50,7 @@ export default async function DashboardPage() {
 const TRIP_ACCENTS = ["border-l-forest", "border-l-sunset", "border-l-moss"];
 
 const CLUB_ICONS = [
-  "bg-forest text-moss",
+  "bg-forest text-sage",
   "bg-moss text-abyss",
   "bg-abyss text-moss",
 ];
@@ -332,10 +332,11 @@ async function ClubAdminHome({
   if (!club) {
     return (
       <div className="mx-auto max-w-5xl space-y-6">
-        <h1 className="font-heading text-forest text-2xl font-extrabold uppercase">
+        <h1 className="font-heading text-summit text-2xl font-extrabold uppercase">
           Mirë se vjen, {getFirstName(name)}! 👋
         </h1>
         <EmptyState
+          tone="dark"
           icon={Building2}
           title="Ende pa klub"
           description="Krijo klubin tënd për të filluar organizimin e udhëtimeve."
@@ -386,7 +387,7 @@ async function ClubAdminHome({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminStat label="Anëtarë" value={stats.memberCount}>
           {growthPct > 0 ? (
-            <span className="text-moss text-[11px] font-semibold">
+            <span className="text-sage text-[11px] font-semibold">
               +{growthPct}%
             </span>
           ) : null}

@@ -67,6 +67,7 @@ export default async function BillingPage() {
           <span className="text-summit/60">Faturimi</span>
         </p>
         <EmptyState
+          tone="dark"
           icon={Building2}
           title="Ende pa klub"
           description="Krijo klubin tënd për të menaxhuar abonimin."
@@ -110,7 +111,7 @@ export default async function BillingPage() {
                 "inline-block border px-2.5 py-[3px] text-[9px] font-bold tracking-[0.1em] uppercase",
                 entitlement.source === "free"
                   ? "border-summit/25 text-summit/50"
-                  : "border-moss/30 bg-moss/15 text-moss",
+                  : "border-moss/30 bg-moss/15 text-sage",
               )}
             >
               {entitlementSourceLabels[entitlement.source]}
@@ -183,7 +184,7 @@ export default async function BillingPage() {
               çmimet te{" "}
               <Link
                 href="/pricing"
-                className="text-moss hover:text-moss/80 underline underline-offset-2"
+                className="text-sage hover:text-sage/80 underline underline-offset-2"
               >
                 faqja e çmimeve
               </Link>
