@@ -165,9 +165,13 @@ CRON_SECRET=[random secret for cron endpoint auth]
 ```
 
 ### Cron Jobs
-Vercel free tier only supports daily crons. Using cron-job.org (free) for:
-- Weather check: `https://hikeit.app/api/cron/weather-check` — every 3 hours
-- Trip reminders: `https://hikeit.app/api/cron/trip-reminders` — daily 8AM
+Vercel free tier only supports daily crons. `vercel.json` schedules weather-check
+(06:00), trip-reminders (08:00) and trial-check (09:00) daily. cron-job.org (free)
+calls `https://hikeit.app/api/cron/complete-trips`, which is not in `vercel.json`;
+its own failure alerting is the monitor (the route returns non-200 on error).
+All cron routes require `Authorization: Bearer $CRON_SECRET`.
+Every successful complete-trips run also sends an info-level
+`cron.complete_trips` message to Sentry as a heartbeat.
 
 ### Google OAuth
 - Google Cloud project: "HikeIt"
@@ -447,6 +451,32 @@ Google Analytics:   Not yet set up
 
 ---
 
+## SHIPPED SINCE LATE SEPTEMBER 2026
+
+Merged to `dev` and `main` (production):
+- **Paddle scoped to MVP (2026-09-20):** checkout disabled; trials and entitlements stay live; terms §6 and privacy payment sections rewritten for Paddle / no trip payments.
+- **Personal hikes, trail proposals, mobile nav, trips table + mobile header, photo pipeline and GPX/avatar storage fixes (2026-09-27 → 10-03).**
+- **Avatar fixes (2026-10-04/05):** uploaded photo shown everywhere a user appears (shared `UserAvatar`); Cloudinary detection now parses the hostname instead of `url.includes()` (CodeQL finding).
+- **Cron fix (2026-10-05):** complete-trips logs and flushes errors, reports the Postgres SQLSTATE, and runs the trip update and audit-log insert in one transaction. Root cause was raw `Date` values interpolated into `sql` template fragments; trip cutover dates now go through Drizzle column operators. cron-job.org set up to call the route.
+- **Next.js 16.3.3 → 16.3.6 (2026-10-05/06)** for the image-optimizer and `next/og` RCE advisories.
+- **better-auth 1.6.22 (2026-10-07)** for GHSA-qq9h-g4jm-xgf3 (magic-link / email-OTP plugins, which we don't enable).
+
+Pushed, **not yet merged to `dev`**:
+- `fix/legal-pages`: strip photo EXIF/GPS metadata, sanitise uploaded GPX, real immediate account deletion (with safe shared-image cleanup), 18+ at signup, admin guards, Sentry replay off, `regions: ["fra1"]` in `vercel.json`, and privacy policy + terms rewritten to match the code.
+- `fix/registration-capacity`: admin confirmation respects `maxParticipants` under a row lock; a full trip reopens when a confirmed spot frees up; privacy policy data-deletion section.
+
+## OPEN ITEMS (as of 2026-10-24)
+
+1. **Upgrade Next.js to ≥ 16.4.1.** `pnpm audit` on `dev` (16.3.6) reports critical GHSA-2464-fhr4-w9xw (Image Optimization RCE) and high GHSA-p3m5-59mp-jv5r (Server Actions DoS), among others. Dependabot PR #58 only goes to 16.3.8, which is not enough, and its preview build failed pnpm's `minimumReleaseAge` check.
+2. **Upgrade `@sentry/nextjs` to ≥ 10.75.2** (critical GHSA-mchm-gjx6-7h55). We don't configure a `tunnelRoute`, so we're likely not exposed.
+3. **Merge `fix/legal-pages` and `fix/registration-capacity` into `dev`, then `main`.** Production still runs in `iad1` until the `fra1` change ships.
+4. **Server-side validation for `updateClub`.** `website`/`facebook` are stored and rendered as links with no URL or length check.
+5. **Rate limits are missing** on `emailTripRegistrants`, `inviteMember`, `createClub`, `createTrip`, `submitTrailReview` and `uploadTripGpx`.
+6. **Orphaned server actions:** `deleteTrailPhoto`, `reorderTripPhotos` (nothing calls them).
+7. **Leftover config:** `NEXT_PUBLIC_POSTHOG_*` still in `src/config/env.ts` (PostHog isn't used).
+8. **Dashboard page widths are inconsistent** (`max-w-2xl` to `max-w-6xl`, some unbounded). Pick one or two standard widths.
+9. **Paddle webhook signature on sandbox** (see Medium priority below). Not urgent while checkout is off.
+
 ## PENDING / TODO
 
 ### High priority
@@ -458,10 +488,10 @@ Google Analytics:   Not yet set up
 
 ### Medium priority
 - [ ] **Paddle webhook signature verification fails on sandbox ("Invalid signature").** Route, raw-body handling, header casing, and proxy matcher all checked out clean — the checkout path was descoped to an MVP (see below) before this got resolved. What we established: `@paddle/paddle-node-sdk`'s `webhooks-validator.js` enforces a hard 5-second window between the `ts` in `Paddle-Signature` and verification time, and returns a signature failure indistinguishable from a wrong secret if that window is exceeded — confirmed against the installed SDK with a fixed secret/body, varying only the timestamp. Preview deployments get no warming traffic, so a cold lambda boot (Next init, Drizzle, Sentry, better-auth) routinely blows past 5s on a fresh delivery. Temporary diagnostic logging (`[paddle-webhook-debug]`, logging `hmacMatches` independently of the SDK, plus timestamp skew) was written and deployed to Preview but never actually exercised against a cold lambda before this got reprioritized — pick this up by redeploying that diagnostic (see git history on `feat/paddle-migration` for the exact block) and sending a sandbox event to an idle Preview instance. If `hmacMatches: true` with `exceedsSdkWindow: true`, the fix is verifying before the heavy import chain, not the secret. Not urgent while checkout is disabled — the route needs to work again before any club can subscribe.
-- [ ] Set up cron-job.org for weather-check (every 3h) and trip-reminders (daily 8AM)
+- [x] cron-job.org set up for complete-trips (2026-10)
 - [ ] Paddle products + prices created in BOTH sandbox and live accounts (Pro €19/mo · €190/yr, Team €49/mo · €490/yr)
 - [ ] Paddle price IDs set in Vercel (see .env.example for all ten PADDLE_* vars)
-- [ ] Rewrite /terms §6 and /privacy — both still describe Stripe Connect and a 2.5% commission
+- [x] Rewrite /terms §6 and /privacy for Paddle (2026-09-20); full rewrite to match the code is on `fix/legal-pages`
 - [ ] Late-cancellation notification to club admins — hook point is `cancelMyRegistration` in src/server/actions/trip-registrations.ts, right after the `trip.registration.canceled` audit-log write. Deferred from the Paddle migration to avoid mid-flight scope creep.
 - [ ] Blog content: 5 Albanian trail guide posts for SEO
 - [ ] Outreach to 5 Kosovo hiking clubs (message template ready in Albanian)
