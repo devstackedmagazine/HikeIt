@@ -269,7 +269,7 @@ export function ImageUploader({
               <button
                 type="button"
                 onClick={() => remove(publicId)}
-                className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-background/90 text-destructive shadow"
+                className="absolute top-1 right-1 flex size-6 items-center justify-center border border-forest/20 bg-background/90 text-destructive"
                 aria-label="Hiq"
               >
                 <X className="size-3.5" />
