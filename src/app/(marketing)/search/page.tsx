@@ -23,17 +23,17 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <h1 className="text-2xl font-bold tracking-tight">
+      <h1 className="font-heading text-2xl font-black uppercase">
         Rezultatet e kërkimit
       </h1>
       {q ? (
-        <p className="mt-1 text-muted-foreground">
+        <p className="text-muted-foreground mt-1">
           {results.total} rezultate për “{q}”
         </p>
       ) : null}
 
       {q.trim().length < 2 ? (
-        <p className="mt-8 text-muted-foreground">
+        <p className="text-muted-foreground mt-8">
           Shkruani të paktën 2 karaktere për të kërkuar.
         </p>
       ) : results.total === 0 ? (
@@ -53,7 +53,7 @@ export default async function SearchPage({
             return (
               <section key={key}>
                 <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
-                  <Icon className="size-5 text-primary" />
+                  <Icon className="text-primary size-5" />
                   {heading}
                 </h2>
                 <div className="space-y-2">
@@ -61,16 +61,16 @@ export default async function SearchPage({
                     <Link
                       key={`${item.type}-${item.id}`}
                       href={`${base}/${item.slug}`}
-                      className="flex items-center justify-between rounded-xl border p-4 transition-colors hover:bg-muted"
+                      className="hover:bg-muted flex items-center justify-between rounded-xl border p-4 transition-colors"
                     >
                       <div>
                         <p className="font-medium">{item.title}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {item.subtitle}
                         </p>
                       </div>
                       {item.metadata.difficulty ? (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {item.metadata.difficulty}
                         </span>
                       ) : null}

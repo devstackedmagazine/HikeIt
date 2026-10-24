@@ -142,7 +142,7 @@ export default async function ClubProfilePage({
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="mt-14 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-summit text-3xl font-bold tracking-tight">
+            <h1 className="font-heading text-summit text-3xl font-black uppercase">
               {club.name}
             </h1>
             <p className="text-muted-foreground mt-1 flex items-center gap-1">

@@ -58,7 +58,7 @@ export default async function BillingPage() {
 
   if (!club) {
     return (
-      <div className="space-y-4">
+      <div className="mx-auto max-w-5xl space-y-4">
         <p className="text-summit/35 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.08em] uppercase">
           <Link href="/dashboard" className="hover:text-summit/60">
             Dashboard
@@ -86,7 +86,7 @@ export default async function BillingPage() {
   const statusLabel = STATUS_LABEL[statusKey] ?? statusKey;
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4">
       {/* Breadcrumb */}
       <p className="text-summit/35 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.08em] uppercase">
         <Link href="/dashboard" className="hover:text-summit/60">

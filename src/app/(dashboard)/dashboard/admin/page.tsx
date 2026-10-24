@@ -51,7 +51,7 @@ export default async function AdminPage({
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <p className="text-forest mb-2 text-xs font-bold tracking-[0.15em] uppercase">
           Kontroll i platformës

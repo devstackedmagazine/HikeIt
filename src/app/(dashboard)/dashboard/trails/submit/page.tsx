@@ -15,7 +15,7 @@ export default async function SubmitTrailPage() {
   const regions = await getTrailRegions();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="mx-auto max-w-[640px] space-y-5">
       <div>
         <p className="text-sage mb-1.5 text-[10px] font-bold tracking-[0.15em] uppercase">
           Shtigjet

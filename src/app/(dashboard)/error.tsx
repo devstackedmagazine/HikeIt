@@ -20,8 +20,10 @@ export default function DashboardError({
 
   return (
     <div className="flex min-h-[60svh] flex-col items-center justify-center text-center">
-      <h1 className="text-2xl font-bold tracking-tight">Ndodhi një gabim</h1>
-      <p className="mt-2 max-w-md text-muted-foreground">
+      <h1 className="font-heading text-2xl font-black uppercase">
+        Ndodhi një gabim
+      </h1>
+      <p className="text-muted-foreground mt-2 max-w-md">
         Nuk arritëm ta ngarkojmë këtë faqe. Provo përsëri.
       </p>
       <Button className="mt-6" onClick={reset}>
