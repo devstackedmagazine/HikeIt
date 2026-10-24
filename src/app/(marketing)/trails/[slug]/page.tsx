@@ -449,7 +449,7 @@ export default async function TrailDetailPage({
                 className="border-moss/30 bg-moss/[0.12] text-moss hover:bg-moss/20 flex flex-1 items-center justify-center gap-1.5 border px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
               >
                 <Download className="size-3.5" />
-                Shkarko GPX
+                Shkarkoni GPX
               </a>
             ) : null}
             <TrailFavoriteButton
@@ -569,14 +569,14 @@ export default async function TrailDetailPage({
               href="/login?redirect=/trails"
               className="border-summit/40 text-summit/60 hover:text-summit border px-3.5 py-2 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
-              Shto Vlerësim
+              Shtoni Vlerësim
             </Link>
           ) : null}
         </div>
 
         {reviewData.count === 0 ? (
           <p className="text-summit/40 text-xs">
-            Bëhu i pari që vlerëson këtë shteg.
+            Bëhuni i pari që vlerëson këtë shteg.
           </p>
         ) : (
           <div>

@@ -286,7 +286,7 @@ export default async function PublicTripPage({
             href={`/trails/${trail.slug}`}
             className="border-summit/40 text-summit/60 hover:border-moss hover:text-moss border px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
-            Shiko Shtegun →
+            Shikoni Shtegun →
           </Link>
         </div>
       ) : null}
@@ -336,7 +336,7 @@ export default async function PublicTripPage({
                 href="/dashboard/my-trips"
                 className="text-moss font-semibold hover:underline"
               >
-                Shto fotot e tua te Udhëtimet e mia → Të kaluara
+                Shtoni fotot tuaja te Udhëtimet e mia → Të kaluara
               </Link>
             ) : (
               "Fotot mund të shtohen pasi udhëtimi të përfundojë."

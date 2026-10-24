@@ -26,8 +26,8 @@ export function ClubSearch() {
     <div className="border-forest/60 bg-summit focus-within:border-forest flex h-16 w-full max-w-[500px] items-center gap-2.5 border px-3.5">
       <input
         type="search"
-        aria-label="Kërko klubet"
-        placeholder="Kërko klubet sipas emrit ose qytetit..."
+        aria-label="Kërkoni klubet"
+        placeholder="Kërkoni klubet sipas emrit ose qytetit..."
         value={filters.search}
         onChange={(e) =>
           setFilters({ search: e.target.value, page: 1 }, { throttleMs: 300 })

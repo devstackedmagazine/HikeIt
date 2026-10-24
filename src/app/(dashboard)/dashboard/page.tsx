@@ -138,7 +138,7 @@ function DiscoverClubCard({
             : "bg-forest text-summit hover:bg-abyss"
         }`}
       >
-        Shiko Klubin →
+        Shikoni Klubin →
       </Link>
     </div>
   );
@@ -215,14 +215,14 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
               href="/dashboard/hikes"
               className="text-pine text-[10px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-70"
             >
-              Shiko të gjitha →
+              Shikoni të gjitha →
             </Link>
             <Link
               href="/dashboard/hikes?shto=1"
               className="border-moss bg-moss text-abyss hover:bg-pine hover:text-summit flex items-center gap-1.5 border-2 px-3 py-1.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
             >
               <Plus className="size-3.5" />
-              Shto një ecje
+              Shtoni një ecje
             </Link>
           </div>
         </div>
@@ -248,7 +248,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
               href="/dashboard/my-trips"
               className="text-pine text-[10px] font-semibold tracking-[0.06em] uppercase transition-opacity hover:opacity-70"
             >
-              Shiko të gjitha →
+              Shikoni të gjitha →
             </Link>
           </div>
 
@@ -285,7 +285,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
               icon={Mountain}
               title="Ende pa udhëtime"
               description="Gjeni udhëtimin tuaj të parë dhe nisni aventurën."
-              action={{ label: "Gjej udhëtime", href: "/trips" }}
+              action={{ label: "Gjeni udhëtime", href: "/trips" }}
             />
           )}
         </section>
@@ -427,7 +427,7 @@ async function ClubAdminHome({
               href={`/dashboard/club/${club.slug}/trips/create`}
               className="border-moss bg-moss text-abyss hover:bg-sage border-2 px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
             >
-              Krijo udhëtim →
+              Krijoni udhëtim →
             </Link>
           </div>
 
@@ -457,7 +457,7 @@ async function ClubAdminHome({
                   <StatusDot status={displayTripStatus(trip)} />
                   <Link
                     href={`/dashboard/club/${club.slug}/trips/${trip.slug}/edit`}
-                    aria-label="Ndrysho"
+                    aria-label="Ndryshoni"
                     className="text-summit/60 hover:text-moss flex justify-end"
                   >
                     <Pencil className="size-3.5" />
@@ -472,7 +472,7 @@ async function ClubAdminHome({
                 href={`/dashboard/club/${club.slug}/trips/create`}
                 className="text-moss font-semibold hover:underline"
               >
-                Krijo udhëtim
+                Krijoni udhëtim
               </Link>{" "}
               për të shtuar të parin, pastaj ndajeni linkun e tij me anëtarët.
             </p>

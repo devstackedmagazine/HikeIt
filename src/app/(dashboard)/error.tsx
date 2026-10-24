@@ -24,10 +24,10 @@ export default function DashboardError({
         Ndodhi një gabim
       </h1>
       <p className="text-muted-foreground mt-2 max-w-md">
-        Nuk arritëm ta ngarkojmë këtë faqe. Provo përsëri.
+        Nuk arritëm ta ngarkojmë këtë faqe. Provoni përsëri.
       </p>
       <Button className="mt-6" onClick={reset}>
-        Provo Përsëri
+        Provoni Përsëri
       </Button>
     </div>
   );

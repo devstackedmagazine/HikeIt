@@ -210,7 +210,7 @@ export default async function ClubProfilePage({
               href={`/trips?club=${club.slug}`}
               className="text-moss text-sm underline-offset-4 hover:underline"
             >
-              Shiko të gjitha
+              Shikoni të gjitha
             </Link>
           </div>
           {upcomingTrips.length > 0 ? (
@@ -223,7 +223,7 @@ export default async function ClubProfilePage({
             <EmptyState
               icon={Mountain}
               title="Ky klub nuk ka udhëtime aktive"
-              description="Kontrollo më vonë për aventura të reja."
+              description="Kontrolloni më vonë për aventura të reja."
             />
           )}
         </section>
@@ -258,9 +258,9 @@ export default async function ClubProfilePage({
 
           <Card className="flex flex-col justify-center">
             <CardContent className="space-y-3 py-6">
-              <p className="font-semibold">Bashkohu me {club.name}</p>
+              <p className="font-semibold">Bashkohuni me {club.name}</p>
               <p className="text-muted-foreground text-sm">
-                Bëhu pjesë e komunitetit dhe merr pjesë në udhëtime.
+                Bëhuni pjesë e komunitetit dhe merrni pjesë në udhëtime.
               </p>
               <JoinClubButton
                 organizationId={club.id}

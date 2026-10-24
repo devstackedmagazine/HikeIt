@@ -16,8 +16,8 @@ export function TrailSearch() {
     <div className="border-summit/40 bg-summit/[0.05] focus-within:border-moss flex h-[38px] w-full items-center gap-2.5 border px-3 sm:w-[260px]">
       <input
         type="search"
-        aria-label="Kërko shtegun"
-        placeholder="Kërko shtegun..."
+        aria-label="Kërkoni shtegun"
+        placeholder="Kërkoni shtegun..."
         value={filters.search}
         onChange={(e) =>
           setFilters({ search: e.target.value, page: 1 }, { throttleMs: 400 })

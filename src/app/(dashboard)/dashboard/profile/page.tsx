@@ -150,7 +150,7 @@ export default async function ProfilePage({
           href="#edit-profile"
           className="border-summit/40 text-summit/60 hover:border-summit/60 hover:text-summit/80 flex w-full items-center justify-center border px-4 py-2.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors sm:w-auto"
         >
-          Ndrysho profilin →
+          Ndryshoni profilin →
         </Link>
       </div>
 
@@ -238,7 +238,7 @@ export default async function ProfilePage({
             </div>
           ) : (
             <p className="border-summit/8 bg-summit/[0.03] text-summit/40 border px-4 py-6 text-center text-xs">
-              Nuk je anëtar i asnjë klubi ende.
+              Nuk jeni anëtar i asnjë klubi ende.
             </p>
           )}
         </div>
@@ -271,7 +271,7 @@ export default async function ProfilePage({
                     </span>
                     <Link
                       href={`/trips/${trip.slug}`}
-                      aria-label="Shiko udhëtimin"
+                      aria-label="Shikoni udhëtimin"
                       className="text-summit/25 hover:text-moss flex justify-end"
                     >
                       <ArrowUpRight className="size-3.5" />

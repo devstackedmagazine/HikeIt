@@ -50,7 +50,7 @@ export function ReviewsSection({
         {!isLoggedIn ? (
           <Button render={<Link href="/login?redirect=/trails" />}>
             <Star />
-            Shto vlerësim
+            Shtoni vlerësim
           </Button>
         ) : null}
       </div>
@@ -59,7 +59,7 @@ export function ReviewsSection({
 
       {count === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center">
-          Bëhu i pari që vlerëson këtë shteg.
+          Bëhuni i pari që vlerëson këtë shteg.
         </p>
       ) : (
         <ul className="space-y-4">

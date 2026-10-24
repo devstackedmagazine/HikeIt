@@ -31,7 +31,7 @@ export function TripUpdated({
         ))}
       </ul>
       <Button href={tripUrl} style={button}>
-        Shiko Detajet
+        Shikoni Detajet
       </Button>
     </EmailLayout>
   );

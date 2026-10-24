@@ -97,7 +97,7 @@ export function SearchCommand({ className }: { className?: string }) {
         )}
       >
         <Search className="size-4" />
-        <span>Kërko…</span>
+        <span>Kërkoni…</span>
         <kbd className="ml-2 hidden rounded border px-1.5 text-[10px] sm:inline">
           ⌘K
         </kbd>
@@ -106,14 +106,14 @@ export function SearchCommand({ className }: { className?: string }) {
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        title="Kërko"
-        description="Kërko shtigje, klube dhe udhëtime"
+        title="Kërkoni"
+        description="Kërkoni shtigje, klube dhe udhëtime"
       >
         <Command shouldFilter={false}>
           <CommandInput
             value={query}
             onValueChange={onValueChange}
-            placeholder="Kërko shtigje, klube, udhëtime..."
+            placeholder="Kërkoni shtigje, klube, udhëtime..."
           />
           <CommandList>
             {loading ? (
@@ -157,7 +157,7 @@ export function SearchCommand({ className }: { className?: string }) {
                   }}
                 >
                   <Search className="size-4" />
-                  Shiko të gjitha rezultatet për “{query}”
+                  Shikoni të gjitha rezultatet për “{query}”
                 </CommandItem>
               </CommandGroup>
             ) : null}

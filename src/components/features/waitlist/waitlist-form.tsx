@@ -59,7 +59,7 @@ export function WaitlistForm({ source = "landing" }: { source?: string }) {
               Duke dërguar…
             </>
           ) : (
-            "Merr Akses →"
+            "Merrni Akses →"
           )}
         </button>
       </form>

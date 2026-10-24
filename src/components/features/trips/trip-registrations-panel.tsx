@@ -216,11 +216,11 @@ function RegistrationActions({
             className="border-moss bg-moss/20 text-moss hover:bg-moss/30 border-2 font-bold uppercase"
             onClick={confirm}
           >
-            Konfirmo
+            Konfirmoni
           </Button>
           <ConfirmRemoveDialog
-            triggerLabel="Hiq"
-            title="Hiq nga udhëtimi"
+            triggerLabel="Hiqni"
+            title="Hiqni nga udhëtimi"
             description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
             onConfirm={remove}
           />
@@ -236,8 +236,8 @@ function RegistrationActions({
   return (
     <div className="space-y-1">
       <ConfirmRemoveDialog
-        triggerLabel="Hiq"
-        title="Hiq nga udhëtimi"
+        triggerLabel="Hiqni"
+        title="Hiqni nga udhëtimi"
         description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi dhe do të njoftohet me email."
         onConfirm={remove}
       />
@@ -311,7 +311,7 @@ function ConfirmRemoveDialog({
                 />
               }
             >
-              Anulo
+              Anuloni
             </AlertDialog.Close>
             <Button
               onClick={confirm}
@@ -319,7 +319,7 @@ function ConfirmRemoveDialog({
               className="border-danger bg-danger text-summit border-2 font-bold tracking-[0.04em] uppercase hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              Hiq
+              Hiqni
             </Button>
           </div>
         </AlertDialog.Popup>
@@ -352,7 +352,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
         render={
           <Button variant="outline" size="sm">
             <Mail />
-            Dërgo Email të Gjithëve
+            Dërgoni Email të Gjithëve
           </Button>
         }
       />
@@ -390,7 +390,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             className="w-full"
           >
             {loading ? <Loader2 className="animate-spin" /> : null}
-            Dërgo
+            Dërgoni
           </Button>
         </div>
       </DialogContent>
