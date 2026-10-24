@@ -84,7 +84,7 @@ export default async function ClubTripsPage({
   const createHref = `/dashboard/club/${club.slug}/trips/create`;
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       {/* Header */}
       <p className="text-forest/40 mb-2 text-[10px] font-medium tracking-[0.08em] uppercase">
         <Link href="/dashboard" className="hover:text-forest">

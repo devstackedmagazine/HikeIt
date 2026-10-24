@@ -28,9 +28,9 @@ export default async function SavedTrailsPage() {
   const trails = await getUserFavoriteTrails(user.id);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-xl font-black tracking-[-0.01em] text-forest uppercase">
+        <h1 className="font-heading text-forest text-xl font-black tracking-[-0.01em] uppercase">
           Shtigjet e Ruajtura
         </h1>
         {/* This page requires a session, so the viewer is always logged in. */}
@@ -54,7 +54,7 @@ export default async function SavedTrailsPage() {
             return (
               <div
                 key={trail.id}
-                className="group relative overflow-hidden border border-forest/12 bg-summit"
+                className="group border-forest/12 bg-summit relative overflow-hidden border"
               >
                 <Link href={`/trails/${trail.slug}`}>
                   <div className="relative h-[140px] overflow-hidden">
@@ -75,10 +75,10 @@ export default async function SavedTrailsPage() {
                     </span>
                   </div>
                   <div className="p-3">
-                    <h3 className="font-heading text-[13px] font-extrabold text-forest uppercase">
+                    <h3 className="font-heading text-forest text-[13px] font-extrabold uppercase">
                       {trail.name}
                     </h3>
-                    <p className="mt-1 text-[10px] font-medium text-forest/45">
+                    <p className="text-forest/45 mt-1 text-[10px] font-medium">
                       {dist ? `${dist} KM` : "—"}
                       {trail.elevationGainM != null
                         ? ` · ${trail.elevationGainM}M NGJITJE`

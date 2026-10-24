@@ -20,7 +20,7 @@ export default function AboutPage() {
           {/* <Mountain className="size-7" /> */}
           <Image src={logo} alt="HikeIt logo" />
         </div>
-        <h1 className="text-sage text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="font-heading text-sage text-4xl font-black uppercase sm:text-5xl">
           HikeIt u krijua për të bashkuar komunitetin e alpinizmit në Kosovë
         </h1>
       </div>

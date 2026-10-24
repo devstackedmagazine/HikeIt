@@ -41,10 +41,12 @@ export default async function AdminTripDetailPage({
   const active = registrations.filter((r) => r.status !== "canceled");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{trip.title}</h1>
+          <h1 className="font-heading text-2xl font-black uppercase">
+            {trip.title}
+          </h1>
           <p className="text-muted-foreground mt-1 flex items-center gap-2">
             <Badge variant="secondary">
               {tripStatusLabels[displayTripStatus(trip)]}

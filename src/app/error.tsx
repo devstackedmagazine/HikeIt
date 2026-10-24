@@ -18,13 +18,15 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center bg-muted/30 px-4 text-center">
-      <h1 className="text-3xl font-bold tracking-tight">Ndodhi një gabim</h1>
-      <p className="mt-2 max-w-md text-muted-foreground">
+    <main className="bg-muted/30 flex min-h-svh flex-col items-center justify-center px-4 text-center">
+      <h1 className="font-heading text-3xl font-black uppercase">
+        Ndodhi një gabim
+      </h1>
+      <p className="text-muted-foreground mt-2 max-w-md">
         Diçka shkoi keq. Provo përsëri ose kthehu në faqen kryesore.
       </p>
       {process.env.NODE_ENV === "development" ? (
-        <pre className="mt-4 max-w-lg overflow-auto rounded-lg bg-muted p-4 text-left text-xs text-destructive">
+        <pre className="bg-muted text-destructive mt-4 max-w-lg overflow-auto rounded-lg p-4 text-left text-xs">
           {error.message}
         </pre>
       ) : null}
