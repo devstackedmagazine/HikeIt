@@ -23,11 +23,6 @@ const CLUB_POINTS = [
   "Njofto anëtarët",
 ];
 
-const STATS = [
-  { value: "4.8k+", label: "Hiker Aktiv" },
-  { value: "120+", label: "Klube Alpike" },
-  { value: "900+", label: "Shtigje Të Shkelura" },
-];
 
 export default async function OnboardingPage() {
   const user = await getRequiredUser();
@@ -101,23 +96,6 @@ export default async function OnboardingPage() {
             </button>
           </form>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mt-12 flex items-center justify-center gap-8 sm:gap-12">
-        {STATS.map((stat, i) => (
-          <div key={stat.label} className="flex items-center gap-8 sm:gap-12">
-            {i > 0 ? <div className="h-10 w-px bg-summit/12" /> : null}
-            <div className="text-center">
-              <p className="font-heading text-[28px] font-black tracking-[-0.02em] text-summit">
-                {stat.value}
-              </p>
-              <p className="mt-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
-                {stat.label}
-              </p>
-            </div>
-          </div>
-        ))}
       </div>
     </main>
   );
