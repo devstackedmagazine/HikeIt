@@ -415,7 +415,7 @@ export default function RegisterPage() {
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}
-                  Regjistrohu →
+                  Regjistrohuni →
                 </button>
               </form>
 
