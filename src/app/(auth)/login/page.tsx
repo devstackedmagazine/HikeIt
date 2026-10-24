@@ -18,9 +18,9 @@ import { safeRedirect } from "@/lib/utils/safe-redirect";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
-  "Gjej shtigje të verifikuara",
-  "Bashkohu me udhëtime",
-  "Merr njoftime moti",
+  "Gjeni shtigje të verifikuara",
+  "Bashkohuni me udhëtime",
+  "Merrni njoftime moti",
 ];
 
 const LABEL =
@@ -63,8 +63,8 @@ function LoginForm() {
         // never arrived.
         setFormError({
           message:
-            "Llogaria jote nuk është verifikuar ende. Sapo të dërguam një " +
-            "lidhje të re verifikimi — kontrollo inboxin dhe dosjen e spam-it.",
+            "Llogaria juaj nuk është verifikuar ende. Sapo ju dërguam një " +
+            "link të ri verifikimi — kontrolloni email-in dhe dosjen e spam-it.",
           tone: "warning",
         });
       } else {
@@ -165,7 +165,7 @@ function LoginForm() {
 
         <div className="w-full max-w-[440px]">
           <h1 className="font-heading text-forest text-[clamp(32px,5vw,56px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
-            Kyçu
+            Kyçuni
           </h1>
           <p className="text-forest/70 mt-1.5 mb-7 text-[14px] leading-[1.5]">
             Mirë se vini përsëri në HikeIt
@@ -211,7 +211,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  aria-label="Shfaq fjalëkalimin"
+                  aria-label="Shfaqni fjalëkalimin"
                   className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                 >
                   {showPassword ? (
@@ -249,7 +249,7 @@ function LoginForm() {
                   Duke u kyçur...
                 </>
               ) : (
-                "Kyçu →"
+                "Kyçuni →"
               )}
             </button>
           </form>
@@ -286,7 +286,7 @@ function LoginForm() {
               href="/register"
               className="text-forest hover:text-pine font-bold uppercase transition-colors"
             >
-              Regjistrohu
+              Regjistrohuni
             </Link>
           </p>
         </div>

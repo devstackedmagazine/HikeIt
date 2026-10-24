@@ -25,10 +25,10 @@ export default function MarketingError({
         Ndodhi një gabim
       </h1>
       <p className="text-muted-foreground mt-2">
-        Diçka shkoi keq. Provo përsëri ose kthehu në faqen kryesore.
+        Diçka shkoi keq. Provoni përsëri ose kthehuni në faqen kryesore.
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={reset}>Provo Përsëri</Button>
+        <Button onClick={reset}>Provoni Përsëri</Button>
         <Button variant="outline" render={<Link href="/" />}>
           Faqja Kryesore
         </Button>

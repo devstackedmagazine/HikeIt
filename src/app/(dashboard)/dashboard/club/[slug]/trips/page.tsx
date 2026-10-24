@@ -118,14 +118,14 @@ export default async function ClubTripsPage({
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-stretch">
           <ProposeTrailLink
             isLoggedIn
-            label="Propozo shteg"
+            label="Propozoni shteg"
             className="px-5 py-3 text-xs"
           />
           <Link
             href={createHref}
             className="bg-moss text-abyss hover:bg-pine hover:text-summit px-5 py-3 text-center text-xs font-extrabold tracking-[0.08em] whitespace-nowrap uppercase transition-colors"
           >
-            Krijo udhëtim të ri →
+            Krijoni udhëtim të ri →
           </Link>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default async function ClubTripsPage({
                 <span className="relative z-10 flex justify-end gap-0.5">
                   <Link
                     href={viewHref}
-                    aria-label="Shiko"
+                    aria-label="Shikoni"
                     tabIndex={-1}
                     className="text-forest/40 hover:text-forest flex size-8 items-center justify-center"
                   >
@@ -205,7 +205,7 @@ export default async function ClubTripsPage({
                   </Link>
                   <Link
                     href={`${viewHref}/edit`}
-                    aria-label="Ndrysho"
+                    aria-label="Ndryshoni"
                     className="text-forest/40 hover:text-forest focus-visible:ring-forest flex size-8 items-center justify-center outline-none focus-visible:ring-2"
                   >
                     <Pencil className="size-3.5" />

@@ -22,6 +22,26 @@ const LEFT_FEATURES = [
 ];
 
 /** 0–4 password strength score for the 4-segment meter. */
+/**
+ * Albanian message for a failed email sign-up. Better Auth's own messages are
+ * English, so they're never shown directly.
+ */
+function registerErrorMessage(code: string | undefined): string {
+  switch (code) {
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "Ekziston tashmë një llogari me këtë email. Provoni të hyni, ose përdorni “Keni harruar fjalëkalimin?”.";
+    case "INVALID_EMAIL":
+      return "Adresa email nuk është e vlefshme.";
+    case "PASSWORD_TOO_SHORT":
+      return "Fjalëkalimi duhet të ketë të paktën 10 karaktere.";
+    case "PASSWORD_TOO_LONG":
+      return "Fjalëkalimi është shumë i gjatë.";
+    default:
+      return "Nuk mundëm ta krijojmë llogarinë. Ju lutemi provoni sërish.";
+  }
+}
+
 function scorePassword(pw: string): number {
   if (!pw) return 0;
   let s = 0;
@@ -90,7 +110,7 @@ export default function RegisterPage() {
     };
     const { error } = await signUp.email(body);
     if (error) {
-      setFormError(error.message ?? "Nuk mundëm të krijojmë llogarinë.");
+      setFormError(registerErrorMessage(error.code));
       return;
     }
     setSubmittedEmail(values.email);
@@ -161,11 +181,11 @@ export default function RegisterPage() {
 
         <div className="relative z-10">
           <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[1.2] font-extrabold tracking-[-0.04em] uppercase">
-            Fillo
+            Filloni
             <br />
             Udhëtimin
             <br />
-            Tënd
+            Tuaj
           </h2>
           <ul className="mt-8 space-y-3">
             {LEFT_FEATURES.map((f) => (
@@ -206,24 +226,24 @@ export default function RegisterPage() {
                 <span className="text-forest font-semibold">
                   {submittedEmail}
                 </span>
-                . Kliko lidhjen për të aktivizuar llogarinë.
+                . Klikoni linkun në email për të aktivizuar llogarinë.
               </p>
               <p className="text-forest/70 mt-3 text-xs leading-[1.6]">
-                Nuk erdhi? Kontrollo dosjen e spam-it, ose{" "}
+                Nuk ju erdhi? Kontrolloni dosjen e spam-it, ose{" "}
                 <Link href="/login" className="text-forest underline">
-                  provo të kyçesh
+                  provoni të hyni
                 </Link>{" "}
-                — do të të dërgojmë një lidhje të re.
+                — do t&apos;ju dërgojmë një link të ri.
               </p>
             </div>
           ) : (
             <>
               <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
-                Regjistrohu
+                Regjistrohuni
               </h1>
               <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
-                Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
-                Ballkan.
+                Krijoni llogarinë tuaj për të gjetur shtigje dhe udhëtime me
+                klubet e alpinizmit në Kosovë.
               </p>
 
               <form
@@ -234,7 +254,7 @@ export default function RegisterPage() {
                   <label className={LABEL}>Emri dhe mbiemri</label>
                   <input
                     className={INPUT}
-                    placeholder="Shkruaj emrin tënd..."
+                    placeholder="Emri dhe mbiemri juaj"
                     autoComplete="name"
                     {...register("name")}
                   />
@@ -273,7 +293,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      aria-label="Shfaq fjalëkalimin"
+                      aria-label="Shfaqni fjalëkalimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showPassword ? (
@@ -306,7 +326,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className={LABEL}>Konfirmo fjalëkalimin</label>
+                  <label className={LABEL}>Konfirmoni fjalëkalimin</label>
                   <div className="relative">
                     <input
                       className={cn(INPUT, "pr-12")}
@@ -317,7 +337,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
-                      aria-label="Shfaq konfirmimin"
+                      aria-label="Shfaqni konfirmimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showConfirm ? (
@@ -395,7 +415,7 @@ export default function RegisterPage() {
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}
-                  Regjistrohu →
+                  Regjistrohuni →
                 </button>
               </form>
 
@@ -403,7 +423,7 @@ export default function RegisterPage() {
                 <p className="text-forest/70 text-center text-[13px]">
                   Keni llogari?{" "}
                   <Link href="/login" className="text-forest font-bold">
-                    KYÇU
+                    KYÇUNI
                   </Link>
                 </p>
                 {inAppBrowser || socialFailed ? (

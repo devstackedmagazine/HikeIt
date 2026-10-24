@@ -26,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { registrationStatusLabels } from "@/lib/i18n/labels";
 import {
   type ActionResult,
   emailTripRegistrants,
@@ -33,6 +34,12 @@ import {
   updateRegistrationStatus,
 } from "@/server/actions/trip-registrations";
 import type { RegistrationWithUser } from "@/server/queries/trips";
+
+/** One CSV cell: quoted, and defused if it would start a spreadsheet formula. */
+function csvCell(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
 
 export function TripRegistrationsPanel({
   tripId,
@@ -53,22 +60,33 @@ export function TripRegistrationsPanel({
   }
 
   function exportCsv() {
-    const header = "Name,Email,Status,Registered\n";
-    const rows = registrations
-      .map((r) =>
-        [
-          r.userName ?? "",
-          r.userEmail,
-          r.status,
-          r.registeredAt.toISOString(),
-        ].join(","),
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
+    const registeredAt = new Intl.DateTimeFormat("sq-AL", {
+      dateStyle: "short",
+      timeStyle: "short",
+      hourCycle: "h23",
+      timeZone: "Europe/Belgrade",
+    });
+    const header = ["Emri", "Email", "Statusi", "Regjistruar më"]
+      .map(csvCell)
+      .join(",");
+    const rows = registrations.map((r) =>
+      [
+        r.userName ?? "",
+        r.userEmail,
+        registrationStatusLabels[r.status] ?? r.status,
+        registeredAt.format(r.registeredAt),
+      ]
+        .map(csvCell)
+        .join(","),
+    );
+    // The BOM makes Excel read the file as UTF-8, so ë and ç survive.
+    const blob = new Blob(["\uFEFF" + [header, ...rows].join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "registrations.csv";
+    a.download = "regjistrimet.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -198,11 +216,11 @@ function RegistrationActions({
             className="border-moss bg-moss/20 text-moss hover:bg-moss/30 border-2 font-bold uppercase"
             onClick={confirm}
           >
-            Konfirmo
+            Konfirmoni
           </Button>
           <ConfirmRemoveDialog
-            triggerLabel="Hiq"
-            title="Hiq nga udhëtimi"
+            triggerLabel="Hiqni"
+            title="Hiqni nga udhëtimi"
             description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
             onConfirm={remove}
           />
@@ -218,8 +236,8 @@ function RegistrationActions({
   return (
     <div className="space-y-1">
       <ConfirmRemoveDialog
-        triggerLabel="Hiq"
-        title="Hiq nga udhëtimi"
+        triggerLabel="Hiqni"
+        title="Hiqni nga udhëtimi"
         description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi dhe do të njoftohet me email."
         onConfirm={remove}
       />
@@ -293,7 +311,7 @@ function ConfirmRemoveDialog({
                 />
               }
             >
-              Anulo
+              Anuloni
             </AlertDialog.Close>
             <Button
               onClick={confirm}
@@ -301,7 +319,7 @@ function ConfirmRemoveDialog({
               className="border-danger bg-danger text-summit border-2 font-bold tracking-[0.04em] uppercase hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              Hiq
+              Hiqni
             </Button>
           </div>
         </AlertDialog.Popup>
@@ -334,7 +352,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
         render={
           <Button variant="outline" size="sm">
             <Mail />
-            Dërgo Email të Gjithëve
+            Dërgoni Email të Gjithëve
           </Button>
         }
       />
@@ -372,7 +390,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             className="w-full"
           >
             {loading ? <Loader2 className="animate-spin" /> : null}
-            Dërgo
+            Dërgoni
           </Button>
         </div>
       </DialogContent>

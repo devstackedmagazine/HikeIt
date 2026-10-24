@@ -15,12 +15,16 @@ export const CLUB_CITIES = [
 const currentYear = new Date().getFullYear();
 
 export const clubBasicInfoSchema = z.object({
-  name: z.string().trim().min(3, "Të paktën 3 karaktere").max(100),
+  name: z
+    .string()
+    .trim()
+    .min(3, "Të paktën 3 karaktere")
+    .max(100, "Maksimumi 100 karaktere"),
   slug: z
     .string()
     .trim()
     .min(3, "Të paktën 3 karaktere")
-    .max(100)
+    .max(100, "Maksimumi 100 karaktere")
     .regex(/^[a-z0-9-]+$/, "Vetëm shkronja të vogla, numra dhe viza"),
   description: z
     .string()
@@ -28,7 +32,12 @@ export const clubBasicInfoSchema = z.object({
     .min(50, "Të paktën 50 karaktere")
     .max(1000, "Maksimumi 1000 karaktere"),
   city: z.string().min(1, "Zgjidhni një qytet"),
-  foundedYear: z.number().int().min(1900).max(currentYear).optional(),
+  foundedYear: z
+    .number({ error: "Shkruani vitin, p.sh. 1998." })
+    .int("Shkruani vitin, p.sh. 1998.")
+    .min(1900, "Viti duhet të jetë pas 1900.")
+    .max(currentYear, "Viti nuk mund të jetë në të ardhmen.")
+    .optional(),
 });
 
 function parseUrl(value: string): URL | null {
@@ -39,24 +48,45 @@ function parseUrl(value: string): URL | null {
   }
 }
 
+/**
+ * Most people type "klubi.com" or "www.facebook.com/klubi", not the scheme.
+ * Add https:// when none was given and upgrade http://, so that isn't an
+ * error; any other scheme is left as typed and fails the https check below.
+ */
+function withHttps(value: string): string {
+  const v = value.trim();
+  if (!v) return v;
+  if (/^http:\/\//i.test(v)) return `https://${v.slice(7)}`;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return v;
+  return `https://${v}`;
+}
+
 /** Rendered as links on the public club page, so https only. */
 const httpsUrl = z
   .string()
   .trim()
   .max(200, "Maksimumi 200 karaktere")
+  .transform(withHttps)
   .refine(
     (v) => parseUrl(v)?.protocol === "https:",
-    "Duhet të fillojë me https://",
+    "Shkruani një adresë të vlefshme, p.sh. klubi.com",
   );
 
 const facebookUrl = httpsUrl.refine((v) => {
   const host = parseUrl(v)?.hostname ?? "";
   return host === "facebook.com" || host.endsWith(".facebook.com");
-}, "Duhet të jetë një lidhje facebook.com");
+}, "Duhet të jetë një lidhje facebook.com, p.sh. facebook.com/klubi");
 
 export const clubContactSchema = z.object({
   website: httpsUrl.optional().or(z.literal("")),
-  instagram: z.string().trim().max(50).optional().or(z.literal("")),
+  instagram: z
+    .string()
+    .trim()
+    .max(50, "Maksimumi 50 karaktere")
+    // The label says "pa @", but people type it anyway.
+    .transform((v) => v.replace(/^@+/, ""))
+    .optional()
+    .or(z.literal("")),
   facebook: facebookUrl.optional().or(z.literal("")),
 });
 

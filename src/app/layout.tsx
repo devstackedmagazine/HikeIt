@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     template: "%s · HikeIt",
   },
   description:
-    "Zbulo shtigjet më të bukura të Kosovës dhe Ballkanit. Bashkohu me klube alpinizmi, rezervo udhëtime malore dhe eksploro natyrën e egër.",
+    "Zbuloni shtigjet më të bukura të Kosovës dhe Ballkanit. Bashkohuni me klube alpinizmi, rezervoni udhëtime malore dhe eksploroni natyrën e egër.",
   keywords: [
     "hiking Kosovo",
     "alpinizëm Kosovë",

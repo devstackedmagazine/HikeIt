@@ -115,7 +115,7 @@ export function ClubInviteCode({ club }: { club: Organization }) {
 
         <Button onClick={redeem} disabled={redeeming || !code.trim()}>
           {redeeming ? <Loader2 className="animate-spin" /> : null}
-          Përdor kodin
+          Përdorni kodin
         </Button>
       </CardContent>
     </Card>

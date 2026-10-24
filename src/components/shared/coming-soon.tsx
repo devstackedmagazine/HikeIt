@@ -25,7 +25,7 @@ export function ComingSoon({
       <p className="text-accent mt-1 text-sm font-medium">Së shpejti</p>
       <Button variant="outline" className="mt-8" render={<Link href="/" />}>
         <ArrowLeft />
-        Kthehu në ballinë
+        Kthehuni në ballinë
       </Button>
     </div>
   );

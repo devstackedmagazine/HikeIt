@@ -115,7 +115,7 @@ export function TripRegistrationCard({
       {/* HikeIt does not process trip money — say so plainly, so nobody
           expects to be charged here and nobody forgets to pay the club. */}
       {!free && !isPast ? (
-        <p className="text-summit/25 mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words uppercase">
+        <p className="text-summit/60 mt-2 text-[11px] leading-relaxed tracking-[0.02em] break-words uppercase">
           Pagesa bëhet direkt te klubi
         </p>
       ) : null}
@@ -130,7 +130,7 @@ export function TripRegistrationCard({
             href={`/login?redirect=/trips/${slug}`}
             className={cn(buttonClass, primaryClass)}
           >
-            {free ? "Regjistrohu falas →" : "Regjistrohu →"}
+            {free ? "Regjistrohuni falas →" : "Regjistrohuni →"}
           </Link>
         ) : isRegistered ? (
           <div className="space-y-2">
@@ -190,8 +190,8 @@ export function TripRegistrationCard({
               {isFull
                 ? "Lista e pritjes →"
                 : free
-                  ? "Regjistrohu falas →"
-                  : "Regjistrohu →"}
+                  ? "Regjistrohuni falas →"
+                  : "Regjistrohuni →"}
             </button>
           </div>
         )}
@@ -245,7 +245,7 @@ function CancelConfirmDialog({
         }
       >
         {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
-        Anulo regjistrimin
+        Anuloni regjistrimin
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="bg-abyss/70 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 z-50" />
@@ -275,7 +275,7 @@ function CancelConfirmDialog({
                 />
               }
             >
-              Kthehu
+              Kthehuni
             </AlertDialog.Close>
             <button
               type="button"
@@ -284,7 +284,7 @@ function CancelConfirmDialog({
               className="border-danger bg-danger font-heading text-summit flex items-center gap-2 border-2 px-4 py-2 text-[12px] font-bold tracking-[0.04em] uppercase transition-colors hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="size-3.5 animate-spin" /> : null}
-              Anulo regjistrimin
+              Anuloni regjistrimin
             </button>
           </div>
         </AlertDialog.Popup>

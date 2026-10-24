@@ -1,4 +1,4 @@
-import { CloudSun, Pencil } from "lucide-react";
+import { ExternalLink, ImagePlus, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -54,12 +54,55 @@ export default async function AdminTripDetailPage({
             {formatTripDateTime(trip.startDatetime)}
           </p>
         </div>
-        <TripAdminActions
-          clubSlug={slug}
-          tripId={trip.id}
-          status={trip.status}
-        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            render={
+              <Link href={`/dashboard/club/${slug}/trips/${trip.slug}/edit`} />
+            }
+          >
+            <Pencil />
+            Ndryshoni
+          </Button>
+          {trip.status !== "draft" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              render={<Link href={`/trips/${trip.slug}`} target="_blank" />}
+            >
+              <ExternalLink />
+              Faqja publike
+            </Button>
+          ) : null}
+          <TripAdminActions
+            clubSlug={slug}
+            tripId={trip.id}
+            status={trip.status}
+          />
+        </div>
       </div>
+
+      {trip.status === "draft" ? (
+        <p className="border-alert/40 bg-alert/10 border-2 px-3 py-2 text-sm">
+          Ky udhëtim është draft: nuk e sheh askush tjetër. Klikoni “Publikoni”
+          kur të jetë gati, që anëtarët të mund të regjistrohen.
+        </p>
+      ) : null}
+      {!trip.coverImageUrl ? (
+        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+          <ImagePlus className="size-4 shrink-0" />
+          <span>
+            Udhëtimi nuk ka ende foto kryesore.{" "}
+            <Link
+              href={`/dashboard/club/${slug}/trips/${trip.slug}/edit`}
+              className="font-semibold underline underline-offset-4"
+            >
+              Shtoni një foto
+            </Link>
+          </span>
+        </p>
+      ) : null}
 
       <Tabs defaultValue="overview">
         <TabsList>
@@ -74,7 +117,10 @@ export default async function AdminTripDetailPage({
             <Stat label="Regjistruar" value={active.length} />
             <Stat label="Konfirmuar" value={confirmed.length} />
             <Stat label="Në pritje" value={waitlisted.length} />
-            <Stat label="Të ardhura" value="€0" />
+            <Stat
+              label="Çmimi për person"
+              value={Number(trip.priceEur) > 0 ? `€${trip.priceEur}` : "Falas"}
+            />
           </div>
 
           {trip.meetingPoint ? (
@@ -85,13 +131,6 @@ export default async function AdminTripDetailPage({
               </CardContent>
             </Card>
           ) : null}
-
-          <Card>
-            <CardContent className="text-muted-foreground flex items-center gap-3 py-4 text-sm">
-              <CloudSun className="text-accent size-5" />
-              Statusi i motit — së shpejti
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="registrations" className="pt-6">
@@ -119,10 +158,10 @@ export default async function AdminTripDetailPage({
             }
           >
             <Pencil />
-            Ndrysho Udhëtimin
+            Ndryshoni Udhëtimin
           </Button>
           <p className="text-muted-foreground text-sm">
-            Për të anuluar udhëtimin, përdor butonin lart në faqe.
+            Për të anuluar udhëtimin, përdorni butonin “Anuloni udhëtimin” lart në faqe.
           </p>
         </TabsContent>
       </Tabs>

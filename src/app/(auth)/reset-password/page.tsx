@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -47,7 +46,7 @@ function ResetPasswordForm() {
   async function onSubmit(values: ResetPasswordInput) {
     setFormError(null);
     if (!token) {
-      setFormError("Missing reset token.");
+      setFormError("Linku është i paplotë. Kërkoni një link të ri.");
       return;
     }
     const { error } = await authClient.resetPassword({
@@ -55,7 +54,9 @@ function ResetPasswordForm() {
       token,
     });
     if (error) {
-      setFormError(error.message ?? "Could not reset your password.");
+      setFormError(
+        "Fjalëkalimi nuk u ndryshua. Linku mund të ketë skaduar — kërkoni një link të ri.",
+      );
       return;
     }
     router.push("/login?reset=success");
@@ -65,15 +66,14 @@ function ResetPasswordForm() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Link expired or invalid</CardTitle>
-          <CardDescription>Linku ka skaduar ose është i pavlefshëm</CardDescription>
+          <CardTitle>Linku ka skaduar ose është i pavlefshëm</CardTitle>
         </CardHeader>
         <CardFooter>
           <Link
             href="/forgot-password"
-            className="text-sm text-primary underline-offset-4 hover:underline"
+            className="text-primary text-sm underline-offset-4 hover:underline"
           >
-            Request a new link
+            Kërkoni një link të ri
           </Link>
         </CardFooter>
       </Card>
@@ -83,8 +83,7 @@ function ResetPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Set a new password</CardTitle>
-        <CardDescription>Vendosni një fjalëkalim të ri</CardDescription>
+        <CardTitle>Vendosni një fjalëkalim të ri</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -94,7 +93,7 @@ function ResetPasswordForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New password</FormLabel>
+                  <FormLabel>Fjalëkalimi i ri</FormLabel>
                   <FormControl>
                     <PasswordInput
                       className="h-9"
@@ -111,7 +110,7 @@ function ResetPasswordForm() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm password</FormLabel>
+                  <FormLabel>Konfirmoni fjalëkalimin</FormLabel>
                   <FormControl>
                     <PasswordInput
                       className="h-9"
@@ -125,7 +124,7 @@ function ResetPasswordForm() {
             />
 
             {formError ? (
-              <p className="text-sm text-destructive">{formError}</p>
+              <p className="text-destructive text-sm">{formError}</p>
             ) : null}
 
             <Button
@@ -137,10 +136,10 @@ function ResetPasswordForm() {
               {form.formState.isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" />
-                  Saving…
+                  Duke ruajtur…
                 </>
               ) : (
-                "Reset password"
+                "Ruani fjalëkalimin"
               )}
             </Button>
           </form>

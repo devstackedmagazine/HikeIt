@@ -11,9 +11,9 @@ import { clubsParsers } from "@/lib/search-params/clubs";
 import { getClubs } from "@/server/queries/clubs";
 
 export const metadata: Metadata = {
-  title: "Klubet e Alpinizmit në Kosovë — Gjej Komunitetin Tënd",
+  title: "Klubet e Alpinizmit në Kosovë — Gjeni Komunitetin Tuaj",
   description:
-    "Bashkohu me klube alpinizmi në Kosovë — Prishtinë, Pejë, Prizren, Gjakovë dhe më shumë. Gjej hikerë si ti dhe eksploro malet së bashku.",
+    "Bashkohuni me klube alpinizmi në Kosovë — Prishtinë, Pejë, Prizren, Gjakovë dhe më shumë. Gjeni hikerë si ju dhe eksploroni malet së bashku.",
   alternates: { canonical: "https://hikeit.app/clubs" },
 };
 
@@ -44,7 +44,7 @@ export default async function ClubsPage({
           Klubet e Alpinizmit
         </h1>
         <p className="mb-5 max-w-[440px] text-[13px] leading-[1.65] text-[#3D5A47] sm:mb-7">
-          Gjej komunitetin tënd të alpinizmit dhe bashkohu me aventurierët që
+          Gjeni komunitetin tuaj të alpinizmit dhe bashkohuni me aventurierët që
           ndajnë të njëjtin pasion për majat e larta.
         </p>
         <ClubSearch />
@@ -89,7 +89,7 @@ export default async function ClubsPage({
           href="/dashboard/club/create"
           className="border-moss text-moss hover:bg-moss/15 inline-block border px-7 py-3 text-xs font-bold tracking-[0.1em] uppercase transition-colors"
         >
-          Shto Klubin Tënd
+          Shtoni Klubin Tuaj
         </Link>
       </section>
     </>

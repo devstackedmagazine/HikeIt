@@ -39,7 +39,7 @@ export function ChangePasswordRow() {
         onClick={() => setOpen((v) => !v)}
         className="text-summit/60 hover:text-summit/90 flex w-full items-center justify-between text-[11px] font-semibold tracking-[0.06em] uppercase transition-colors"
       >
-        Ndrysho fjalëkalimin
+        Ndryshoni fjalëkalimin
         <Lock className="text-summit/30 size-3.5" />
       </button>
 
@@ -72,7 +72,7 @@ export function ChangePasswordRow() {
             {status === "loading" ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : null}
-            Ruaj
+            Ruani
           </button>
         </div>
       ) : null}

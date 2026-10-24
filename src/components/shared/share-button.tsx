@@ -64,7 +64,7 @@ export function ShareButton({ title, className }: ShareButtonProps) {
       <button
         type="button"
         onClick={handleShare}
-        aria-label="Ndaj"
+        aria-label="Ndani"
         className={cn(
           "flex items-center justify-center border transition-colors",
           copied

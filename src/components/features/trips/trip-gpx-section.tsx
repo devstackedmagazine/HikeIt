@@ -53,7 +53,7 @@ export function TripGpxSection({
             render={<a href={existingGpxUrl} download />}
           >
             <Download />
-            Shkarko GPX aktual
+            Shkarkoni GPX aktual
           </Button>
         ) : null}
 
@@ -69,7 +69,7 @@ export function TripGpxSection({
 
         <Button onClick={upload} disabled={!content || status === "loading"}>
           {status === "loading" ? <Loader2 className="animate-spin" /> : null}
-          Ngarko GPX
+          Ngarkoni GPX
         </Button>
       </CardContent>
     </Card>
