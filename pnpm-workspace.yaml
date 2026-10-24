@@ -3,3 +3,9 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# GHSA-mrhx-c7xc-m3w5 (zod memory exhaustion, fixed in 4.6.6). better-auth
+# allows ^4.3.6 but its lock entry stayed on 4.4.3; force only the affected
+# range onto the same zod the app uses.
+overrides:
+  'zod@<4.6.6': '^4.6.7'
