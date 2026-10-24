@@ -48,6 +48,18 @@ export const RATE_LIMITS = {
   // ceiling as the admin invite-code limits since it guards the same
   // underlying redemption path.
   "ratelimit.club.invite_code": { max: 10, windowMs: 60 * 60 * 1000 },
+  // Every /api/upload request, including rejected ones. The per-file
+  // `image.upload` limit (MAX_UPLOADS_PER_HOUR) only counts files that pass
+  // validation.
+  "ratelimit.upload.request": { max: 100, windowMs: 60 * 60 * 1000 },
+  // Both of these send email from our domain to addresses the caller picks.
+  "ratelimit.club.invite_member": { max: 30, windowMs: 60 * 60 * 1000 },
+  "ratelimit.trip.email_registrants": { max: 5, windowMs: 60 * 60 * 1000 },
+  "ratelimit.club.create": { max: 5, windowMs: 60 * 60 * 1000 },
+  "ratelimit.club.join": { max: 20, windowMs: 60 * 60 * 1000 },
+  "ratelimit.trip.create": { max: 20, windowMs: 60 * 60 * 1000 },
+  "ratelimit.trip.gpx.upload": { max: 10, windowMs: 60 * 60 * 1000 },
+  "ratelimit.trail.review": { max: 20, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export type RateLimitedAction = keyof typeof RATE_LIMITS;

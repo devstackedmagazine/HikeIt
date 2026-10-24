@@ -3,6 +3,7 @@
 import { and, count, eq, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { ReactElement } from "react";
+import { z } from "zod";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
@@ -21,11 +22,7 @@ import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
-import {
-  formatTripDateTime,
-  googleCalendarUrl,
-} from "@/lib/utils/datetime";
-
+import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
 
 /**
  * Views that change when a club edits a trip's roster: every club dashboard
@@ -578,6 +575,20 @@ export interface EmailResult extends ActionResult {
   sentCount?: number;
 }
 
+const registrantEmailSchema = z.object({
+  tripId: z.uuid("Udhëtim i pavlefshëm."),
+  subject: z
+    .string()
+    .trim()
+    .min(1, "Shkruani një subjekt.")
+    .max(150, "Subjekti: maksimumi 150 karaktere."),
+  message: z
+    .string()
+    .trim()
+    .min(1, "Shkruani një mesazh.")
+    .max(5000, "Mesazhi: maksimumi 5000 karaktere."),
+});
+
 /** Admin: broadcast a free-form message to every registrant of a trip. */
 export async function emailTripRegistrants(
   tripId: string,
@@ -587,18 +598,35 @@ export async function emailTripRegistrants(
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
 
+  const parsed = registrantEmailSchema.safeParse({ tripId, subject, message });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Të dhëna të pavlefshme.",
+    };
+  }
+
   const trip = await db.query.trips.findFirst({
-    where: eq(trips.id, tripId),
+    where: eq(trips.id, parsed.data.tripId),
     columns: { organizationId: true },
   });
   if (!trip || !(await isClubManager(session.user.id, trip.organizationId))) {
     return { success: false, error: "Nuk keni qasje." };
   }
 
+  // Every call emails the whole registrant list.
+  const limited = await enforceRateLimit("ratelimit.trip.email_registrants", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const sent = await emailRegistrants(
-    tripId,
-    subject,
-    GenericMessage({ heading: subject, message }),
+    parsed.data.tripId,
+    parsed.data.subject,
+    GenericMessage({
+      heading: parsed.data.subject,
+      message: parsed.data.message,
+    }),
   );
   return { success: true, sentCount: sent };
 }
@@ -622,9 +650,7 @@ async function emailRegistrants(
       );
 
     await Promise.allSettled(
-      recipients.map((r) =>
-        sendEmail({ to: r.email, subject, template }),
-      ),
+      recipients.map((r) => sendEmail({ to: r.email, subject, template })),
     );
     return recipients.length;
   } catch {

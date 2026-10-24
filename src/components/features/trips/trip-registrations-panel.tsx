@@ -348,6 +348,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             <Input
               id="email-subject"
               className="h-9"
+              maxLength={150}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
             />
@@ -357,6 +358,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             <Textarea
               id="email-message"
               rows={5}
+              maxLength={5000}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />

@@ -6,6 +6,8 @@ import {
   MAX_FILES_PER_UPLOAD,
 } from "@/lib/cloudinary/config";
 import { uploadImage } from "@/lib/cloudinary/upload";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { canUploadImage } from "@/server/services/entity-access";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -20,11 +22,24 @@ const VALID_ENTITY_TYPES: ImageEntityType[] = [
 export async function POST(request: NextRequest) {
   const session = await getOptionalSession();
   if (!session) {
-    return NextResponse.json({ error: "Kyçu për të ngarkuar foto" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Kyçu për të ngarkuar foto" },
+      { status: 401 },
+    );
+  }
+
+  // Before the body is read, so a flood of requests is cheap to turn away.
+  const limited = await enforceRateLimit("ratelimit.upload.request", {
+    userId: session.user.id,
+  });
+  if (limited) {
+    return NextResponse.json({ error: limited }, { status: 429 });
   }
 
   const formData = await request.formData();
-  const files = formData.getAll("files").filter((f): f is File => f instanceof File);
+  const files = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File);
   const entityType = String(formData.get("entityType") ?? "");
   const entityId = String(formData.get("entityId") ?? "");
 
@@ -38,12 +53,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Mungon entityId" }, { status: 400 });
   }
   if (files.length === 0) {
-    return NextResponse.json({ error: "Asnjë skedar nuk u ngarkua" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Asnjë skedar nuk u ngarkua" },
+      { status: 400 },
+    );
   }
   if (files.length > MAX_FILES_PER_UPLOAD) {
     return NextResponse.json(
       { error: `Maksimumi ${MAX_FILES_PER_UPLOAD} foto për ngarkesë` },
       { status: 400 },
+    );
+  }
+  if (
+    !(await canUploadImage(
+      session.user.id,
+      entityType as ImageEntityType,
+      entityId,
+    ))
+  ) {
+    return NextResponse.json(
+      { error: "Nuk keni qasje për të ngarkuar foto këtu" },
+      { status: 403 },
     );
   }
 

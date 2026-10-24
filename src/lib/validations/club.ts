@@ -31,10 +31,33 @@ export const clubBasicInfoSchema = z.object({
   foundedYear: z.number().int().min(1900).max(currentYear).optional(),
 });
 
+function parseUrl(value: string): URL | null {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+/** Rendered as links on the public club page, so https only. */
+const httpsUrl = z
+  .string()
+  .trim()
+  .max(200, "Maksimumi 200 karaktere")
+  .refine(
+    (v) => parseUrl(v)?.protocol === "https:",
+    "Duhet të fillojë me https://",
+  );
+
+const facebookUrl = httpsUrl.refine((v) => {
+  const host = parseUrl(v)?.hostname ?? "";
+  return host === "facebook.com" || host.endsWith(".facebook.com");
+}, "Duhet të jetë një lidhje facebook.com");
+
 export const clubContactSchema = z.object({
-  website: z.url("URL e pavlefshme").optional().or(z.literal("")),
+  website: httpsUrl.optional().or(z.literal("")),
   instagram: z.string().trim().max(50).optional().or(z.literal("")),
-  facebook: z.url("URL e pavlefshme").optional().or(z.literal("")),
+  facebook: facebookUrl.optional().or(z.literal("")),
 });
 
 /**
