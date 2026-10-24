@@ -34,12 +34,16 @@ export function DashboardShell({
   const isAlwaysDark =
     pathname.startsWith("/dashboard/profile") ||
     pathname === "/dashboard/trails/submit";
-  // Personal pages built with light-surface ink: light for every role, or a
-  // club admin gets dark text on the dark surface.
+  // Pages built with light-surface ink: light for every role, or a club admin
+  // gets dark text on the dark surface. Club creation is listed here because
+  // the `isForm` check below would otherwise make it dark.
   const isAlwaysLight = [
     "/dashboard/hikes",
     "/dashboard/trails",
     "/dashboard/admin",
+    "/dashboard/my-trips",
+    "/dashboard/notifications",
+    "/dashboard/club/create",
   ].includes(pathname);
   const isLight =
     isAlwaysLight ||
