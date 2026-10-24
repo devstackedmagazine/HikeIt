@@ -32,3 +32,35 @@ export function safeRedirect(
   }
   return value;
 }
+
+/**
+ * A redirect worth carrying through sign-up → email verification → sign-in
+ * (e.g. back to `/invite/<token>`): `value` if it's a safe internal path
+ * other than "/", else null. Same rules as `safeRedirect`.
+ */
+export function carriedRedirect(
+  value: string | null | undefined,
+): string | null {
+  const safe = safeRedirect(value, "");
+  return safe && safe !== "/" ? safe : null;
+}
+
+/**
+ * The `callbackURL` Better Auth put into a verification link, when it's a
+ * safe internal path to carry. Better Auth defaults it to "/" when the
+ * sign-up/sign-in didn't pass one, which yields null here.
+ */
+export function verificationRedirect(betterAuthUrl: string): string | null {
+  try {
+    return carriedRedirect(
+      new URL(betterAuthUrl).searchParams.get("callbackURL"),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** `path` with `?redirect=` appended when there's a redirect to carry. */
+export function withRedirect(path: string, redirect: string | null): string {
+  return redirect ? `${path}?redirect=${encodeURIComponent(redirect)}` : path;
+}

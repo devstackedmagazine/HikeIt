@@ -14,7 +14,11 @@ import {
 } from "@/components/features/auth/in-app-browser-notice";
 import { signIn } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
-import { safeRedirect } from "@/lib/utils/safe-redirect";
+import {
+  carriedRedirect,
+  safeRedirect,
+  withRedirect,
+} from "@/lib/utils/safe-redirect";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
@@ -34,6 +38,9 @@ function LoginForm() {
   // Validated: this feeds router.push and Better Auth's callbackURL, so an
   // unchecked value would be an open redirect.
   const redirectTo = safeRedirect(searchParams.get("redirect"));
+  // Only a non-default redirect is carried on: into the verification email
+  // Better Auth re-sends to unverified users, and to the register link.
+  const carried = carriedRedirect(searchParams.get("redirect"));
   const [formError, setFormError] = useState<{
     message: string;
     tone: "error" | "warning";
@@ -54,6 +61,7 @@ function LoginForm() {
     const { error } = await signIn.email({
       email: values.email,
       password: values.password,
+      ...(carried ? { callbackURL: carried } : {}),
     });
 
     if (error) {
@@ -283,7 +291,7 @@ function LoginForm() {
           <p className="text-forest/70 text-center text-[13px]">
             Nuk keni llogari?{" "}
             <Link
-              href="/register"
+              href={withRedirect("/register", carried)}
               className="text-forest hover:text-pine font-bold uppercase transition-colors"
             >
               Regjistrohuni

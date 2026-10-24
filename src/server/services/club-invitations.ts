@@ -239,6 +239,21 @@ export async function acceptInvitation(
       }
     }
 
+    // An invited newcomer has already said why they're here, so skip the
+    // "Kush jeni ju?" choice: finish onboarding as a hiker (the default role
+    // they already have). Only touches users who haven't finished onboarding
+    // and are still plain hikers, so nobody's role ever changes here.
+    await tx
+      .update(users)
+      .set({ onboardingCompleted: true })
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.onboardingCompleted, false),
+          eq(users.role, "hiker"),
+        ),
+      );
+
     await tx
       .update(clubInvitations)
       .set({ acceptedAt: now, acceptedBy: userId })

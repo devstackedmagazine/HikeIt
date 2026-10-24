@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { formatTripDate } from "@/lib/utils/datetime";
+import { withRedirect } from "@/lib/utils/safe-redirect";
 import {
   getInvitationPreview,
   invitationProblemMessages,
@@ -91,8 +92,8 @@ export default async function InvitePage({
             <>
               <p className="text-muted-foreground text-center text-sm">
                 Hyni me adresën email ku e morët ftesën. Nëse nuk keni ende
-                llogari, regjistrohuni me po atë adresë, konfirmoni email-in dhe
-                pastaj hapni sërish linkun nga email-i i ftesës.
+                llogari, regjistrohuni me po atë adresë dhe konfirmoni email-in:
+                linku i konfirmimit ju kthen këtu, te ftesa.
               </p>
               <Button
                 className="w-full"
@@ -106,7 +107,7 @@ export default async function InvitePage({
               <Button
                 className="w-full"
                 variant="outline"
-                render={<Link href="/register" />}
+                render={<Link href={withRedirect("/register", here)} />}
               >
                 Krijoni llogari
               </Button>

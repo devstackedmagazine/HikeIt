@@ -1,6 +1,8 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { carriedRedirect } from "@/lib/utils/safe-redirect";
+
 /**
  * Route protection via an optimistic session-cookie check. The proxy runs on
  * the edge, so we only look at cookie presence here (no DB round-trip); real
@@ -38,9 +40,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Already authenticated → keep them out of login/register.
+  // Already authenticated → keep them out of login/register, and send them
+  // where they were headed (e.g. an invite) if that's a safe internal path.
   if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const next =
+      carriedRedirect(request.nextUrl.searchParams.get("redirect")) ??
+      "/dashboard";
+    return NextResponse.redirect(new URL(next, request.url));
   }
 
   return NextResponse.next();

@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Eye, EyeOff, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/features/auth/in-app-browser-notice";
 import { signIn, signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
+import { carriedRedirect, withRedirect } from "@/lib/utils/safe-redirect";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
@@ -64,6 +66,20 @@ const INPUT =
   "h-12 md:h-10 w-full border-[1.5px] border-forest/60 bg-summit px-4 text-[14px] text-forest placeholder:text-forest/70 placeholder:italic focus:border-forest focus:outline-none";
 
 export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
+  // Where to go once the account exists, e.g. back to `/invite/<token>`. It
+  // travels as Better Auth's `callbackURL` into the verification email, so
+  // only a safe internal path is accepted (no host, no scheme).
+  const searchParams = useSearchParams();
+  const redirectTo = carriedRedirect(searchParams.get("redirect"));
+  const loginHref = withRedirect("/login", redirectTo);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -107,6 +123,7 @@ export default function RegisterPage() {
       email: values.email,
       password: values.password,
       ageConfirmed: true,
+      ...(redirectTo ? { callbackURL: redirectTo } : {}),
     };
     const { error } = await signUp.email(body);
     if (error) {
@@ -117,7 +134,8 @@ export default function RegisterPage() {
   }
 
   // New social users go through onboarding to pick hiker vs club, same as
-  // the email registration flow. Social sign-up is explicit (`requestSignUp`)
+  // the email registration flow — unless they came from an invite (or another
+  // carried redirect), which is where they go instead. Social sign-up is explicit (`requestSignUp`)
   // and carries the 18+ confirmation through the OAuth state, where the
   // server checks it before creating the account.
   async function handleSocialSignUp(provider: "google" | "facebook") {
@@ -132,7 +150,7 @@ export default function RegisterPage() {
     try {
       const { error } = await signIn.social({
         provider,
-        callbackURL: "/onboarding",
+        callbackURL: redirectTo ?? "/onboarding",
         errorCallbackURL: `/social-login-error?provider=${provider}`,
         requestSignUp: true,
         additionalData: { ageConfirmed: true },
@@ -230,7 +248,7 @@ export default function RegisterPage() {
               </p>
               <p className="text-forest/70 mt-3 text-xs leading-[1.6]">
                 Nuk ju erdhi? Kontrolloni dosjen e spam-it, ose{" "}
-                <Link href="/login" className="text-forest underline">
+                <Link href={loginHref} className="text-forest underline">
                   provoni të hyni
                 </Link>{" "}
                 — do t&apos;ju dërgojmë një link të ri.
@@ -422,7 +440,7 @@ export default function RegisterPage() {
               <div className="border-forest/10 mt-6 border-t pt-5 md:mt-3 md:pt-4">
                 <p className="text-forest/70 text-center text-[13px]">
                   Keni llogari?{" "}
-                  <Link href="/login" className="text-forest font-bold">
+                  <Link href={loginHref} className="text-forest font-bold">
                     KYÇUNI
                   </Link>
                 </p>
