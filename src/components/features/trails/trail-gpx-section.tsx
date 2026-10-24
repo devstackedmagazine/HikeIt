@@ -31,7 +31,7 @@ export function TrailGpxSection({ trailId }: { trailId: string }) {
   return (
     <div className="border border-summit/10 p-4">
       <p className="mb-3 text-[10px] font-bold tracking-[0.12em] text-summit/40 uppercase">
-        Ngarko Skedar GPX
+        Ngarkoni Skedar GPX
       </p>
 
       <GpxUploader onParsed={(c) => setContent(c)} />
@@ -53,7 +53,7 @@ export function TrailGpxSection({ trailId }: { trailId: string }) {
         size="sm"
       >
         {status === "loading" ? <Loader2 className="animate-spin" /> : null}
-        Ngarko GPX
+        Ngarkoni GPX
       </Button>
     </div>
   );

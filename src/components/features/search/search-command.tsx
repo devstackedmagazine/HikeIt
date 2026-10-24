@@ -157,7 +157,7 @@ export function SearchCommand({ className }: { className?: string }) {
                   }}
                 >
                   <Search className="size-4" />
-                  Shiko të gjitha rezultatet për “{query}”
+                  Shikoni të gjitha rezultatet për “{query}”
                 </CommandItem>
               </CommandGroup>
             ) : null}

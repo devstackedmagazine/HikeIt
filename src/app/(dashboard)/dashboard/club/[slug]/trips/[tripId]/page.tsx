@@ -63,7 +63,7 @@ export default async function AdminTripDetailPage({
             }
           >
             <Pencil />
-            Ndrysho
+            Ndryshoni
           </Button>
           {trip.status !== "draft" ? (
             <Button
@@ -85,7 +85,7 @@ export default async function AdminTripDetailPage({
 
       {trip.status === "draft" ? (
         <p className="border-alert/40 bg-alert/10 border-2 px-3 py-2 text-sm">
-          Ky udhëtim është draft: nuk e sheh askush tjetër. Klikoni “Publiko”
+          Ky udhëtim është draft: nuk e sheh askush tjetër. Klikoni “Publikoni”
           kur të jetë gati, që anëtarët të mund të regjistrohen.
         </p>
       ) : null}
@@ -158,10 +158,10 @@ export default async function AdminTripDetailPage({
             }
           >
             <Pencil />
-            Ndrysho Udhëtimin
+            Ndryshoni Udhëtimin
           </Button>
           <p className="text-muted-foreground text-sm">
-            Për të anuluar udhëtimin, përdorni butonin “Anulo udhëtimin” lart në faqe.
+            Për të anuluar udhëtimin, përdorni butonin “Anuloni udhëtimin” lart në faqe.
           </p>
         </TabsContent>
       </Tabs>

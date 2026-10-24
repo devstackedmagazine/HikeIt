@@ -81,7 +81,7 @@ export function RegisterCard({
             className="w-full"
             render={<Link href={`/login?redirect=/trips/${slug}`} />}
           >
-            Kyçu për t&apos;u regjistruar
+            Kyçuni për t&apos;u regjistruar
           </Button>
         ) : isRegistered ? (
           <div className="space-y-2">
@@ -98,7 +98,7 @@ export function RegisterCard({
               disabled={loading}
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              Anulo regjistrimin
+              Anuloni regjistrimin
             </Button>
           </div>
         ) : (
@@ -128,7 +128,7 @@ export function RegisterCard({
               disabled={loading || !acceptedWaiver}
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              {isFull ? "Lista e pritjes" : "Regjistrohu"}
+              {isFull ? "Lista e pritjes" : "Regjistrohuni"}
             </Button>
           </div>
         )}

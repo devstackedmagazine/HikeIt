@@ -82,7 +82,7 @@ export function NotificationsList({
           ))}
         </div>
         <Button variant="outline" size="sm" onClick={handleMarkAll}>
-          Shëno të gjitha si të lexuara
+          Shënoni të gjitha si të lexuara
         </Button>
       </div>
 

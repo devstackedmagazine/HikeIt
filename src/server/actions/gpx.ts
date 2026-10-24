@@ -53,7 +53,7 @@ export async function submitTrail(
     }
     return {
       success: false,
-      error: "Kontrollo fushat e shënuara.",
+      error: "Kontrolloni fushat e shënuara.",
       fieldErrors,
     };
   }
@@ -69,8 +69,8 @@ export async function submitTrail(
     if (!regions.includes(input.data.region)) {
       return {
         success: false,
-        error: "Kontrollo fushat e shënuara.",
-        fieldErrors: { region: "Zgjidh një rajon nga lista." },
+        error: "Kontrolloni fushat e shënuara.",
+        fieldErrors: { region: "Zgjidhni një rajon nga lista." },
       };
     }
     region = input.data.region;

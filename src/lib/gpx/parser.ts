@@ -45,7 +45,7 @@ const EARTH_RADIUS_M = 6_371_000;
 export const MAX_GPX_BYTES = 4 * 1024 * 1024;
 
 export const GPX_TOO_LARGE_MESSAGE =
-  "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.";
+  "Skedari GPX është më i madh se 4 MB. Shkurtoni gjurmën ose zvogëloni numrin e pikave në aplikacionin tuaj GPS dhe provoni sërish.";
 const MAX_POINTS = 50_000;
 const DOWNSAMPLE_TARGET = 5_000;
 

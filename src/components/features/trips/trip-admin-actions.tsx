@@ -51,7 +51,7 @@ export function TripAdminActions({
       {status === "draft" ? (
         <Button size="sm" onClick={onPublish} disabled={publishing}>
           {publishing ? <Loader2 className="animate-spin" /> : <Send />}
-          Publiko
+          Publikoni
         </Button>
       ) : null}
       {status !== "canceled" ? <CancelDialog tripId={tripId} /> : null}
@@ -85,13 +85,13 @@ function CancelDialog({ tripId }: { tripId: string }) {
         render={
           <Button variant="destructive" size="sm">
             <XCircle />
-            Anulo Udhëtimin
+            Anuloni Udhëtimin
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Anulo udhëtimin</DialogTitle>
+          <DialogTitle>Anuloni udhëtimin</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
           Shkruani arsyen e anulimit — do t&apos;u dërgohet me email të
@@ -108,7 +108,7 @@ function CancelDialog({ tripId }: { tripId: string }) {
           disabled={loading || !reason}
         >
           {loading ? <Loader2 className="animate-spin" /> : null}
-          Konfirmo anulimin
+          Konfirmoni anulimin
         </Button>
         {error ? (
           <p className="text-destructive text-sm" role="alert">
