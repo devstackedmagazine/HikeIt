@@ -308,7 +308,7 @@ export default function PrivacyPage() {
               Telefoni dhe kontakti i emergjencës:
             </strong>{" "}
             nëse i keni plotësuar në profil dhe regjistrimi juaj në një udhëtim
-            është i konfirmuar, organizatorët dhe administratorët e klubit që e
+            është konfirmuar (edhe pasi klubi shënon pjesëmarrjen), organizatorët dhe administratorët e klubit që e
             organizon udhëtimin i shohin, edhe në eksportin CSV, vetëm nga 3
             ditë para fillimit të udhëtimit deri 2 ditë pas përfundimit të tij,
             për sigurinë tuaj ditën e ecjes. Për regjistrimet në pritje ose të

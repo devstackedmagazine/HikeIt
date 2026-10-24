@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -8,7 +8,7 @@ import {
   users,
 } from "@/lib/db/schema";
 import {
-  CONTACT_VISIBLE_STATUS,
+  CONTACT_VISIBLE_STATUSES,
   contactAccess,
   type ContactAccessDenial,
   contactWindow,
@@ -24,7 +24,7 @@ export type TripContacts =
   | {
       available: true;
       closesAt: Date;
-      /** Keyed by registration id; confirmed registrations only. */
+      /** Keyed by registration id; approved registrations only. */
       contacts: Record<string, ParticipantContact>;
     }
   | {
@@ -38,7 +38,8 @@ export type TripContacts =
  * organisers. Every condition is checked here, from the database, not taken
  * from the caller: the viewer's current role in the club that owns the trip,
  * the trip's status and the time window (`contactAccess`), and — per row —
- * that the registration is confirmed. Nothing here is logged.
+ * that the registration is approved (confirmed, attended or no-show).
+ * Nothing here is logged.
  */
 export async function getTripContactsForOrganiser(
   tripId: string,
@@ -96,7 +97,7 @@ export async function getTripContactsForOrganiser(
     .where(
       and(
         eq(tripRegistrations.tripId, trip.id),
-        eq(tripRegistrations.status, CONTACT_VISIBLE_STATUS),
+        inArray(tripRegistrations.status, [...CONTACT_VISIBLE_STATUSES]),
       ),
     );
 

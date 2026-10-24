@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 
-import { contactAccess, contactWindow } from "../src/lib/trips/contact-access";
+import type { TripRegistration } from "../src/lib/db/schema";
+import {
+  contactAccess,
+  contactVisibleForStatus,
+  contactWindow,
+} from "../src/lib/trips/contact-access";
 
 /**
  * Who may see participants' phone / emergency contact, and when
@@ -116,3 +121,23 @@ const w = contactWindow(trip);
 assert.equal(w.opensAt.toISOString(), "2026-10-29T07:00:00.000Z");
 assert.equal(w.closesAt.toISOString(), "2026-11-03T15:00:00.000Z");
 console.log("ok  window bounds");
+
+// Per-registration: every status in the enum, so a new status fails here
+// until someone decides whether it shows contacts. There is no "rejected"
+// status; a rejected sign-up is "canceled".
+const statusVisible: Record<TripRegistration["status"], boolean> = {
+  confirmed: true,
+  attended: true,
+  no_show: true,
+  pending: false,
+  waitlisted: false,
+  canceled: false,
+};
+for (const [status, visible] of Object.entries(statusVisible)) {
+  assert.equal(
+    contactVisibleForStatus(status as TripRegistration["status"]),
+    visible,
+    status,
+  );
+  console.log(`ok  status ${status} → ${visible ? "shown" : "hidden"}`);
+}

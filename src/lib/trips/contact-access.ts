@@ -1,4 +1,4 @@
-import type { Trip } from "@/lib/db/schema";
+import type { Trip, TripRegistration } from "@/lib/db/schema";
 import { NO_END_DURATION_HOURS } from "@/lib/trips/display-status";
 
 /**
@@ -43,8 +43,8 @@ export type ContactAccessDenial =
 
 /**
  * Whether the viewer may see contact details for this trip at all. Per-row,
- * only `confirmed` registrations are ever included (see
- * `CONTACT_VISIBLE_STATUS`).
+ * only approved registrations are ever included (see
+ * `CONTACT_VISIBLE_STATUSES`).
  */
 export function contactAccess(input: {
   viewerRole: "admin" | "organizer" | "member" | null;
@@ -65,5 +65,20 @@ export function contactAccess(input: {
   return { allowed: true };
 }
 
-/** The only registration status whose contact details are ever shown. */
-export const CONTACT_VISIBLE_STATUS = "confirmed" as const;
+/**
+ * Registration statuses whose contact details are shown: approved ones.
+ * `attended` and `no_show` are approved registrations after the organiser
+ * marks attendance, which happens inside the window. `pending`, `waitlisted`
+ * and `canceled` are never shown.
+ */
+export const CONTACT_VISIBLE_STATUSES = [
+  "confirmed",
+  "attended",
+  "no_show",
+] as const satisfies readonly TripRegistration["status"][];
+
+export function contactVisibleForStatus(
+  status: TripRegistration["status"],
+): boolean {
+  return (CONTACT_VISIBLE_STATUSES as readonly string[]).includes(status);
+}
