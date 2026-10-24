@@ -171,7 +171,10 @@ calls `https://hikeit.app/api/cron/complete-trips`, which is not in `vercel.json
 its own failure alerting is the monitor (the route returns non-200 on error).
 All cron routes require `Authorization: Bearer $CRON_SECRET`.
 Every successful complete-trips run also sends an info-level
-`cron.complete_trips` message to Sentry as a heartbeat.
+`cron.complete_trips` message to Sentry as a heartbeat. Until
+`fix/cron-heartbeat-flush` ships, that success path doesn't flush, so most
+heartbeats are lost (6 in Sentry between 2026-10-05 and 10-21). Check
+cron-job.org's run history, not Sentry, to confirm the job is alive.
 
 ### Google OAuth
 - Google Cloud project: "HikeIt"
@@ -464,18 +467,29 @@ Merged to `dev` and `main` (production):
 Pushed, **not yet merged to `dev`**:
 - `fix/legal-pages`: strip photo EXIF/GPS metadata, sanitise uploaded GPX, real immediate account deletion (with safe shared-image cleanup), 18+ at signup, admin guards, Sentry replay off, `regions: ["fra1"]` in `vercel.json`, and privacy policy + terms rewritten to match the code.
 - `fix/registration-capacity`: admin confirmation respects `maxParticipants` under a row lock; a full trip reopens when a confirmed spot frees up; privacy policy data-deletion section.
+- Dashboard audit (2026-10-24), styling/layout only:
+  - `fix/audit-contrast`: palette-rule contrast fixes; `EmptyState tone="dark"`.
+  - `fix/audit-shadows`: leftover shadcn shadows removed.
+  - `fix/audit-shell-surfaces`: notifications, my trips and club creation render on the light shell for club admins (their headings were Forest on Forest).
+  - `fix/audit-widths`: trip edit page wraps like trip create (640px content, full-width Abyss).
+- `fix/cron-heartbeat-flush`: complete-trips flushes Sentry on success, so the heartbeat actually arrives.
 
 ## OPEN ITEMS (as of 2026-10-24)
 
-1. **Upgrade Next.js to ≥ 16.4.1.** `pnpm audit` on `dev` (16.3.6) reports critical GHSA-2464-fhr4-w9xw (Image Optimization RCE) and high GHSA-p3m5-59mp-jv5r (Server Actions DoS), among others. Dependabot PR #58 only goes to 16.3.8, which is not enough, and its preview build failed pnpm's `minimumReleaseAge` check.
+1. **Upgrade Next.js to ≥ 16.4.1.** `pnpm audit` on `dev` (16.3.6) reports critical GHSA-2464-fhr4-w9xw (Image Optimization RCE; we use `next/image` with `remotePatterns`, so production is exposed), high GHSA-p3m5-59mp-jv5r (Server Actions DoS) and high GHSA-cjq9-62q9-8jv4 (Image Optimization SSRF). The `use cache` RCE (GHSA-673q-mjm6-r5xr) doesn't apply; we never use `use cache`. Dependabot's `next-16.3.8` branch is not enough, and its preview build failed pnpm's `minimumReleaseAge` check.
 2. **Upgrade `@sentry/nextjs` to ≥ 10.75.2** (critical GHSA-mchm-gjx6-7h55). We don't configure a `tunnelRoute`, so we're likely not exposed.
-3. **Merge `fix/legal-pages` and `fix/registration-capacity` into `dev`, then `main`.** Production still runs in `iad1` until the `fra1` change ships.
-4. **Server-side validation for `updateClub`.** `website`/`facebook` are stored and rendered as links with no URL or length check.
-5. **Rate limits are missing** on `emailTripRegistrants`, `inviteMember`, `createClub`, `createTrip`, `submitTrailReview` and `uploadTripGpx`.
-6. **Orphaned server actions:** `deleteTrailPhoto`, `reorderTripPhotos` (nothing calls them).
-7. **Leftover config:** `NEXT_PUBLIC_POSTHOG_*` still in `src/config/env.ts` (PostHog isn't used).
-8. **Dashboard page widths are inconsistent** (`max-w-2xl` to `max-w-6xl`, some unbounded). Pick one or two standard widths.
-9. **Paddle webhook signature on sandbox** (see Medium priority below). Not urgent while checkout is off.
+3. **Upgrade `zod` to ≥ 4.6.6** (high GHSA-mrhx-c7xc-m3w5, memory exhaustion on oversized collections). It validates user input in server actions, so it's reachable.
+4. **Merge `fix/legal-pages` and `fix/registration-capacity` into `dev`, then `main`.** Production still runs in `iad1` until the `fra1` change ships.
+5. **`inviteMember` adds an existing user to a club without their consent.** If the email belongs to an account, the membership row is created immediately (no accept step). It also emails any address with no format check and no rate limit.
+6. **`/api/upload` has no rate limit and doesn't validate `entityId`.** Any logged-in user can upload into any entity's Cloudinary folder, which costs storage quota. Attaching an image to a record is ownership-checked separately.
+7. **Server-side validation for `updateClub`.** `website`/`facebook` are stored with no URL or length check and rendered as `href`s on the public club page. React 19 blocks `javascript:` URLs, so the risk is spoofed or junk links.
+8. **Rate limits are missing** on `emailTripRegistrants` (also no length check on subject/message), `inviteMember`, `createClub`, `createTrip`, `submitTrailReview` and `uploadTripGpx`.
+9. **Google/Facebook sign-in fails unhandled inside in-app browsers** (Sentry JAVASCRIPT-NEXTJS-N: Instagram webview, `Failed to fetch` at `src/app/(auth)/login/page.tsx:78`). Catch the error and suggest opening the page in the system browser.
+10. **Orphaned code:** server actions `deleteTrailPhoto`, `reorderTripPhotos` (nothing calls them, but they're still reachable endpoints), and the unused `AccountSection` component.
+11. **Leftover config:** `NEXT_PUBLIC_POSTHOG_*` still in `src/config/env.ts` (PostHog isn't used).
+12. **Dashboard page widths are inconsistent** (`max-w-2xl` to `max-w-6xl`; home, billing and profile unbounded). Pick one or two standard widths.
+13. **Dashboard headings still use the shadcn default** `text-2xl font-bold tracking-tight` (club page, club trip detail, club create, my trips, notifications, dashboard error page, reviews section) instead of Sora 900.
+14. **Paddle webhook signature on sandbox** (see Medium priority below). Not urgent while checkout is off.
 
 ## PENDING / TODO
 
