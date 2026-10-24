@@ -22,6 +22,7 @@ import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
+import { decideSignUp } from "@/lib/trips/registration-rules";
 import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
 
 /**
@@ -133,31 +134,62 @@ export async function registerForTrip(
   return createRegistration(session.user.id, trip, canceled != null);
 }
 
-/** Confirm (or waitlist) the hiker, email them, revalidate. */
+/**
+ * Confirm (or waitlist) the hiker, email them, revalidate.
+ *
+ * The confirmed count, the insert and the "full" flip happen in one
+ * transaction holding the trip's row lock — the same lock admin roster
+ * changes take — so two hikers racing for the last spot can't both be
+ * confirmed. The one-active-row unique index stops double sign-ups.
+ */
 async function createRegistration(
   userId: string,
   trip: typeof trips.$inferSelect,
   isReregistration: boolean,
 ): Promise<RegisterResult> {
-  const confirmed = await confirmedCountFor(trip.id);
-  const isFull =
-    trip.maxParticipants !== null && confirmed >= trip.maxParticipants;
-  const status = isFull ? "waitlisted" : "confirmed";
+  let status: "confirmed" | "waitlisted";
+  try {
+    const decided = await db.transaction(async (tx) => {
+      const locked = await lockTrip(tx, trip.id);
+      if (!locked) return null;
+      const decision = decideSignUp({
+        status: locked.status,
+        maxParticipants: locked.maxParticipants,
+        confirmed: await confirmedCountFor(locked.id, tx),
+      });
+      if (decision.kind === "closed") return null;
 
-  await db.insert(tripRegistrations).values({
-    tripId: trip.id,
-    userId,
-    status,
-    isReregistration,
-    waiverSignedAt: new Date(),
-  });
-
-  if (
-    status === "confirmed" &&
-    trip.maxParticipants !== null &&
-    confirmed + 1 >= trip.maxParticipants
-  ) {
-    await db.update(trips).set({ status: "full" }).where(eq(trips.id, trip.id));
+      await tx.insert(tripRegistrations).values({
+        tripId: locked.id,
+        userId,
+        status: decision.kind,
+        isReregistration,
+        waiverSignedAt: new Date(),
+      });
+      if (
+        decision.kind === "confirmed" &&
+        decision.fillsTrip &&
+        locked.status === "open"
+      ) {
+        await tx
+          .update(trips)
+          .set({ status: "full" })
+          .where(eq(trips.id, locked.id));
+      }
+      return decision.kind;
+    });
+    if (!decided) {
+      return {
+        success: false,
+        error: "Regjistrimet për këtë udhëtim nuk janë të hapura.",
+      };
+    }
+    status = decided;
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { success: false, error: "Jeni tashmë i regjistruar." };
+    }
+    throw error;
   }
 
   await db.insert(auditLogs).values({
