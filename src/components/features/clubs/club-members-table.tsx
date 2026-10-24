@@ -155,7 +155,7 @@ export function ClubMembersTable({
                         </select>
                         {isOnlyAdmin ? (
                           <p className="text-muted-foreground text-xs italic">
-                            Admin i vetëm — nuk mund të ndryshosh rolin
+                            Admin i vetëm — nuk mund ta ndryshoni rolin
                           </p>
                         ) : null}
                       </div>
