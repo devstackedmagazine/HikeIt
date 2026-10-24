@@ -1,4 +1,4 @@
-import { CloudSun, ExternalLink, ImagePlus, Pencil } from "lucide-react";
+import { ExternalLink, ImagePlus, Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -134,13 +134,6 @@ export default async function AdminTripDetailPage({
               </CardContent>
             </Card>
           ) : null}
-
-          <Card>
-            <CardContent className="text-muted-foreground flex items-center gap-3 py-4 text-sm">
-              <CloudSun className="text-accent size-5" />
-              Statusi i motit — së shpejti
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="registrations" className="pt-6">

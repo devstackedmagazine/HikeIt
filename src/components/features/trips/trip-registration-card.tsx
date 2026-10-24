@@ -115,7 +115,7 @@ export function TripRegistrationCard({
       {/* HikeIt does not process trip money — say so plainly, so nobody
           expects to be charged here and nobody forgets to pay the club. */}
       {!free && !isPast ? (
-        <p className="text-summit/25 mt-2 text-[9px] leading-relaxed tracking-[0.02em] break-words uppercase">
+        <p className="text-summit/60 mt-2 text-[11px] leading-relaxed tracking-[0.02em] break-words uppercase">
           Pagesa bëhet direkt te klubi
         </p>
       ) : null}
