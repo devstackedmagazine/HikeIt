@@ -138,3 +138,45 @@ assert.equal(
   null,
 );
 console.log("ok  past start and end-before-start rejected");
+
+// Editing (updateTrip passes the stored start).
+const started = k("2026-10-25T08:00"); // already started at `now`
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T08:00"), end: null }, now, started),
+  null,
+  "unchanged past start: other fields can be edited",
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-10-25T08:00"), end: k("2026-10-25T16:00") },
+    now,
+    new Date(started.getTime() + 30 * 1000), // stored with seconds
+  ),
+  null,
+  "same minute counts as unchanged",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T09:00"), end: null }, now, started),
+  PAST_START_ERROR,
+  "moving a start to another past time",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-11-01T08:00"), end: null }, now, started),
+  null,
+  "moving a start into the future",
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-10-25T08:00"), end: k("2026-10-25T07:00") },
+    now,
+    started,
+  ),
+  END_BEFORE_START_ERROR,
+  "end before start is rejected even when the start is unchanged",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T08:00"), end: null }, now),
+  PAST_START_ERROR,
+  "new trip (no stored start) can't start in the past",
+);
+console.log("ok  edits: past start allowed only when unchanged");

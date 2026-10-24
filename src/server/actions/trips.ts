@@ -237,7 +237,7 @@ export async function updateTrip(
   const times = parseTripTimes(input);
   if (!times) return { success: false, error: INVALID_TIME_ERROR };
   const newStart = times.start;
-  const timesError = tripTimesError(times);
+  const timesError = tripTimesError(times, new Date(), trip.startDatetime);
   if (timesError) return { success: false, error: timesError };
 
   // Registration-based locks.
