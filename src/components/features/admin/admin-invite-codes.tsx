@@ -23,7 +23,7 @@ const STATUS_LABELS: Record<InviteCodeStatus, string> = {
 };
 
 const STATUS_TONE: Record<InviteCodeStatus, string> = {
-  active: "text-moss",
+  active: "text-forest",
   inactive: "text-forest/40",
   expired: "text-alert",
   exhausted: "text-alert",
@@ -179,7 +179,7 @@ function CreateCodeForm() {
           </p>
         ) : null}
         {success ? (
-          <p className="text-[13px] font-bold text-moss">{success}</p>
+          <p className="text-[13px] font-bold text-forest">{success}</p>
         ) : null}
 
         <button
@@ -248,7 +248,7 @@ function CodeRow({ code }: { code: InviteCodeRow }) {
         </span>
       </Td>
       <Td align="right">
-        <span className="font-heading text-[15px] font-black text-sage">
+        <span className="font-heading text-[15px] font-black text-forest">
           {code.trialMonths}
         </span>
       </Td>

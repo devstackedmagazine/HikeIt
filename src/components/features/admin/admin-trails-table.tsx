@@ -102,7 +102,7 @@ function TrailRow({
         <span
           className={cn(
             "text-[10px] font-bold tracking-[0.08em] uppercase",
-            trail.hasGpx ? "text-moss" : "text-forest/40",
+            trail.hasGpx ? "text-forest" : "text-forest/40",
           )}
         >
           {trail.hasGpx ? "Po" : "Jo"}

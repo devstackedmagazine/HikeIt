@@ -44,7 +44,7 @@ export function AlertSensitivityToggle({
               className={cn(
                 "border px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.06em] uppercase transition-colors",
                 active
-                  ? "border-moss/40 bg-moss/20 text-moss"
+                  ? "border-moss/40 bg-moss/20 text-sage"
                   : "border-summit/12 bg-summit/[0.05] text-summit/35 hover:text-summit/60",
               )}
             >
