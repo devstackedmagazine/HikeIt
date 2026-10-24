@@ -104,7 +104,7 @@ export function TripPhotosManager({
                 <button
                   type="button"
                   onClick={() => setConfirmingId(p.id)}
-                  className="bg-background/90 text-destructive absolute top-1 right-1 hidden size-8 items-center justify-center rounded-full shadow group-focus-within:flex group-hover:flex [@media(hover:none)]:flex"
+                  className="bg-background/90 text-destructive absolute top-1 right-1 hidden size-8 items-center justify-center border border-forest/20 group-focus-within:flex group-hover:flex [@media(hover:none)]:flex"
                   aria-label="Fshi foton"
                 >
                   <Trash2 className="size-4" />
