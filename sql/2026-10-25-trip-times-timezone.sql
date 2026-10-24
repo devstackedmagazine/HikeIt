@@ -3,6 +3,11 @@
 -- ----------------------------------------------------------------------------
 -- RUN EXACTLY ONCE. Not idempotent.
 --
+-- STEP 0 FIRST: run the CHECK query in section 0. It must return exactly two
+-- rows, start_datetime and end_datetime, BOTH with data_type
+-- 'timestamp with time zone'. If either is anything else (e.g. 'timestamp
+-- without time zone'), STOP: the conversion below is wrong for that type.
+--
 -- Why: until this fix, the server (UTC on Vercel) read the form's
 -- "2026-11-01T08:00" as 08:00 UTC, so every trip was stored 1 h (winter) or
 -- 2 h (summer) late. The new code reads it as Kosovo time (Europe/Belgrade).
@@ -20,30 +25,44 @@
 -- date/time columns (no registration deadline). created_at / updated_at /
 -- deleted_at are real instants written by now() and are NOT touched.
 --
--- Guards (both in the one UPDATE statement, so it's all-or-nothing):
---   1. Only trips CREATED BEFORE the new code went live. Replace
---      __DEPLOY_TIME__ below with the time the deployment carrying this fix
---      became Ready, in UTC, e.g. '2026-10-26 07:30:00+00'. Until replaced,
---      the statement fails to parse the timestamp and changes nothing.
---      Trips created after that were written correctly and must not move.
---      (A trip edited after deploy without changing its time keeps its old
---      instant — the edit form round-trips it — so it is still correct to
---      shift it.)
---   2. A marker row in audit_logs (action 'migration.trip_times_timezone').
+-- __DEPLOY_TIME__: replace EVERY occurrence (find-and-replace all) with the time
+-- the production deployment carrying this fix became Ready, in UTC with an
+-- explicit offset, exactly in this format:
+--
+--   2026-10-25 14:05:00+00
+--
+-- Until replaced, the statements fail to parse the timestamp and change
+-- nothing.
+--
+-- Guards (all in the one UPDATE statement, so it's all-or-nothing):
+--   1. created_at < deploy time: trips created after the deploy were written
+--      correctly by the new code and must not move.
+--   2. updated_at < deploy time: a trip edited by the new code after the
+--      deploy is never shifted twice. CAVEAT: the app bumps updated_at on
+--      EVERY write to trips (status open/full on registrations, the hourly
+--      complete-trips job, cover photo, weather), not only on edits. An old
+--      trip touched that way after the deploy is skipped and stays 1–2 h
+--      late. Run this within minutes of the deploy, and check section 1b:
+--      it lists every skipped trip so it can be fixed by hand.
+--   3. A marker row in audit_logs (action 'migration.trip_times_timezone').
 --      If it already exists, the UPDATE matches nothing. This turns a second
 --      run into a no-op, but don't rely on it: run once.
+--      audit_logs: only `action` is NOT NULL without a default (id and
+--      created_at have defaults; user_id, entity_*, metadata, ip, user agent
+--      are nullable), so action + metadata is a valid insert. No personal
+--      data is written.
 --
 -- Known caveat: trips inserted by `pnpm db:seed` on a machine set to Kosovo
 -- time were already correct and will be shifted too. Check the preview.
 -- ============================================================================
 
+-- ─── 0. CHECK (read-only) — must return timestamp with time zone ×2 ────────
+SELECT column_name, data_type FROM information_schema.columns WHERE table_name='trips' AND column_name IN ('start_datetime','end_datetime');
 
 -- ─── 1. PREVIEW (read-only) ─────────────────────────────────────────────────
--- Trip id and times only. Run this first and check a few rows: new_start
--- shown in Kosovo time should be what the organiser typed (= old_start shown
--- in UTC).
 SELECT id,
        created_at,
+       updated_at,
        start_datetime                                                   AS old_start,
        (start_datetime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Belgrade' AS new_start,
        ((start_datetime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Belgrade')
@@ -52,16 +71,25 @@ SELECT id,
        (end_datetime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Belgrade'   AS new_end
   FROM trips
  WHERE created_at < TIMESTAMPTZ '__DEPLOY_TIME__'
+   AND updated_at < TIMESTAMPTZ '__DEPLOY_TIME__'
  ORDER BY start_datetime DESC
  LIMIT 20;
+-- SELECT count(*) FROM trips
+--  WHERE created_at < TIMESTAMPTZ '__DEPLOY_TIME__'
+--    AND updated_at < TIMESTAMPTZ '__DEPLOY_TIME__';
 
--- How many rows the UPDATE will touch:
--- SELECT count(*) FROM trips WHERE created_at < TIMESTAMPTZ '__DEPLOY_TIME__';
-
+-- ─── 1b. SKIPPED (read-only): old trips written to after the deploy ────────
+-- These were created by the old code but touched after the deploy, so the
+-- UPDATE leaves them alone. Check each by hand: if its time shows 1–2 h late
+-- in the app, the organiser re-enters it in the edit form.
+SELECT id, created_at, updated_at, status,
+       start_datetime AT TIME ZONE 'Europe/Belgrade' AS start_kosovo_now
+  FROM trips
+ WHERE created_at < TIMESTAMPTZ '__DEPLOY_TIME__'
+   AND updated_at >= TIMESTAMPTZ '__DEPLOY_TIME__'
+ ORDER BY updated_at;
 
 -- ─── 2. UPDATE (one statement; RUN EXACTLY ONCE) ────────────────────────────
--- Plain UPDATE through a CTE, not via Drizzle, so updated_at is not bumped.
--- end_datetime NULL stays NULL. Returns the number of trips shifted.
 WITH guard AS (
   SELECT NOT EXISTS (
     SELECT 1 FROM audit_logs WHERE action = 'migration.trip_times_timezone'
@@ -74,6 +102,7 @@ shifted AS (
          end_datetime =
            (end_datetime AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Belgrade'
    WHERE created_at < TIMESTAMPTZ '__DEPLOY_TIME__'
+     AND updated_at < TIMESTAMPTZ '__DEPLOY_TIME__'
      AND (SELECT ok FROM guard)
   RETURNING id
 ),
@@ -90,21 +119,9 @@ marker AS (
 SELECT (SELECT count(*) FROM shifted) AS trips_shifted,
        (SELECT count(*) FROM marker)  AS marker_written;
 
-
 -- ─── 3. VERIFICATION (read-only, run after) ─────────────────────────────────
--- Expect exactly one marker row, with "shifted" equal to the preview count:
--- SELECT created_at, metadata FROM audit_logs
---  WHERE action = 'migration.trip_times_timezone';
---
--- Spot-check: start times shown in Kosovo time should be the times organisers
--- typed (typically round hours like 07:00, 08:00):
--- SELECT id,
---        start_datetime AT TIME ZONE 'Europe/Belgrade' AS start_kosovo,
---        end_datetime   AT TIME ZONE 'Europe/Belgrade' AS end_kosovo
---   FROM trips
---  ORDER BY start_datetime DESC
---  LIMIT 20;
---
--- Sanity: no trip ends before it starts:
--- SELECT count(*) FROM trips WHERE end_datetime IS NOT NULL
---                              AND end_datetime <= start_datetime;  -- expect 0
+-- SELECT created_at, metadata FROM audit_logs WHERE action = 'migration.trip_times_timezone';
+-- SELECT id, start_datetime AT TIME ZONE 'Europe/Belgrade' AS start_kosovo,
+--        end_datetime AT TIME ZONE 'Europe/Belgrade' AS end_kosovo
+--   FROM trips ORDER BY start_datetime DESC LIMIT 20;
+-- SELECT count(*) FROM trips WHERE end_datetime IS NOT NULL AND end_datetime <= start_datetime; -- expect 0

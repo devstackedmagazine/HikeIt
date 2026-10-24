@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 
 import {
+  END_BEFORE_START_ERROR,
+  PAST_START_ERROR,
+  tripTimesError,
+} from "../src/lib/trips/trip-times";
+import {
   formatTripDateTime,
   fromKosovoWallTime,
   googleCalendarUrl,
@@ -86,3 +91,50 @@ const cal = googleCalendarUrl({
 });
 assert.ok(cal.includes("dates=20261101T070000Z%2F20261101T100000Z"), cal);
 console.log("ok  display in Kosovo time, 24h; calendar link in UTC");
+
+// Server-side start/end rules (createTrip and updateTrip).
+// 2026-10-25 14:00 Kosovo (winter, after the autumn change) = 13:00Z.
+const now = new Date("2026-10-25T13:00:00Z");
+const k = (v: string) => fromKosovoWallTime(v)!;
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T13:59"), end: null }, now),
+  PAST_START_ERROR,
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T14:00"), end: null }, now),
+  null,
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T14:01"), end: null }, now),
+  null,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T08:00") },
+    now,
+  ),
+  END_BEFORE_START_ERROR,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T07:00") },
+    now,
+  ),
+  END_BEFORE_START_ERROR,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T16:00") },
+    now,
+  ),
+  null,
+);
+// Across the night: end on the next day is fine.
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T22:00"), end: k("2026-11-02T06:00") },
+    now,
+  ),
+  null,
+);
+console.log("ok  past start and end-before-start rejected");

@@ -23,6 +23,7 @@ import {
 } from "@/lib/email/templates/trip-updated";
 import { resolveEntitlement } from "@/lib/entitlements";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { tripTimesError } from "@/lib/trips/trip-times";
 import { formatTripDateTime, fromKosovoWallTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
 import {
@@ -104,6 +105,8 @@ export async function createTrip(
   const input = parsed.data;
   const times = parseTripTimes(input);
   if (!times) return { success: false, error: INVALID_TIME_ERROR };
+  const timesError = tripTimesError(times);
+  if (timesError) return { success: false, error: timesError };
 
   // Resolve difficulty from the trail if not provided directly.
   let difficulty = input.difficulty ?? null;
@@ -234,12 +237,8 @@ export async function updateTrip(
   const times = parseTripTimes(input);
   if (!times) return { success: false, error: INVALID_TIME_ERROR };
   const newStart = times.start;
-  if (newStart.getTime() < Date.now()) {
-    return {
-      success: false,
-      error: "Data e nisjes nuk mund të jetë në të kaluarën.",
-    };
-  }
+  const timesError = tripTimesError(times);
+  if (timesError) return { success: false, error: timesError };
 
   // Registration-based locks.
   const [confirmed] = await db
