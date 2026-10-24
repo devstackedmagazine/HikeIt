@@ -40,7 +40,7 @@ export default async function SocialLoginErrorPage({
           href="/login"
           className="font-heading bg-forest text-summit hover:bg-abyss flex h-11 w-full items-center justify-center text-[14px] font-extrabold tracking-[0.04em] uppercase transition-colors"
         >
-          Kthehu te Kyçu →
+          Kthehuni te kyçja →
         </Link>
       </div>
     </main>
