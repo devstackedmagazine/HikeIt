@@ -45,6 +45,9 @@ export async function GET(request: Request) {
       tripIds: result.tripIds.slice(0, SENTRY_TRIP_ID_SAMPLE),
       tripIdsTruncated: result.tripIds.length > SENTRY_TRIP_ID_SAMPLE,
     });
+    // Same reason as the error path: without this the heartbeat is usually
+    // lost when the function freezes after responding.
+    await Sentry.flush(2000);
 
     return Response.json(result);
   } catch (error) {
