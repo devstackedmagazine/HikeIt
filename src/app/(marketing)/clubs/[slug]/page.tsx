@@ -256,7 +256,7 @@ export default async function ClubProfilePage({
 
           <Card className="flex flex-col justify-center">
             <CardContent className="space-y-3 py-6">
-              <p className="font-semibold">Bashkohu me {club.name}</p>
+              <p className="font-semibold">Bashkohuni me {club.name}</p>
               <p className="text-muted-foreground text-sm">
                 Bëhuni pjesë e komunitetit dhe merrni pjesë në udhëtime.
               </p>

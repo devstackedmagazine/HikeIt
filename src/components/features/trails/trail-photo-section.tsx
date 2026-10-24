@@ -29,7 +29,7 @@ export function TrailPhotoSection({
         render={<Link href={`/login?redirect=/trails/${trailSlug}`} />}
       >
         <ImagePlus />
-        Shto Foto
+        Shtoni Foto
       </Button>
     );
   }
@@ -38,7 +38,7 @@ export function TrailPhotoSection({
     <div className="space-y-3">
       <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
         <ImagePlus />
-        Shto Foto
+        Shtoni Foto
       </Button>
       {open ? (
         <ImageUploader

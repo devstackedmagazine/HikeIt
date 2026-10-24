@@ -60,7 +60,7 @@ export function ClubTripsTable({
           render={<Link href={`/dashboard/club/${clubSlug}/trips/create`} />}
         >
           <Plus />
-          Krijo Udhëtim të Ri
+          Krijoni Udhëtim të Ri
         </Button>
       </div>
 

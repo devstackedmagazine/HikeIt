@@ -60,7 +60,7 @@ export function ClubCard({ club }: { club: ClubWithStats }) {
           href={`/clubs/${club.slug}`}
           className="mt-auto block border border-moss/30 bg-moss/15 py-2.5 text-center text-[11px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/50 hover:bg-moss/25"
         >
-          Shiko Klubin →
+          Shikoni Klubin →
         </Link>
       </div>
     </div>

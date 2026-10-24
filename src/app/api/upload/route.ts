@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const session = await getOptionalSession();
   if (!session) {
     return NextResponse.json(
-      { error: "Kyçu për të ngarkuar foto" },
+      { error: "Kyçuni për të ngarkuar foto" },
       { status: 401 },
     );
   }

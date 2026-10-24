@@ -62,7 +62,7 @@ export default async function TripsPage({
           Udhëtimet e Ardhshme
         </h1>
         <p className="text-summit/55 mb-6 max-w-[480px] text-[13px] leading-[1.65]">
-          [{total}] udhëtime të planifikuara në rajon. Eksploro shtigjet më të
+          [{total}] udhëtime të planifikuara në rajon. Eksploroni shtigjet më të
           bukura me komunitetin tonë të bjeshkatarëve.
         </p>
         <div className="pb-5">

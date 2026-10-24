@@ -125,7 +125,7 @@ function TrailRow({
             rel="noopener noreferrer"
             className="border-forest bg-summit text-forest hover:bg-mist border-2 px-3 py-1.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
-            Shiko
+            Shikoni
           </Link>
           <button
             type="button"
@@ -147,7 +147,7 @@ function TrailRow({
             className="border-danger bg-summit text-danger hover:bg-danger hover:text-summit flex items-center gap-1 border-2 px-3 py-1.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
           >
             <X className="size-3" />
-            Refuzo
+            Refuzoni
           </button>
         </div>
       </Td>
@@ -198,7 +198,7 @@ function RejectDialog({
         <Dialog.Popup className="border-forest bg-summit fixed top-1/2 left-1/2 z-50 max-h-[90svh] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto border-2 outline-none sm:max-w-md">
           <div className="border-forest border-b-2 p-5">
             <Dialog.Title className="font-heading text-forest text-[16px] font-black tracking-tight uppercase">
-              Refuzo shtegun
+              Refuzoni shtegun
             </Dialog.Title>
             <Dialog.Description className="text-forest/60 mt-1 text-[13px]">
               {trail.name} nuk do të bëhet publik. Shtegu dhe skedari GPX i tij
@@ -240,7 +240,7 @@ function RejectDialog({
                 />
               }
             >
-              Anulo
+              Anuloni
             </Dialog.Close>
             <button
               type="button"
@@ -249,7 +249,7 @@ function RejectDialog({
               className="border-danger bg-danger text-summit flex items-center gap-2 border-2 px-4 py-2.5 text-[11px] font-bold tracking-[0.06em] uppercase transition-colors hover:opacity-90 disabled:opacity-50"
             >
               {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
-              Refuzo shtegun
+              Refuzoni shtegun
             </button>
           </div>
         </Dialog.Popup>
