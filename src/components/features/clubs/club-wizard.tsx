@@ -152,7 +152,7 @@ export function ClubWizard() {
                   name="slug"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL (slug)</FormLabel>
+                      <FormLabel>Adresa e faqes së klubit</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -160,9 +160,19 @@ export function ClubWizard() {
                             {...field}
                             onChange={(e) => {
                               setSlugEdited(true);
-                              field.onChange(generateSlug(e.target.value));
+                              // generateSlug trims a trailing "-", which would
+                              // swallow the dash as it's typed; keep one while
+                              // typing and tidy up on blur.
+                              const raw = e.target.value;
+                              const trailing = /[\s_-]$/.test(raw) ? "-" : "";
+                              const slug = generateSlug(raw);
+                              field.onChange(slug ? slug + trailing : "");
                             }}
-                            onBlur={() => void checkSlug(field.value)}
+                            onBlur={() => {
+                              const slug = generateSlug(field.value);
+                              field.onChange(slug);
+                              void checkSlug(slug);
+                            }}
                           />
                           <span className="absolute top-1/2 right-3 -translate-y-1/2">
                             {slugStatus === "checking" ? (
@@ -266,7 +276,7 @@ export function ClubWizard() {
                       <FormControl>
                         <Input
                           className="h-9"
-                          placeholder="https://..."
+                          placeholder="klubi.com"
                           {...field}
                         />
                       </FormControl>
@@ -300,7 +310,7 @@ export function ClubWizard() {
                       <FormControl>
                         <Input
                           className="h-9"
-                          placeholder="https://facebook.com/..."
+                          placeholder="facebook.com/klubi"
                           {...field}
                         />
                       </FormControl>
