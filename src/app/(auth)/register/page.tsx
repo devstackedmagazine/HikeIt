@@ -136,9 +136,8 @@ function RegisterForm() {
   // New social users go through onboarding to pick hiker vs club, same as
   // the email registration flow — unless they came from an invite (or another
   // carried redirect), which is where they go instead. Social sign-up is
-  // explicit (`requestSignUp`)
-  // and carries the 18+ confirmation through the OAuth state, where the
-  // server checks it before creating the account.
+  // explicit (`requestSignUp`) and carries the 18+ confirmation through the
+  // OAuth state, where the server checks it before creating the account.
   async function handleSocialSignUp(provider: "google" | "facebook") {
     setFormError(null);
     const consent = consentError();
