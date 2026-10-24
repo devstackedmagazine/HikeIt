@@ -73,13 +73,23 @@ function List({
 }) {
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
-        {variant === "upcoming"
-          ? "Asnjë udhëtim i ardhshëm."
-          : variant === "past"
-            ? "Asnjë udhëtim i kaluar."
-            : "Nuk je në asnjë listë pritjeje."}
-      </p>
+      <div className="rounded-xl border border-dashed px-6 py-10 text-center">
+        <p className="text-muted-foreground text-sm">
+          {variant === "upcoming"
+            ? "Nuk jeni regjistruar ende në asnjë udhëtim të ardhshëm."
+            : variant === "past"
+              ? "Udhëtimet ku keni marrë pjesë do të shfaqen këtu."
+              : "Nuk jeni në asnjë listë pritjeje."}
+        </p>
+        {variant !== "past" ? (
+          <Link
+            href="/trips"
+            className="text-primary mt-3 inline-block text-sm font-medium hover:underline"
+          >
+            Zbuloni udhëtime →
+          </Link>
+        ) : null}
+      </div>
     );
   }
   return (
@@ -102,7 +112,7 @@ function SavedList({ items }: { items: FavoriteTrip[] }) {
           href="/trips"
           className="text-primary mt-3 inline-block text-sm font-medium hover:underline"
         >
-          Zbulo udhëtime →
+          Zbuloni udhëtime →
         </Link>
       </div>
     );
@@ -151,10 +161,18 @@ function TripRow({
   const days = daysUntil(item.trip.startDatetime);
 
   async function cancel() {
-    if (!confirm("Konfirmo veprimin?")) return;
+    const question =
+      variant === "waitlisted"
+        ? "Doni të dilni nga lista e pritjes për këtë udhëtim?"
+        : "Doni ta anuloni regjistrimin për këtë udhëtim?";
+    if (!confirm(question)) return;
     setLoading(true);
-    await cancelMyRegistration(item.registrationId);
+    const result = await cancelMyRegistration(item.registrationId);
     setLoading(false);
+    if (!result.success) {
+      alert(result.error ?? "Regjistrimi nuk u anulua. Provoni sërish.");
+      return;
+    }
     router.refresh();
   }
 
