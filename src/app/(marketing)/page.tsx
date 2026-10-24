@@ -101,10 +101,11 @@ const CLUB_BENEFITS = [
   },
 ];
 
+// Plain statements, not counts: numbers here were placeholders, not data.
 const STATS = [
-  { value: "25+", label: "Klube aktive" },
-  { value: "15+", label: "Shtigje të verifikuara" },
-  { value: "500+", label: "Hiker të regjistruar" },
+  { value: "Klube", label: "Udhëtime të organizuara nga klubet" },
+  { value: "Shtigje", label: "Të shqyrtuara nga ekipi HikeIt" },
+  { value: "Falas", label: "Për hiker-at" },
 ];
 
 export default function LandingPage() {
