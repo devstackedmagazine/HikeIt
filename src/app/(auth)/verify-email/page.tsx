@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/client";
+import { carriedRedirect } from "@/lib/utils/safe-redirect";
 
 type Status = "verifying" | "success" | "error";
 
@@ -22,6 +23,9 @@ function VerifyEmail() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  // Where to land after verifying (e.g. back on an invite). Checked: only a
+  // safe internal path, otherwise the dashboard.
+  const next = carriedRedirect(searchParams.get("redirect")) ?? "/dashboard";
 
   const [status, setStatus] = useState<Status>(token ? "verifying" : "error");
   const [resendEmail, setResendEmail] = useState("");
@@ -42,18 +46,18 @@ function VerifyEmail() {
       }
       setStatus("success");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push(next);
         router.refresh();
       }, 1500);
     });
-  }, [token, router]);
+  }, [token, router, next]);
 
   async function handleResend() {
     if (!resendEmail) return;
     setResendState("sending");
     await authClient.sendVerificationEmail({
       email: resendEmail,
-      callbackURL: "/dashboard",
+      callbackURL: next,
     });
     setResendState("sent");
   }

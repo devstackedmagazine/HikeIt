@@ -534,8 +534,8 @@ export async function inviteMember(
           `Jeni ftuar të bashkoheni me klubin ${clubName} në HikeIt.\n\n` +
           `Për ta pranuar ftesën, hapni këtë link: ${inviteUrl}\n\n` +
           `Hyni me këtë adresë email. Nëse nuk keni ende llogari, ` +
-          `regjistrohuni me këtë adresë, konfirmoni email-in dhe pastaj hapni ` +
-          `sërish linkun.\n\n` +
+          `regjistrohuni nga faqja e ftesës me këtë adresë: pasi të ` +
+          `konfirmoni email-in, ktheheni drejt te ftesa.\n\n` +
           `Ftesa është e vlefshme për ${INVITATION_TTL_DAYS} ditë.`,
       }),
     });

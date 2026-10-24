@@ -15,6 +15,7 @@ import {
 import { sendEmail } from "@/lib/email";
 import { ResetPassword } from "@/lib/email/templates/reset-password";
 import { VerifyEmail } from "@/lib/email/templates/verify-email";
+import { verificationRedirect } from "@/lib/utils/safe-redirect";
 
 /**
  * Better Auth server instance.
@@ -94,10 +95,15 @@ export const auth = betterAuth({
     // arbitrary addresses.
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, token }) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
       // Point at our own page (which calls `verifyEmail` client-side and shows
       // loading/success/error states) rather than Better Auth's API endpoint.
-      const verificationUrl = `${env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
+      // The sign-up/sign-in's `callbackURL` (e.g. an invite page) rides along
+      // as `redirect`, but only if it's a safe internal path: never a host.
+      const next = verificationRedirect(url);
+      const verificationUrl =
+        `${env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}` +
+        (next ? `&redirect=${encodeURIComponent(next)}` : "");
       await sendEmail({
         to: user.email,
         subject: "Verify your email · HikeIt",
