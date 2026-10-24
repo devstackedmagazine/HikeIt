@@ -66,7 +66,7 @@ export function haversine(a: GpxPoint, b: GpxPoint): number {
  * Strip DOCTYPE declarations and reject ENTITY definitions to prevent
  * XXE and billion-laughs attacks. xml2js 0.6.2 has no built-in protection.
  */
-function sanitizeXml(content: string): string {
+export function sanitizeXml(content: string): string {
   const stripped = content.replace(/<!DOCTYPE[^>]*>/gi, "");
   if (/<!ENTITY/i.test(stripped)) {
     throw new GpxError("Skedari GPX përmban entitete të palejuara.");

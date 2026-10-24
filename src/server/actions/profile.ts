@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -9,10 +9,27 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { isCloudinaryConfigured } from "@/lib/cloudinary/client";
+import { releaseImage } from "@/lib/cloudinary/ownership";
 import { uploadImage } from "@/lib/cloudinary/upload";
 import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
-import { hikes, users } from "@/lib/db/schema";
+import {
+  accounts,
+  hikes,
+  imageHashes,
+  notifications,
+  organizationMembers,
+  organizations,
+  sessions,
+  trailFavorites,
+  trailPhotos,
+  tripFavorites,
+  tripPhotos,
+  tripRegistrations,
+  trips,
+  users,
+  verifications,
+} from "@/lib/db/schema";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 
@@ -183,34 +200,208 @@ export async function changePassword(data: {
   }
 }
 
-export async function deleteAccount(confirmation: string): Promise<void> {
+/** Thrown inside the deletion transaction to abort it with a user message. */
+class DeletionBlocked extends Error {}
+
+/**
+ * Delete the signed-in user's account: immediate and permanent.
+ *
+ * Refused (nothing changes) when the user is the last super admin, or the
+ * only admin of a club that still exists — the club must never be left
+ * without someone who can manage it. Both checks run inside the transaction
+ * with row locks, so two admins deleting at once can't both pass.
+ *
+ * Redirects home on success; otherwise returns the reason.
+ */
+export async function deleteAccount(
+  confirmation: string,
+): Promise<ActionResult> {
   const session = await getOptionalSession();
   if (!session) redirect("/login");
 
-  // Throttled before the confirmation check. This action returns void, so —
-  // like a failed confirmation — a throttled call just returns without
-  // deleting; there's no channel to report the reason.
   const limited = await enforceRateLimit("ratelimit.profile.delete_account", {
     userId: session.user.id,
   });
-  if (limited) return;
+  if (limited) return { success: false, error: limited };
 
   if (confirmation.trim().toLowerCase() !== session.user.email.toLowerCase()) {
-    return;
+    return { success: false, error: "Email-i nuk përputhet." };
   }
 
-  // The user row is only soft-deleted, which cascades nothing, so hikes —
-  // personal location data — are hard-deleted explicitly, in the same
-  // transaction: both happen or neither does.
-  await db.transaction(async (tx) => {
-    await tx.delete(hikes).where(eq(hikes.userId, session.user.id));
-    await tx
-      .update(users)
-      .set({ deletedAt: new Date() })
-      .where(eq(users.id, session.user.id));
-  });
+  const userId = session.user.id;
+  const now = new Date();
+  let photoIds: string[] = [];
 
-  await auth.api.signOut({ headers: await headers() });
+  // The whole database part is one transaction: every write happens, or —
+  // if a guard throws — none does. Cloudinary is only touched after commit.
+  // The user row itself is kept (past registrations, reviews and trail
+  // proposals point at it) but every personal field is wiped and the login
+  // methods are deleted, so the account can't be signed into or restored.
+  try {
+    await db.transaction(async (tx) => {
+      const [me] = await tx
+        .select({ role: users.role })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for("update");
+      if (me?.role === "super_admin") {
+        const others = await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(
+            and(
+              eq(users.role, "super_admin"),
+              isNull(users.deletedAt),
+              ne(users.id, userId),
+            ),
+          )
+          .for("update");
+        if (others.length === 0) {
+          throw new DeletionBlocked(
+            "Jeni super administratori i fundit i HikeIt. Caktoni një super administrator tjetër para se të fshini llogarinë.",
+          );
+        }
+      }
+
+      const adminOf = await tx
+        .select({ id: organizations.id, name: organizations.name })
+        .from(organizationMembers)
+        .innerJoin(
+          organizations,
+          eq(organizations.id, organizationMembers.organizationId),
+        )
+        .where(
+          and(
+            eq(organizationMembers.userId, userId),
+            eq(organizationMembers.role, "admin"),
+            isNull(organizationMembers.leftAt),
+            isNull(organizations.deletedAt),
+          ),
+        );
+      for (const club of adminOf) {
+        const otherAdmins = await tx
+          .select({ id: organizationMembers.id })
+          .from(organizationMembers)
+          .where(
+            and(
+              eq(organizationMembers.organizationId, club.id),
+              eq(organizationMembers.role, "admin"),
+              isNull(organizationMembers.leftAt),
+              ne(organizationMembers.userId, userId),
+            ),
+          )
+          .for("update");
+        if (otherAdmins.length === 0) {
+          throw new DeletionBlocked(
+            `Jeni administratori i vetëm i klubit „${club.name}". Caktoni një administrator tjetër ose fshini klubin para se të fshini llogarinë.`,
+          );
+        }
+      }
+
+      // Images to release after commit: photos the user posted, and every
+      // avatar they uploaded (current and past).
+      photoIds = [
+        ...(await tx
+          .select({ id: tripPhotos.cloudinaryPublicId })
+          .from(tripPhotos)
+          .where(eq(tripPhotos.userId, userId))),
+        ...(await tx
+          .select({ id: trailPhotos.cloudinaryPublicId })
+          .from(trailPhotos)
+          .where(eq(trailPhotos.userId, userId))),
+        ...(await tx
+          .select({ id: imageHashes.cloudinaryPublicId })
+          .from(imageHashes)
+          .where(
+            and(
+              eq(imageHashes.uploadedBy, userId),
+              eq(imageHashes.entityType, "avatar"),
+            ),
+          )),
+      ].map((r) => r.id);
+
+      await tx.delete(hikes).where(eq(hikes.userId, userId));
+      await tx.delete(tripPhotos).where(eq(tripPhotos.userId, userId));
+      await tx.delete(trailPhotos).where(eq(trailPhotos.userId, userId));
+      await tx.delete(trailFavorites).where(eq(trailFavorites.userId, userId));
+      await tx.delete(tripFavorites).where(eq(tripFavorites.userId, userId));
+      await tx.delete(notifications).where(eq(notifications.userId, userId));
+      await tx.delete(sessions).where(eq(sessions.userId, userId));
+      await tx.delete(accounts).where(eq(accounts.userId, userId));
+      // Pending password-reset tokens store the user id as their value; a
+      // leftover one could otherwise recreate a password login.
+      await tx.delete(verifications).where(eq(verifications.value, userId));
+
+      // Free the seat on trips that haven't started; past ones stay as history.
+      const upcoming = tx
+        .select({ id: trips.id })
+        .from(trips)
+        .where(gt(trips.startDatetime, now));
+      await tx
+        .update(tripRegistrations)
+        .set({ status: "canceled", canceledAt: now })
+        .where(
+          and(
+            eq(tripRegistrations.userId, userId),
+            inArray(tripRegistrations.status, [
+              "confirmed",
+              "waitlisted",
+              "pending",
+            ]),
+            inArray(tripRegistrations.tripId, upcoming),
+          ),
+        );
+      // Every club they admin still has another admin (checked above), so
+      // leaving and dropping `ownerId` never orphans a club.
+      await tx
+        .update(organizationMembers)
+        .set({ leftAt: now })
+        .where(
+          and(
+            eq(organizationMembers.userId, userId),
+            isNull(organizationMembers.leftAt),
+          ),
+        );
+      await tx
+        .update(organizations)
+        .set({ ownerId: null })
+        .where(eq(organizations.ownerId, userId));
+
+      await tx
+        .update(users)
+        .set({
+          email: `deleted-${userId}@deleted.invalid`,
+          emailVerified: false,
+          name: "Përdorues i fshirë",
+          avatarUrl: null,
+          bio: null,
+          phone: null,
+          dateOfBirth: null,
+          emergencyContactName: null,
+          emergencyContactPhone: null,
+          preferences: null,
+          deletedAt: now,
+        })
+        .where(eq(users.id, userId));
+    });
+  } catch (error) {
+    if (error instanceof DeletionBlocked) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
+  // Committed. `releaseImage` destroys a file only when no column in any
+  // table still references it (trip/trail photos, trip/trail covers, club
+  // logo/cover, avatars), so a club logo or trip cover that shares an asset
+  // with one of these photos survives. Best effort: failures are reported to
+  // Sentry and leave an unreferenced file behind.
+  await Promise.all(
+    [...new Set(photoIds)].map((id) => releaseImage(id, userId)),
+  );
+
+  // The session row is already deleted; this clears the browser cookie.
+  await auth.api.signOut({ headers: await headers() }).catch(() => undefined);
   redirect("/");
 }
 

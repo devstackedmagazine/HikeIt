@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://hikeit.app/terms" },
 };
 
-const LAST_UPDATED = "Shtator 2026";
+const LAST_UPDATED = "Tetor 2026";
 
 export default function TermsPage() {
   return (
@@ -44,6 +44,18 @@ export default function TermsPage() {
             .
           </p>
           <p>
+            HikeIt operohet nga{" "}
+            <strong className="text-summit">
+              Fatlum Gerxhaliu (person fizik), Kosovë
+            </strong>
+            . Kontakti:{" "}
+            <LegalLink href="mailto:hello@hikeit.app">
+              hello@hikeit.app
+            </LegalLink>
+            . Në këto Kushte, &ldquo;HikeIt&rdquo;, &ldquo;ne&rdquo; dhe
+            &ldquo;neve&rdquo; i referohen operatorit.
+          </p>
+          <p>
             Këto Kushte rregullojnë përdorimin e platformës HikeIt (hikeit.app)
             nga të gjithë përdoruesit: hikerët dhe klubet organizatore.
           </p>
@@ -65,17 +77,11 @@ export default function TermsPage() {
             items={[
               <>
                 Mosha minimale për të krijuar llogari është{" "}
-                <strong className="text-summit">18 vjeç</strong>.
+                <strong className="text-summit">18 vjeç</strong>. Personat nën
+                18 vjeç nuk lejohen të regjistrohen, as me leje të prindit.
               </>,
-              <>
-                Personat <strong className="text-summit">16–18 vjeç</strong>{" "}
-                mund të përdorin platformën vetëm me leje të shkruar të prindit
-                ose kujdestarit ligjor, i cili merr përsipër përgjegjësinë e
-                plotë.
-              </>,
-              <>
-                Personat nën 16 vjeç nuk lejohen të regjistrohen në platformë.
-              </>,
+              "Gjatë regjistrimit — me email ose me Google/Facebook — ju konfirmoni që jeni 18 vjeç ose më shumë.",
+              "Nëse mësojmë se një llogari i përket një personi nën 18 vjeç, e fshijmë.",
             ]}
           />
         </LegalSection>
@@ -149,7 +155,32 @@ export default function TermsPage() {
           </LegalCallout>
         </LegalSection>
 
-        <LegalSection heading="6. Pagesat">
+        <LegalSection heading="6. Informacioni për Shtigjet">
+          <LegalCallout heading="Vetëm informativ — verifikojeni para ecjes">
+            <LegalList
+              items={[
+                "Informacioni për shtigjet — distanca, lartësia, ngjitja, vështirësia, kohëzgjatja, itinerari, harta dhe skedarët GPX — është vetëm informativ. Mund të jetë i pasaktë, i paplotë ose i vjetëruar.",
+                "Shumë shtigje propozohen nga përdoruesit dhe statistikat llogariten automatikisht nga skedarët GPX. Ne i shqyrtojmë propozimet, por nuk e verifikojmë shtegun në terren.",
+                "Kushtet në terren ndryshojnë: shtigjet mund të jenë të dëmtuara, të mbyllura ose të rrezikshme pa u pasqyruar në platformë.",
+                "Ju jeni përgjegjës ta verifikoni informacionin nga burime të tjera (harta zyrtare, udhërrëfyes vendas, klubi organizator) para çdo ecjeje dhe të mos mbështeteni vetëm te HikeIt për orientim.",
+              ]}
+            />
+          </LegalCallout>
+        </LegalSection>
+
+        <LegalSection heading="7. Njoftimet e Motit">
+          <LegalCallout heading="Lehtësi, jo shërbim sigurie">
+            <LegalList
+              items={[
+                "Njoftimet e motit për udhëtimet janë një lehtësi. Ato bazohen në parashikime automatike të palëve të treta (Open-Meteo) dhe në pragje të thjeshta.",
+                "Njoftimet mund të vonohen, të jenë të gabuara ose të mos dërgohen fare — p.sh. kur udhëtimi nuk ka pikë takimi në hartë, kur parashikimi ndryshon ose kur një shërbim teknik dështon.",
+                "Mungesa e një njoftimi nuk do të thotë që moti është i sigurt. Njoftimet e motit nuk janë shërbim sigurie dhe nuk zëvendësojnë parashikimet zyrtare, gjykimin tuaj apo vendimin e klubit organizator.",
+              ]}
+            />
+          </LegalCallout>
+        </LegalSection>
+
+        <LegalSection heading="8. Pagesat">
           <LegalCallout heading="Seksion kritik — pagesat e udhëtimeve">
             <LegalList
               items={[
@@ -190,23 +221,24 @@ export default function TermsPage() {
             <LegalList
               items={[
                 <>
-                  Klubet që abonohen te planet Pro ose Team të HikeIt paguajnë
-                  nëpërmjet <strong className="text-summit">Paddle</strong>, i
-                  cili vepron si{" "}
+                  Kur të hapen abonimet, klubet që abonohen te planet Pro ose
+                  Team do të paguajnë nëpërmjet{" "}
+                  <strong className="text-summit">Paddle</strong>, i cili do të
+                  veprojë si{" "}
                   <strong className="text-summit">Merchant of Record</strong>{" "}
-                  për këto abonime — Paddle faturon klubin, mban të dhënat e
-                  kartës bankare dhe trajton TVSH-në sipas juridiksionit të
-                  klubit.
+                  për këto abonime — Paddle do ta faturojë klubin, do të mbajë
+                  të dhënat e kartës bankare dhe do ta trajtojë TVSH-në sipas
+                  juridiksionit të klubit.
                 </>,
-                "HikeIt nuk ruan asnjë të dhënë karte bankare për abonimet e klubeve — gjithçka procesohet nga Paddle.",
-                "Faturimi, anulimi dhe menaxhimi i abonimit bëhen nëpërmjet portalit të Paddle, të aksesueshëm nga paneli i klubit.",
+                "HikeIt nuk ruan asnjë të dhënë karte bankare.",
+                "Abonimet nuk janë hapur ende: sot çdo klub e përdor platformën falas, brenda planit falas ose periudhës së provës. Për çdo pyetje rreth planit të klubit — dhe, kur të hapen abonimet, për faturat, metodën e pagesës ose anulimin — na shkruani në hello@hikeit.app.",
                 "HikeIt nuk mban përgjegjësi për dështime teknike, vonesa apo gabime të shkaktuara nga Paddle gjatë procesimit të abonimeve.",
               ]}
             />
           </LegalCallout>
         </LegalSection>
 
-        <LegalSection heading="7. Kufizimi i Përgjegjësisë">
+        <LegalSection heading="9. Kufizimi i Përgjegjësisë">
           <LegalCallout heading="Seksion kritik — kufizim i përgjegjësisë">
             <p>
               Në masën maksimale të lejuar nga legjislacioni i Republikës së
@@ -239,7 +271,7 @@ export default function TermsPage() {
           </LegalCallout>
         </LegalSection>
 
-        <LegalSection heading="8. Klubet dhe Organizatorët">
+        <LegalSection heading="10. Klubet dhe Organizatorët">
           <p>
             Klubet që përdorin HikeIt për të listuar udhëtime marrin përsipër
             detyrimet e mëposhtme:
@@ -251,7 +283,7 @@ export default function TermsPage() {
               "Të respektojnë legjislacionin në fuqi të Republikës së Kosovës, përfshirë detyrimet tatimore dhe ato për mbrojtjen e konsumatorit.",
               "Të disponojnë licencat, lejet dhe sigurimet e nevojshme sipas natyrës së aktivitetit që organizojnë.",
               "Të trajtojnë të dhënat personale të pjesëmarrësve në përputhje me Ligjin Nr. 06/L-082.",
-              "Të përcaktojnë dhe respektojnë politikën e tyre të anulimit dhe rimbursimit ndaj hikerëve, siç përshkruhet në Seksionin 6.",
+              "Të përcaktojnë dhe respektojnë politikën e tyre të anulimit dhe rimbursimit ndaj hikerëve, siç përshkruhet në Seksionin 8.",
             ]}
           />
           <p>
@@ -261,19 +293,41 @@ export default function TermsPage() {
           </p>
         </LegalSection>
 
-        <LegalSection heading="9. Pronësia Intelektuale">
+        <LegalSection heading="11. Pronësia Intelektuale">
           <LegalList
             items={[
               "Platforma HikeIt, emri, logoja, dizajni dhe kodi burimor janë pronë e HikeIt dhe mbrohen nga legjislacioni për pronësinë intelektuale.",
               "Përmbajtja që ju ngarkoni (foto, përshkrime, komente) mbetet pronë juaja.",
               "Duke ngarkuar përmbajtje, ju i jepni HikeIt një licencë jo-ekskluzive, pa pagesë dhe globale për ta përdorur, shfaqur dhe shpërndarë atë brenda platformës dhe në materialet promovuese të saj.",
               "Ju garantoni se zotëroni të drejtat mbi përmbajtjen që ngarkoni dhe se ajo nuk cenon të drejtat e palëve të treta.",
-              "Mund të kërkoni heqjen e përmbajtjes tuaj në çdo kohë në hello@hikeit.app.",
+              "Mund të kërkoni heqjen e përmbajtjes tuaj në çdo kohë në hello@hikeit.app — përveç shtigjeve të propozuara, për të cilat vlen Seksioni 12.",
             ]}
           />
         </LegalSection>
 
-        <LegalSection heading="10. Sjellja e Përdoruesve">
+        <LegalSection heading="12. Propozimet e Shtigjeve">
+          <LegalList
+            items={[
+              "Duke propozuar një shteg, ju na jepni të drejtën — jo-ekskluzive, pa pagesë, globale dhe pa afat — për të ruajtur, përpunuar dhe publikuar të dhënat e shtegut (emrin, përshkrimin, rajonin, gjurmën dhe skedarin GPX) pas miratimit, përfshirë shkarkimin e skedarit GPX nga kushdo.",
+              "Para ruajtjes, nga skedari GPX hiqen kohët, të dhënat e pajisjes dhe autori; mbeten koordinatat dhe lartësia.",
+              "Ju garantoni se keni të drejtë ta ndani gjurmën dhe se ajo nuk zbulon vende private (p.sh. shtëpinë tuaj).",
+              "Me kërkesën tuaj në hello@hikeit.app, ose kur fshini llogarinë, heqim emrin tuaj nga shtegu. Vetë shtegu mund të mbetet i publikuar.",
+              "Mund ta refuzojmë, ndryshojmë ose heqim një shteg sipas gjykimit tonë.",
+            ]}
+          />
+        </LegalSection>
+
+        <LegalSection heading="13. Ecjet Personale">
+          <LegalList
+            items={[
+              "Jeni përgjegjës për skedarët GPX që ngarkoni si ecje personale dhe garantoni se ju përkasin juve.",
+              "Statistikat e ecjeve — distanca, ngjitja, kohëzgjatja dhe totali i kilometrave — llogariten automatikisht dhe janë vlerësime; mund të ndryshojnë nga vlerat reale ose nga aplikacione të tjera.",
+              "Ecjet janë private dhe mund t'i fshini në çdo kohë. Si i trajtojmë përshkruhet në Politikën e Privatësisë.",
+            ]}
+          />
+        </LegalSection>
+
+        <LegalSection heading="14. Sjellja e Përdoruesve">
           <p>Gjatë përdorimit të platformës, ndalohet:</p>
           <LegalList
             items={[
@@ -292,7 +346,7 @@ export default function TermsPage() {
           </p>
         </LegalSection>
 
-        <LegalSection heading="11. Ndryshimet e Kushteve">
+        <LegalSection heading="15. Ndryshimet e Kushteve">
           <p>
             HikeIt mund t&apos;i ndryshojë këto Kushte në çdo kohë. Për
             ndryshime thelbësore, ju njoftojmë me email dhe/ose me njoftim në
@@ -302,7 +356,7 @@ export default function TermsPage() {
           </p>
         </LegalSection>
 
-        <LegalSection heading="12. Ligji i Aplikueshëm dhe Juridiksioni">
+        <LegalSection heading="16. Ligji i Aplikueshëm dhe Juridiksioni">
           <p>
             Këto Kushte rregullohen nga legjislacioni i{" "}
             <strong className="text-summit">Republikës së Kosovës</strong>.
@@ -319,7 +373,7 @@ export default function TermsPage() {
           </p>
         </LegalSection>
 
-        <LegalSection heading="13. Kontakti">
+        <LegalSection heading="17. Kontakti">
           <p>
             Për çdo pyetje në lidhje me këto Kushte të Shërbimit, na shkruani në{" "}
             <LegalLink href="mailto:hello@hikeit.app">

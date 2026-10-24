@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -56,17 +57,32 @@ export default function RegisterPage() {
   const password = useWatch({ control: form.control, name: "password" });
   const strengthScore = scorePassword(password);
 
+  /** Both boxes are required for every sign-up method; null when ticked. */
+  function consentError(): string | null {
+    if (!confirmedAge) {
+      return "Ju lutem konfirmoni që jeni 18 vjeç ose më shumë.";
+    }
+    if (!acceptedTerms) return "Ju lutem pranoni Kushtet e Përdorimit.";
+    return null;
+  }
+
   async function onSubmit(values: RegisterInput) {
     setFormError(null);
-    if (!acceptedTerms) {
-      setFormError("Ju lutem pranoni Kushtet e Përdorimit.");
+    const consent = consentError();
+    if (consent) {
+      setFormError(consent);
       return;
     }
-    const { error } = await signUp.email({
+    // `ageConfirmed` is required server-side (databaseHooks in lib/auth).
+    // It isn't a user field, so it's absent from the client's body type;
+    // the endpoint accepts and ignores extra keys.
+    const body = {
       name: values.name,
       email: values.email,
       password: values.password,
-    });
+      ageConfirmed: true,
+    };
+    const { error } = await signUp.email(body);
     if (error) {
       setFormError(error.message ?? "Nuk mundëm të krijojmë llogarinë.");
       return;
@@ -74,23 +90,23 @@ export default function RegisterPage() {
     setSubmittedEmail(values.email);
   }
 
-  async function handleGoogleSignIn() {
-    // New Google users go through onboarding to pick hiker vs club, same as
-    // the email registration flow.
+  // New social users go through onboarding to pick hiker vs club, same as
+  // the email registration flow. Social sign-up is explicit (`requestSignUp`)
+  // and carries the 18+ confirmation through the OAuth state, where the
+  // server checks it before creating the account.
+  async function handleSocialSignUp(provider: "google" | "facebook") {
+    setFormError(null);
+    const consent = consentError();
+    if (consent) {
+      setFormError(consent);
+      return;
+    }
     await signIn.social({
-      provider: "google",
+      provider,
       callbackURL: "/onboarding",
-      errorCallbackURL: "/social-login-error?provider=google",
-    });
-  }
-
-  async function handleFacebookSignIn() {
-    // Same onboarding redirect as Google — new social users still need to
-    // pick hiker vs club.
-    await signIn.social({
-      provider: "facebook",
-      callbackURL: "/onboarding",
-      errorCallbackURL: "/social-login-error?provider=facebook",
+      errorCallbackURL: `/social-login-error?provider=${provider}`,
+      requestSignUp: true,
+      additionalData: { ageConfirmed: true },
     });
   }
 
@@ -308,6 +324,28 @@ export default function RegisterPage() {
                 <label className="text-forest/70 flex items-center gap-2.5 text-[13px]">
                   <input
                     type="checkbox"
+                    checked={confirmedAge}
+                    onChange={(e) => setConfirmedAge(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "flex size-4 shrink-0 items-center justify-center border-[1.5px]",
+                      confirmedAge
+                        ? "border-forest bg-forest"
+                        : "border-forest/30",
+                    )}
+                  >
+                    {confirmedAge ? (
+                      <Check className="text-summit size-3" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span>Konfirmoj që jam 18 vjeç ose më shumë</span>
+                </label>
+
+                <label className="text-forest/70 flex items-center gap-2.5 text-[13px]">
+                  <input
+                    type="checkbox"
                     checked={acceptedTerms}
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
                     className="sr-only"
@@ -358,14 +396,14 @@ export default function RegisterPage() {
                 <div className="mt-4 flex gap-2.5">
                   <button
                     type="button"
-                    onClick={handleGoogleSignIn}
+                    onClick={() => void handleSocialSignUp("google")}
                     className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Google
                   </button>
                   <button
                     type="button"
-                    onClick={handleFacebookSignIn}
+                    onClick={() => void handleSocialSignUp("facebook")}
                     className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Facebook
