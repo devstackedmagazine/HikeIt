@@ -19,8 +19,8 @@ const HIKER_POINTS = [
 const CLUB_POINTS = [
   "Menaxho anëtarët",
   "Krijo udhëtime",
-  "Mblidh pagesa",
-  "Dërgo alerts",
+  "Menaxho regjistrimet",
+  "Njofto anëtarët",
 ];
 
 const STATS = [

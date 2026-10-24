@@ -141,10 +141,9 @@ function DiscoverClubCard({
 
 function DashboardFooter() {
   const links = [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Trail Safety", href: "#" },
-    { label: "Contact Basecamp", href: "mailto:hello@hikeit.app" },
-    { label: "Terms of Service", href: "/terms" },
+    { label: "Privatësia", href: "/privacy" },
+    { label: "Na kontaktoni", href: "mailto:hello@hikeit.app" },
+    { label: "Kushtet e përdorimit", href: "/terms" },
   ];
   return (
     <footer className="bg-abyss mt-8 px-6 py-6">
@@ -280,7 +279,7 @@ async function HikerHome({ userId, name }: { userId: string; name: string }) {
             <EmptyState
               icon={Mountain}
               title="Ende pa udhëtime"
-              description="Gjej udhëtimin tënd të parë dhe nis aventurën."
+              description="Gjeni udhëtimin tuaj të parë dhe nisni aventurën."
               action={{ label: "Gjej udhëtime", href: "/trips" }}
             />
           )}
@@ -333,15 +332,15 @@ async function ClubAdminHome({
     return (
       <div className="mx-auto max-w-5xl space-y-6">
         <h1 className="font-heading text-summit text-2xl font-extrabold uppercase">
-          Mirë se vjen, {getFirstName(name)}! 👋
+          Mirë se vini, {getFirstName(name)}! 👋
         </h1>
         <EmptyState
           tone="dark"
           icon={Building2}
           title="Ende pa klub"
-          description="Krijo klubin tënd për të filluar organizimin e udhëtimeve."
+          description="Krijoni klubin tuaj për të filluar organizimin e udhëtimeve."
           action={{
-            label: "Krijo klubin tënd",
+            label: "Krijoni klubin",
             href: "/dashboard/club/create",
           }}
         />
@@ -368,7 +367,7 @@ async function ClubAdminHome({
       <div className="border-summit/10 bg-summit/[0.04] flex items-start justify-between gap-4 border p-5">
         <div>
           <p className="text-summit/60 mb-1.5 text-[10px] font-semibold tracking-[0.1em] uppercase">
-            Mirë se vjen
+            Mirë se vini
           </p>
           <h1 className="font-heading text-summit mb-2.5 text-[clamp(20px,3vw,32px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
             {club.name}
@@ -417,7 +416,7 @@ async function ClubAdminHome({
         <div className="border-summit/8 bg-summit/[0.03] border">
           <div className="flex items-center justify-between px-4 py-3.5">
             <h2 className="text-summit/70 text-[11px] font-bold tracking-[0.08em] uppercase">
-              Udhëtimet ardhshme
+              Udhëtimet e ardhshme
             </h2>
             <Link
               href={`/dashboard/club/${club.slug}/trips/create`}
@@ -463,7 +462,14 @@ async function ClubAdminHome({
             </div>
           ) : (
             <p className="text-summit/70 px-4 py-8 text-center text-xs">
-              Asnjë udhëtim aktiv. Krijoni të parin.
+              Nuk keni udhëtime të ardhshme. Klikoni{" "}
+              <Link
+                href={`/dashboard/club/${club.slug}/trips/create`}
+                className="text-moss font-semibold hover:underline"
+              >
+                Krijo udhëtim
+              </Link>{" "}
+              për të shtuar të parin, pastaj ndajeni linkun e tij me anëtarët.
             </p>
           )}
         </div>
