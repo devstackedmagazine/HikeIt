@@ -36,52 +36,54 @@ export default async function EditTripPage({
   const trailOptions = await getTrailOptions();
 
   return (
-    <div className="-mx-6 -my-5 min-h-svh max-w-[688px] space-y-6 bg-abyss px-6 py-5 pb-24 md:pb-12">
-      <nav className="flex items-center gap-1 text-xs text-summit/40">
-        <Link href="/dashboard" className="hover:text-summit">
-          {access.organization.name}
-        </Link>
-        <ChevronRight className="size-3.5" />
-        <Link
-          href={`/dashboard/club/${slug}/trips/${trip.slug}`}
-          className="hover:text-summit"
-        >
-          {trip.title}
-        </Link>
-        <ChevronRight className="size-3.5" />
-        <span className="text-summit/70">Ndrysho</span>
-      </nav>
+    <div className="bg-abyss -mx-6 -my-5 min-h-svh px-6 py-5 pb-24 md:pb-12">
+      <div className="max-w-[640px] space-y-6">
+        <nav className="text-summit/40 flex items-center gap-1 text-xs">
+          <Link href="/dashboard" className="hover:text-summit">
+            {access.organization.name}
+          </Link>
+          <ChevronRight className="size-3.5" />
+          <Link
+            href={`/dashboard/club/${slug}/trips/${trip.slug}`}
+            className="hover:text-summit"
+          >
+            {trip.title}
+          </Link>
+          <ChevronRight className="size-3.5" />
+          <span className="text-summit/70">Ndrysho</span>
+        </nav>
 
-      <h1 className="font-heading text-2xl font-extrabold tracking-tight text-summit uppercase">
-        Ndrysho Udhëtimin
-      </h1>
+        <h1 className="font-heading text-summit text-2xl font-extrabold tracking-tight uppercase">
+          Ndrysho Udhëtimin
+        </h1>
 
-      <TripForm
-        mode="edit"
-        clubSlug={slug}
-        tripId={trip.id}
-        tripSlug={trip.slug}
-        trailOptions={trailOptions}
-        initialValues={{
-          title: trip.title,
-          description: trip.description ?? "",
-          trailId: trip.trailId ?? "",
-          difficulty: trip.difficulty ?? undefined,
-          startDatetime: toLocalInput(trip.startDatetime),
-          endDatetime: trip.endDatetime ? toLocalInput(trip.endDatetime) : "",
-          meetingPoint: trip.meetingPoint ?? "",
-          maxParticipants: trip.maxParticipants ?? undefined,
-          minParticipants: trip.minParticipants,
-          requirements: trip.requirements ?? "",
-          included: trip.included ?? "",
-          priceEur: Number(trip.priceEur),
-          publish: trip.status === "open",
-        }}
-      />
+        <TripForm
+          mode="edit"
+          clubSlug={slug}
+          tripId={trip.id}
+          tripSlug={trip.slug}
+          trailOptions={trailOptions}
+          initialValues={{
+            title: trip.title,
+            description: trip.description ?? "",
+            trailId: trip.trailId ?? "",
+            difficulty: trip.difficulty ?? undefined,
+            startDatetime: toLocalInput(trip.startDatetime),
+            endDatetime: trip.endDatetime ? toLocalInput(trip.endDatetime) : "",
+            meetingPoint: trip.meetingPoint ?? "",
+            maxParticipants: trip.maxParticipants ?? undefined,
+            minParticipants: trip.minParticipants,
+            requirements: trip.requirements ?? "",
+            included: trip.included ?? "",
+            priceEur: Number(trip.priceEur),
+            publish: trip.status === "open",
+          }}
+        />
 
-      <TripCoverField tripId={trip.id} initialPublicId={trip.coverImageUrl} />
+        <TripCoverField tripId={trip.id} initialPublicId={trip.coverImageUrl} />
 
-      <TripGpxSection tripId={trip.id} existingGpxUrl={trip.gpxUrl} />
+        <TripGpxSection tripId={trip.id} existingGpxUrl={trip.gpxUrl} />
+      </div>
     </div>
   );
 }
