@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import type { Trip } from "@/lib/db/schema";
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 import { getClubBySlug } from "@/server/queries/clubs";
 import { getClubPhotos } from "@/server/queries/photos";
 import { getUpcomingTripsByClub } from "@/server/queries/trips";
@@ -42,6 +43,7 @@ export async function generateMetadata({
 
 function formatTripDate(date: Date): string {
   return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "numeric",
     month: "short",
     year: "numeric",

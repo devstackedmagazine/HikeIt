@@ -23,12 +23,30 @@ import {
 } from "@/lib/email/templates/trip-updated";
 import { resolveEntitlement } from "@/lib/entitlements";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
-import { formatTripDateTime } from "@/lib/utils/datetime";
+import { formatTripDateTime, fromKosovoWallTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
 import {
   type CreateTripInput,
   createTripSchema,
 } from "@/lib/validations/trips";
+
+/**
+ * The form's datetime-local strings are Kosovo wall-clock times. Read them
+ * as such — `new Date("2026-11-01T08:00")` would use the server's zone, which
+ * on Vercel is UTC, and store every trip one or two hours late.
+ */
+function parseTripTimes(input: {
+  startDatetime: string;
+  endDatetime?: string;
+}): { start: Date; end: Date | null } | null {
+  const start = fromKosovoWallTime(input.startDatetime);
+  if (!start) return null;
+  if (!input.endDatetime) return { start, end: null };
+  const end = fromKosovoWallTime(input.endDatetime);
+  return end ? { start, end } : null;
+}
+
+const INVALID_TIME_ERROR = "Data ose ora nuk është e vlefshme.";
 
 export interface CreateTripResult {
   success: boolean;
@@ -84,6 +102,8 @@ export async function createTrip(
     return { success: false, error: "Të dhëna të pavlefshme." };
   }
   const input = parsed.data;
+  const times = parseTripTimes(input);
+  if (!times) return { success: false, error: INVALID_TIME_ERROR };
 
   // Resolve difficulty from the trail if not provided directly.
   let difficulty = input.difficulty ?? null;
@@ -107,8 +127,8 @@ export async function createTrip(
       trailId,
       title: input.title,
       description: input.description || null,
-      startDatetime: new Date(input.startDatetime),
-      endDatetime: input.endDatetime ? new Date(input.endDatetime) : null,
+      startDatetime: times.start,
+      endDatetime: times.end,
       meetingPoint: input.meetingPoint || null,
       meetingLat: input.meetingLat ? String(input.meetingLat) : null,
       meetingLng: input.meetingLng ? String(input.meetingLng) : null,
@@ -138,7 +158,7 @@ export async function createTrip(
     void notifyMembers(access.organization.id, access.organization.name, {
       tripTitle: input.title,
       slug: trip.slug,
-      startDatetime: new Date(input.startDatetime),
+      startDatetime: times.start,
     });
   }
 
@@ -211,7 +231,9 @@ export async function updateTrip(
   }
   const input = parsed.data;
 
-  const newStart = new Date(input.startDatetime);
+  const times = parseTripTimes(input);
+  if (!times) return { success: false, error: INVALID_TIME_ERROR };
+  const newStart = times.start;
   if (newStart.getTime() < Date.now()) {
     return {
       success: false,
@@ -263,7 +285,7 @@ export async function updateTrip(
       description: input.description || null,
       trailId: input.trailId || null,
       startDatetime: newStart,
-      endDatetime: input.endDatetime ? new Date(input.endDatetime) : null,
+      endDatetime: times.end,
       meetingPoint: newMeeting,
       maxParticipants: input.maxParticipants ?? null,
       minParticipants: input.minParticipants,

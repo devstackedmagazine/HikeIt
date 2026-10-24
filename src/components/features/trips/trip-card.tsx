@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CloudImage } from "@/components/features/images/cloud-image";
 import type { Trip } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 import type { TripWithClub } from "@/server/queries/trips";
 
 const DIFFICULTY: Record<
@@ -13,11 +14,16 @@ const DIFFICULTY: Record<
   easy: { label: "Lehtë", bar: "bg-moss", badge: "bg-moss text-abyss" },
   moderate: { label: "Moderat", bar: "bg-alert", badge: "bg-alert text-abyss" },
   hard: { label: "Vështirë", bar: "bg-sunset", badge: "bg-sunset text-summit" },
-  expert: { label: "Ekstreme", bar: "bg-danger", badge: "bg-danger text-summit" },
+  expert: {
+    label: "Ekstreme",
+    bar: "bg-danger",
+    badge: "bg-danger text-summit",
+  },
 };
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -54,16 +60,16 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
     .toUpperCase();
 
   return (
-    <div className="flex flex-col overflow-hidden border border-summit/[0.08] bg-summit/[0.03]">
+    <div className="border-summit/[0.08] bg-summit/[0.03] flex flex-col overflow-hidden border">
       {/* Top difficulty accent */}
       <div className={cn("h-[3px] w-full", barColor)} />
 
       {/* Club row */}
-      <div className="flex items-center gap-1.5 border-b border-summit/[0.06] bg-summit/[0.03] px-3 py-2">
-        <span className="flex size-4 items-center justify-center rounded-full bg-moss/20 text-[8px] font-bold text-moss">
+      <div className="border-summit/[0.06] bg-summit/[0.03] flex items-center gap-1.5 border-b px-3 py-2">
+        <span className="bg-moss/20 text-moss flex size-4 items-center justify-center rounded-full text-[8px] font-bold">
           {trip.club.name?.charAt(0).toUpperCase() ?? "?"}
         </span>
-        <span className="truncate text-[10px] font-semibold tracking-[0.06em] text-summit/50 uppercase">
+        <span className="text-summit/50 truncate text-[10px] font-semibold tracking-[0.06em] uppercase">
           {trip.club.name}
         </span>
       </div>
@@ -92,22 +98,22 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
 
       {/* Body */}
       <div className="flex flex-1 flex-col px-3 pt-3">
-        <h3 className="font-heading mb-2.5 line-clamp-2 text-[14px] leading-[1.2] font-extrabold tracking-[-0.01em] text-summit uppercase">
+        <h3 className="font-heading text-summit mb-2.5 line-clamp-2 text-[14px] leading-[1.2] font-extrabold tracking-[-0.01em] uppercase">
           {trip.title}
         </h3>
 
-        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] text-summit/45 uppercase">
-          <Calendar className="size-[11px] text-summit/35" />
+        <p className="text-summit/45 mb-1.5 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] uppercase">
+          <Calendar className="text-summit/35 size-[11px]" />
           {formatDate(trip.startDatetime)}
         </p>
         {location ? (
-          <p className="mb-3 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] text-summit/45 uppercase">
-            <MapPin className="size-[11px] text-summit/35" />
+          <p className="text-summit/45 mb-3 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.04em] uppercase">
+            <MapPin className="text-summit/35 size-[11px]" />
             {location}
           </p>
         ) : null}
 
-        <div className="mb-2.5 h-px w-full bg-summit/[0.06]" />
+        <div className="bg-summit/[0.06] mb-2.5 h-px w-full" />
 
         {/* Spots */}
         <div className="mb-2">
@@ -119,19 +125,22 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
           >
             {s.label}
           </span>
-          <div className="h-[3px] w-full bg-summit/[0.08]">
-            <div className={cn("h-full", s.color)} style={{ width: `${s.pct}%` }} />
+          <div className="bg-summit/[0.08] h-[3px] w-full">
+            <div
+              className={cn("h-full", s.color)}
+              style={{ width: `${s.pct}%` }}
+            />
           </div>
         </div>
 
         {/* Price */}
         <div className="mb-3">
           {free ? (
-            <span className="font-heading text-[20px] font-extrabold tracking-[-0.01em] text-moss uppercase">
+            <span className="font-heading text-moss text-[20px] font-extrabold tracking-[-0.01em] uppercase">
               Falas
             </span>
           ) : (
-            <span className="font-heading text-[20px] font-extrabold tracking-[-0.02em] text-summit">
+            <span className="font-heading text-summit text-[20px] font-extrabold tracking-[-0.02em]">
               €{Number(trip.priceEur)}
             </span>
           )}
@@ -139,7 +148,7 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
 
         <Link
           href={`/trips/${trip.slug}`}
-          className="mt-auto block border border-moss/25 bg-moss/10 py-2.5 text-center text-[10px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/45 hover:bg-moss/20"
+          className="border-moss/25 bg-moss/10 text-moss hover:border-moss/45 hover:bg-moss/20 mt-auto block border py-2.5 text-center text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
         >
           Shiko Udhëtimin →
         </Link>
