@@ -125,6 +125,7 @@ export default async function PublicTripPage({
   const timeLabel = new Intl.DateTimeFormat("sq-AL", {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(trip.startDatetime);
   const location = [trip.club.city, "Kosovë"]
     .filter(Boolean)

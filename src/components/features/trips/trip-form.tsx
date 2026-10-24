@@ -1,7 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, CreditCard, Loader2, Search } from "lucide-react";
+import {
+  ChevronDown,
+  CreditCard,
+  ImagePlus,
+  Loader2,
+  Search,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,7 +19,6 @@ import {
   Field,
   Section,
 } from "@/components/features/forms/brutal-form";
-import { CoverPhotoUploader } from "@/components/features/images/cover-photo-uploader";
 import { SUBMIT_TRAIL_PATH } from "@/components/features/trails/propose-trail-link";
 import {
   type Difficulty,
@@ -178,8 +183,20 @@ export function TripForm({
         </div>
       </Section>
 
-      {/* Cover photo (standalone, outside cards) */}
-      <CoverPhotoUploader />
+      {/* The photo and GPX upload need the trip's id, so they live on the
+          edit page. Say so here instead of offering a drop zone that
+          silently discards the file. */}
+      {mode === "create" ? (
+        <div className="border-summit/20 bg-summit/[0.03] flex items-start gap-2.5 border border-dashed px-3.5 py-3">
+          <ImagePlus className="text-summit/50 mt-0.5 size-4 shrink-0" />
+          <p className="text-summit/70 text-[12px] leading-[1.55]">
+            <span className="text-summit font-semibold">
+              Foto kryesore dhe skedari GPX:
+            </span>{" "}
+            i shtoni pasi ta ruani udhëtimin, te butoni “Ndrysho udhëtimin”.
+          </p>
+        </div>
+      ) : null}
 
       {/* 02 — Date & location */}
       <Section number="02" title="Data dhe vendndodhja">
