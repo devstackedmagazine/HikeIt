@@ -15,7 +15,7 @@ export function SubscriptionCanceled({
         kësaj, klubi kalon në planin falas.
       </Text>
       <Button href={billingUrl} style={button}>
-        Riaktivizo Abonimin
+        Riaktivizoni Abonimin
       </Button>
     </EmailLayout>
   );
