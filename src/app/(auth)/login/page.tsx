@@ -8,6 +8,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  InAppBrowserNotice,
+  useInAppBrowser,
+} from "@/components/features/auth/in-app-browser-notice";
 import { signIn } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { safeRedirect } from "@/lib/utils/safe-redirect";
@@ -35,6 +39,8 @@ function LoginForm() {
     tone: "error" | "warning";
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [socialFailed, setSocialFailed] = useState(false);
+  const inAppBrowser = useInAppBrowser();
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -74,20 +80,19 @@ function LoginForm() {
     router.refresh();
   }
 
-  async function handleGoogleSignIn() {
-    await signIn.social({
-      provider: "google",
-      callbackURL: redirectTo,
-      errorCallbackURL: "/social-login-error?provider=google",
-    });
-  }
-
-  async function handleFacebookSignIn() {
-    await signIn.social({
-      provider: "facebook",
-      callbackURL: redirectTo,
-      errorCallbackURL: "/social-login-error?provider=facebook",
-    });
+  // A failed request (typically "Failed to fetch" inside an in-app browser)
+  // shows the open-in-browser notice instead of an unhandled rejection.
+  async function handleSocialSignIn(provider: "google" | "facebook") {
+    try {
+      const { error } = await signIn.social({
+        provider,
+        callbackURL: redirectTo,
+        errorCallbackURL: `/social-login-error?provider=${provider}`,
+      });
+      if (error) setSocialFailed(true);
+    } catch {
+      setSocialFailed(true);
+    }
   }
 
   return (
@@ -256,17 +261,19 @@ function LoginForm() {
             </span>
           </div>
 
+          {inAppBrowser || socialFailed ? <InAppBrowserNotice /> : null}
+
           <div className="mb-5 flex gap-2.5">
             <button
               type="button"
-              onClick={handleGoogleSignIn}
+              onClick={() => void handleSocialSignIn("google")}
               className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Google
             </button>
             <button
               type="button"
-              onClick={handleFacebookSignIn}
+              onClick={() => void handleSocialSignIn("facebook")}
               className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Facebook

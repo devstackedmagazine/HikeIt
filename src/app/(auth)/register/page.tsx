@@ -7,6 +7,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import {
+  InAppBrowserNotice,
+  useInAppBrowser,
+} from "@/components/features/auth/in-app-browser-notice";
 import { signIn, signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
@@ -46,6 +50,8 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [confirmedAge, setConfirmedAge] = useState(false);
+  const [socialFailed, setSocialFailed] = useState(false);
+  const inAppBrowser = useInAppBrowser();
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -101,13 +107,20 @@ export default function RegisterPage() {
       setFormError(consent);
       return;
     }
-    await signIn.social({
-      provider,
-      callbackURL: "/onboarding",
-      errorCallbackURL: `/social-login-error?provider=${provider}`,
-      requestSignUp: true,
-      additionalData: { ageConfirmed: true },
-    });
+    // A failed request (typically inside an in-app browser) shows the
+    // open-in-browser notice instead of an unhandled rejection.
+    try {
+      const { error } = await signIn.social({
+        provider,
+        callbackURL: "/onboarding",
+        errorCallbackURL: `/social-login-error?provider=${provider}`,
+        requestSignUp: true,
+        additionalData: { ageConfirmed: true },
+      });
+      if (error) setSocialFailed(true);
+    } catch {
+      setSocialFailed(true);
+    }
   }
 
   return (
@@ -393,6 +406,11 @@ export default function RegisterPage() {
                     KYÇU
                   </Link>
                 </p>
+                {inAppBrowser || socialFailed ? (
+                  <div className="mt-4">
+                    <InAppBrowserNotice />
+                  </div>
+                ) : null}
                 <div className="mt-4 flex gap-2.5">
                   <button
                     type="button"
