@@ -22,6 +22,26 @@ const LEFT_FEATURES = [
 ];
 
 /** 0–4 password strength score for the 4-segment meter. */
+/**
+ * Albanian message for a failed email sign-up. Better Auth's own messages are
+ * English, so they're never shown directly.
+ */
+function registerErrorMessage(code: string | undefined): string {
+  switch (code) {
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "Ekziston tashmë një llogari me këtë email. Provoni të hyni, ose përdorni “Keni harruar fjalëkalimin?”.";
+    case "INVALID_EMAIL":
+      return "Adresa email nuk është e vlefshme.";
+    case "PASSWORD_TOO_SHORT":
+      return "Fjalëkalimi duhet të ketë të paktën 10 karaktere.";
+    case "PASSWORD_TOO_LONG":
+      return "Fjalëkalimi është shumë i gjatë.";
+    default:
+      return "Nuk mundëm ta krijojmë llogarinë. Ju lutemi provoni sërish.";
+  }
+}
+
 function scorePassword(pw: string): number {
   if (!pw) return 0;
   let s = 0;
@@ -90,7 +110,7 @@ export default function RegisterPage() {
     };
     const { error } = await signUp.email(body);
     if (error) {
-      setFormError(error.message ?? "Nuk mundëm të krijojmë llogarinë.");
+      setFormError(registerErrorMessage(error.code));
       return;
     }
     setSubmittedEmail(values.email);
@@ -206,14 +226,14 @@ export default function RegisterPage() {
                 <span className="text-forest font-semibold">
                   {submittedEmail}
                 </span>
-                . Kliko lidhjen për të aktivizuar llogarinë.
+                . Klikoni linkun në email për të aktivizuar llogarinë.
               </p>
               <p className="text-forest/70 mt-3 text-xs leading-[1.6]">
-                Nuk erdhi? Kontrollo dosjen e spam-it, ose{" "}
+                Nuk ju erdhi? Kontrolloni dosjen e spam-it, ose{" "}
                 <Link href="/login" className="text-forest underline">
-                  provo të kyçesh
+                  provoni të hyni
                 </Link>{" "}
-                — do të të dërgojmë një lidhje të re.
+                — do t&apos;ju dërgojmë një link të ri.
               </p>
             </div>
           ) : (
@@ -222,7 +242,7 @@ export default function RegisterPage() {
                 Regjistrohu
               </h1>
               <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
-                Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
+                Krijoni llogarinë tuaj në ekosistemin më të madh të shtigjeve në
                 Ballkan.
               </p>
 
@@ -234,7 +254,7 @@ export default function RegisterPage() {
                   <label className={LABEL}>Emri dhe mbiemri</label>
                   <input
                     className={INPUT}
-                    placeholder="Shkruaj emrin tënd..."
+                    placeholder="Emri dhe mbiemri juaj"
                     autoComplete="name"
                     {...register("name")}
                   />
