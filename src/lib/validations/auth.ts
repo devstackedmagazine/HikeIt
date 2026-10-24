@@ -7,33 +7,33 @@ import { z } from "zod";
  */
 const passwordSchema = z
   .string()
-  .min(10, "Password must be at least 10 characters")
-  .regex(/[A-Za-z]/, "Password must contain at least one letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
+  .min(10, "Fjalëkalimi duhet të ketë të paktën 10 karaktere.")
+  .regex(/[A-Za-z]/, "Fjalëkalimi duhet të përmbajë të paktën një shkronjë.")
+  .regex(/[0-9]/, "Fjalëkalimi duhet të përmbajë të paktën një numër.");
 
 export const registerSchema = z
   .object({
     name: z
       .string()
       .trim()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be at most 100 characters"),
-    email: z.email("Enter a valid email address"),
+      .min(2, "Emri duhet të ketë të paktën 2 shkronja.")
+      .max(100, "Emri mund të ketë më së shumti 100 shkronja."),
+    email: z.email("Shkruani një adresë email të vlefshme."),
     password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Fjalëkalimet nuk përputhen.",
     path: ["confirmPassword"],
   });
 
 export const loginSchema = z.object({
-  email: z.email("Enter a valid email address"),
-  password: z.string().min(1, "Enter your password"),
+  email: z.email("Shkruani një adresë email të vlefshme."),
+  password: z.string().min(1, "Shkruani fjalëkalimin."),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.email("Enter a valid email address"),
+  email: z.email("Shkruani një adresë email të vlefshme."),
 });
 
 export const resetPasswordSchema = z
@@ -42,7 +42,7 @@ export const resetPasswordSchema = z
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Fjalëkalimet nuk përputhen.",
     path: ["confirmPassword"],
   });
 

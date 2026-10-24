@@ -63,8 +63,8 @@ function LoginForm() {
         // never arrived.
         setFormError({
           message:
-            "Llogaria jote nuk është verifikuar ende. Sapo të dërguam një " +
-            "lidhje të re verifikimi — kontrollo inboxin dhe dosjen e spam-it.",
+            "Llogaria juaj nuk është verifikuar ende. Sapo ju dërguam një " +
+            "link të ri verifikimi — kontrolloni email-in dhe dosjen e spam-it.",
           tone: "warning",
         });
       } else {
