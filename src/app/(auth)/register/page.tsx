@@ -242,8 +242,8 @@ export default function RegisterPage() {
                 Regjistrohu
               </h1>
               <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
-                Krijoni llogarinë tuaj në ekosistemin më të madh të shtigjeve në
-                Ballkan.
+                Krijoni llogarinë tuaj për të gjetur shtigje dhe udhëtime me
+                klubet e alpinizmit në Kosovë.
               </p>
 
               <form
