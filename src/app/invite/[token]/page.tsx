@@ -60,7 +60,7 @@ export default async function InvitePage({
               variant="outline"
               render={<Link href={session ? "/dashboard" : "/"} />}
             >
-              {session ? "Shko te paneli" : "Shko te faqja kryesore"}
+              {session ? "Shkoni te paneli" : "Shkoni te faqja kryesore"}
             </Button>
           </CardContent>
         </Card>

@@ -233,13 +233,13 @@ function InviteDialog({ clubSlug }: { clubSlug: string }) {
         render={
           <Button size="sm">
             <UserPlus />
-            Fto Anëtar
+            Ftoni Anëtar
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Fto Anëtar</DialogTitle>
+          <DialogTitle>Ftoni Anëtar</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -278,7 +278,7 @@ function InviteDialog({ clubSlug }: { clubSlug: string }) {
             className="w-full"
           >
             {loading ? <Loader2 className="animate-spin" /> : null}
-            Dërgo ftesën
+            Dërgoni ftesën
           </Button>
         </div>
       </DialogContent>
