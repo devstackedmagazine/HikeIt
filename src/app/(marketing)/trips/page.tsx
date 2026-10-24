@@ -15,9 +15,9 @@ import { getTrailRegions } from "@/server/queries/trails";
 import { getPublicTrips } from "@/server/queries/trips";
 
 export const metadata: Metadata = {
-  title: "Udhëtimet e Ardhshme Alpine — Rezervo Aventurën Tënde",
+  title: "Udhëtimet e Ardhshme Alpine — Rezervoni Aventurën Tuaj",
   description:
-    "Shiko udhëtimet e planifikuara të alpinizmit në Kosovë. Bashkohu me grupe, eksploro shtigje të reja dhe rezervo udhëtimin tënd të radhës.",
+    "Shikoni udhëtimet e planifikuara të alpinizmit në Kosovë. Bashkohuni me grupe, eksploroni shtigje të reja dhe rezervoni udhëtimin tuaj të radhës.",
   alternates: { canonical: "https://hikeit.app/trips" },
 };
 
@@ -78,7 +78,7 @@ export default async function TripsPage({
               Asnjë udhëtim nuk u gjet
             </p>
             <p className="text-summit/45 mt-2 text-xs">
-              Provo të ndryshosh filtrat.
+              Provoni të ndryshoni filtrat.
             </p>
           </div>
         ) : (

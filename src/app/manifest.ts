@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "HikeIt — Komuniteti i Alpinizmit",
     short_name: "HikeIt",
     description:
-      "Gjej shtigje, bashkohu me klube dhe rezervo udhëtime malore.",
+      "Gjeni shtigje, bashkohuni me klube dhe rezervoni udhëtime malore.",
     start_url: "/",
     display: "standalone",
     background_color: "#0D1F14",

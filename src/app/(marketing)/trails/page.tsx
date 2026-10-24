@@ -21,7 +21,7 @@ import { getTrailRegions, getTrails } from "@/server/queries/trails";
 export const metadata: Metadata = {
   title: "Shtigjet e Kosovës — Shtigje Malore të Verifikuara",
   description:
-    "Eksploro shtigjet e Kosovës: Rugova, Bjeshkët e Namuna, Sharri dhe më shumë. Harta GPS, nivelet e vështirësisë dhe udhëzues të detajuar.",
+    "Eksploroni shtigjet e Kosovës: Rugova, Bjeshkët e Namuna, Sharri dhe më shumë. Harta GPS, nivelet e vështirësisë dhe udhëzues të detajuar.",
   keywords: [
     "shtigje malore Kosovë",
     "hiking trails Kosovo",
@@ -73,7 +73,7 @@ export default async function TrailsPage({
       <div className="flex flex-col justify-between gap-4 px-6 pt-6 sm:flex-row sm:items-start">
         <div>
           <p className="text-moss mb-1.5 text-[10px] font-bold tracking-[0.15em] uppercase">
-            Eksploro
+            Eksploroni
           </p>
           <h1 className="font-heading text-summit mb-2 text-[32px] font-extrabold tracking-[-0.02em] uppercase">
             Shtigjet e Kosovës

@@ -507,7 +507,7 @@ export default function PrivacyPage() {
               </>,
             ]}
           />
-          <LegalCallout heading="Raporto një problem sigurie">
+          <LegalCallout heading="Raportoni një problem sigurie">
             <p>
               Nëse zbuloni një dobësi sigurie, ju lutemi na njoftoni menjëherë
               në{" "}
