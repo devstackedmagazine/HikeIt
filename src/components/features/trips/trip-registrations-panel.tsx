@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  type ActionResult,
   emailTripRegistrants,
   removeRegistration,
   updateRegistrationStatus,
@@ -45,9 +46,10 @@ export function TripRegistrationsPanel({
   async function setStatus(
     id: string,
     status: "confirmed" | "waitlisted" | "canceled",
-  ) {
-    await updateRegistrationStatus(id, status);
+  ): Promise<ActionResult> {
+    const result = await updateRegistrationStatus(id, status);
     router.refresh();
+    return result;
   }
 
   function exportCsv() {
@@ -157,10 +159,16 @@ function RegistrationActions({
   onSetStatus: (
     id: string,
     status: "confirmed" | "waitlisted" | "canceled",
-  ) => void | Promise<void>;
+  ) => Promise<ActionResult>;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+
+  async function confirm() {
+    setError(null);
+    const result = await onSetStatus(r.id, "confirmed");
+    if (!result.success) setError(result.error ?? "Diçka shkoi keq.");
+  }
 
   async function remove() {
     setError(null);
@@ -188,7 +196,7 @@ function RegistrationActions({
           <Button
             size="xs"
             className="border-moss bg-moss/20 text-moss hover:bg-moss/30 border-2 font-bold uppercase"
-            onClick={() => onSetStatus(r.id, "confirmed")}
+            onClick={confirm}
           >
             Konfirmo
           </Button>
