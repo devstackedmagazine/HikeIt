@@ -92,8 +92,14 @@ export async function registerForTrip(
 
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
-  if (trip.status !== "open") {
-    return { success: false, error: "Ky udhëtim nuk është i hapur." };
+  // A full trip still takes sign-ups: `createRegistration` puts them on the
+  // waitlist, which is what the "Lista e pritjes" button on a full trip
+  // promises. Rejecting `full` here left that button a dead end.
+  if (trip.status !== "open" && trip.status !== "full") {
+    return {
+      success: false,
+      error: "Regjistrimet për këtë udhëtim nuk janë të hapura.",
+    };
   }
   // The cron only completes a trip hours after it ends, so `open` alone
   // would still accept sign-ups once the group has left.
