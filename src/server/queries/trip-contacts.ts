@@ -9,8 +9,8 @@ import {
 } from "@/lib/db/schema";
 import {
   CONTACT_VISIBLE_STATUS,
-  type ContactAccessDenial,
   contactAccess,
+  type ContactAccessDenial,
   contactWindow,
 } from "@/lib/trips/contact-access";
 
