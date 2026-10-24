@@ -30,6 +30,13 @@ import {
   redeemInviteCodeSchema,
 } from "@/lib/validations/club";
 import {
+  acceptInvitation,
+  declineInvitation,
+  INVITATION_TTL_DAYS,
+  invitationProblemMessages,
+  upsertPendingInvitation,
+} from "@/server/services/club-invitations";
+import {
   inviteCodeErrorMessages,
   type InviteCodeGrant,
   normalizeInviteCode,
@@ -426,8 +433,12 @@ export async function deleteClub(
   return { success: true };
 }
 
-/** Admin: invite someone by email. Existing users are added immediately; new
- * emails get a link to register and join. */
+/**
+ * Admin: invite someone by email. Nobody is added directly any more: this
+ * creates (or refreshes) a pending invitation and emails a link. The invitee
+ * becomes a member only after opening /invite/<token>, logging in with this
+ * same email and accepting — see `acceptClubInvitation`.
+ */
 export async function inviteMember(
   slug: string,
   email: string,
@@ -455,6 +466,7 @@ export async function inviteMember(
 
   // Free tier: cap at 50 active members. Resolved, not read straight off the
   // row — a club inside its trial is entitled to Pro and must not be capped.
+  // Checked again on accept, since several invites can be out at once.
   if (resolveEntitlement(access.organization).tier === "free") {
     const [memberCount] = await db
       .select({ value: count() })
@@ -475,52 +487,143 @@ export async function inviteMember(
   }
 
   const normalized = parsedEmail.data;
-  const clubUrl = `${env.NEXT_PUBLIC_APP_URL}/clubs/${slug}`;
 
   const existingUser = await db.query.users.findFirst({
     where: eq(users.email, normalized),
     columns: { id: true },
   });
-
   if (existingUser) {
     const membership = await db.query.organizationMembers.findFirst({
       where: and(
         eq(organizationMembers.organizationId, access.organization.id),
         eq(organizationMembers.userId, existingUser.id),
+        isNull(organizationMembers.leftAt),
       ),
+      columns: { id: true },
     });
-    if (membership && membership.leftAt === null) {
+    if (membership) {
       return { success: false, error: "Personi është tashmë anëtar." };
     }
-    if (membership) {
-      await db
-        .update(organizationMembers)
-        .set({ leftAt: null, role })
-        .where(eq(organizationMembers.id, membership.id));
-    } else {
-      await db.insert(organizationMembers).values({
-        organizationId: access.organization.id,
-        userId: existingUser.id,
-        role,
-      });
-    }
-    revalidatePath(`/dashboard/club/${slug}`);
   }
 
+  let token: string;
+  try {
+    ({ token } = await upsertPendingInvitation({
+      organizationId: access.organization.id,
+      email: normalized,
+      role,
+      invitedBy: session.user.id,
+    }));
+  } catch (error) {
+    captureError(error, { action: "inviteMember" });
+    return {
+      success: false,
+      error: "Ftesa nuk u krijua. Ju lutemi provoni sërish.",
+    };
+  }
+
+  const inviteUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
+  const clubName = access.organization.name;
   try {
     await sendEmail({
       to: normalized,
-      subject: `Ftesë: bashkohu me ${access.organization.name}`,
+      subject: `Ftesë për t'u bashkuar me ${clubName}`,
       template: GenericMessage({
-        heading: `Bashkohu me ${access.organization.name}`,
-        message: `Je ftuar të bashkohesh me klubin në HikeIt.\n\nHape këtë link: ${clubUrl}`,
+        heading: `Ftesë nga ${clubName}`,
+        message:
+          `Jeni ftuar të bashkoheni me klubin ${clubName} në HikeIt.\n\n` +
+          `Për ta pranuar ftesën, hapni këtë link: ${inviteUrl}\n\n` +
+          `Hyni me këtë adresë email. Nëse nuk keni ende llogari, ` +
+          `regjistrohuni me këtë adresë, konfirmoni email-in dhe pastaj hapni ` +
+          `sërish linkun.\n\n` +
+          `Ftesa është e vlefshme për ${INVITATION_TTL_DAYS} ditë.`,
       }),
     });
-  } catch {
-    // Best-effort email.
+  } catch (error) {
+    // The invitation exists; the admin can re-send it.
+    captureError(error, { action: "inviteMember.email" });
+    return {
+      success: false,
+      error:
+        "Ftesa u krijua, por email-i nuk u dërgua. Ju lutemi provoni sërish.",
+    };
   }
 
+  revalidatePath(`/dashboard/club/${slug}`);
   return { success: true };
+}
+
+export interface InvitationActionResult extends ActionResult {
+  /** Club to send the user to after accepting. */
+  slug?: string;
+  alreadyMember?: boolean;
+}
+
+/** Invitee: accept the invitation behind `token` as the logged-in user. */
+export async function acceptClubInvitation(
+  token: string,
+): Promise<InvitationActionResult> {
+  const session = await getOptionalSession();
+  if (!session) {
+    return {
+      success: false,
+      error: "Hyni në llogarinë tuaj për ta pranuar ftesën.",
+    };
+  }
+
+  try {
+    const outcome = await acceptInvitation(String(token), session.user.id);
+    if (!outcome.ok) {
+      return {
+        success: false,
+        error: invitationProblemMessages[outcome.problem],
+      };
+    }
+    revalidatePath(`/clubs/${outcome.clubSlug}`);
+    revalidatePath(`/dashboard/club/${outcome.clubSlug}`);
+    revalidatePath("/dashboard");
+    return {
+      success: true,
+      slug: outcome.clubSlug,
+      alreadyMember: outcome.alreadyMember,
+    };
+  } catch (error) {
+    captureError(error, { action: "acceptClubInvitation" });
+    return {
+      success: false,
+      error: "Ftesa nuk u pranua. Ju lutemi provoni sërish pas pak.",
+    };
+  }
+}
+
+/** Invitee: decline the invitation behind `token`. */
+export async function declineClubInvitation(
+  token: string,
+): Promise<ActionResult> {
+  const session = await getOptionalSession();
+  if (!session) {
+    return {
+      success: false,
+      error: "Hyni në llogarinë tuaj për ta refuzuar ftesën.",
+    };
+  }
+
+  try {
+    const outcome = await declineInvitation(String(token), session.user.id);
+    if (!outcome.ok) {
+      return {
+        success: false,
+        error: invitationProblemMessages[outcome.problem],
+      };
+    }
+    return { success: true };
+  } catch (error) {
+    captureError(error, { action: "declineClubInvitation" });
+    return {
+      success: false,
+      error: "Ftesa nuk u refuzua. Ju lutemi provoni sërish pas pak.",
+    };
+  }
 }
 
 /** Admin: change a member's role. */

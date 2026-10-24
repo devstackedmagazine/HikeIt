@@ -199,23 +199,36 @@ function InviteDialog({ clubSlug }: { clubSlug: string }) {
   const [role, setRole] = useState<"member" | "organizer">("member");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function submit() {
     setLoading(true);
     setError(null);
+    setSentTo(null);
     const result = await inviteMember(clubSlug, email, role);
     setLoading(false);
     if (!result.success) {
       setError(result.error ?? "Diçka shkoi keq.");
       return;
     }
-    setOpen(false);
+    // Stay open with a confirmation: nobody is added until they accept, so
+    // an empty-looking members list right after inviting is expected.
+    setSentTo(email.trim());
     setEmail("");
     router.refresh();
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setSentTo(null);
+          setError(null);
+        }
+      }}
+    >
       <DialogTrigger
         render={
           <Button size="sm">
@@ -253,6 +266,12 @@ function InviteDialog({ clubSlug }: { clubSlug: string }) {
             </select>
           </div>
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
+          {sentTo ? (
+            <p className="text-sm">
+              Ftesa u dërgua te {sentTo}. Personi bëhet anëtar pasi ta pranojë
+              ftesën nga email-i (e vlefshme 7 ditë).
+            </p>
+          ) : null}
           <Button
             onClick={submit}
             disabled={loading || !email}
