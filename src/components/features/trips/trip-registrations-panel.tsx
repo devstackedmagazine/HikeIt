@@ -33,6 +33,7 @@ import {
   removeRegistration,
   updateRegistrationStatus,
 } from "@/server/actions/trip-registrations";
+import type { TripContacts } from "@/server/queries/trip-contacts";
 import type { RegistrationWithUser } from "@/server/queries/trips";
 
 /** One CSV cell: quoted, and defused if it would start a spreadsheet formula. */
@@ -44,11 +45,20 @@ function csvCell(value: string): string {
 export function TripRegistrationsPanel({
   tripId,
   registrations,
+  contacts,
 }: {
   tripId: string;
   registrations: RegistrationWithUser[];
+  /** Checked and filtered on the server; empty unless access is allowed. */
+  contacts: TripContacts;
 }) {
   const router = useRouter();
+  const contactOf = (id: string) =>
+    contacts.available ? (contacts.contacts[id] ?? null) : null;
+  const emergency = (c: ReturnType<typeof contactOf>) =>
+    [c?.emergencyContactName, c?.emergencyContactPhone]
+      .filter(Boolean)
+      .join(" · ");
 
   async function setStatus(
     id: string,
@@ -66,19 +76,35 @@ export function TripRegistrationsPanel({
       hourCycle: "h23",
       timeZone: "Europe/Belgrade",
     });
-    const header = ["Emri", "Email", "Statusi", "Regjistruar më"]
+    const header = [
+      "Emri",
+      "Email",
+      "Statusi",
+      "Regjistruar më",
+      ...(contacts.available
+        ? ["Telefoni", "Kontakti emergjent", "Telefoni emergjent"]
+        : []),
+    ]
       .map(csvCell)
       .join(",");
-    const rows = registrations.map((r) =>
-      [
+    const rows = registrations.map((r) => {
+      const c = contactOf(r.id);
+      return [
         r.userName ?? "",
         r.userEmail,
         registrationStatusLabels[r.status] ?? r.status,
         registeredAt.format(r.registeredAt),
+        ...(contacts.available
+          ? [
+              c?.phone ?? "",
+              c?.emergencyContactName ?? "",
+              c?.emergencyContactPhone ?? "",
+            ]
+          : []),
       ]
         .map(csvCell)
-        .join(","),
-    );
+        .join(",");
+    });
     // The BOM makes Excel read the file as UTF-8, so ë and ç survive.
     const blob = new Blob(["\uFEFF" + [header, ...rows].join("\r\n")], {
       type: "text/csv;charset=utf-8",
@@ -106,6 +132,8 @@ export function TripRegistrationsPanel({
         </div>
       </div>
 
+      <ContactsNote contacts={contacts} />
+
       {registrations.length === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
           Asnjë regjistrim ende.
@@ -118,6 +146,12 @@ export function TripRegistrationsPanel({
                 <TableHead>Emri</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Statusi</TableHead>
+                {contacts.available ? (
+                  <>
+                    <TableHead>Telefoni</TableHead>
+                    <TableHead>Kontakti emergjent</TableHead>
+                  </>
+                ) : null}
                 <TableHead>Veprime</TableHead>
               </TableRow>
             </TableHeader>
@@ -140,6 +174,16 @@ export function TripRegistrationsPanel({
                   <TableCell>
                     <StatusBadge status={r.status} />
                   </TableCell>
+                  {contacts.available ? (
+                    <>
+                      <TableCell className="text-muted-foreground">
+                        {contactOf(r.id)?.phone ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {emergency(contactOf(r.id)) || "—"}
+                      </TableCell>
+                    </>
+                  ) : null}
                   <TableCell>
                     <RegistrationActions
                       registration={r}
@@ -154,6 +198,27 @@ export function TripRegistrationsPanel({
       )}
     </div>
   );
+}
+
+const windowDate = new Intl.DateTimeFormat("sq-AL", {
+  dateStyle: "long",
+  timeStyle: "short",
+  hourCycle: "h23",
+  timeZone: "Europe/Belgrade",
+});
+
+/** Why phone / emergency contact columns are or aren't shown. */
+function ContactsNote({ contacts }: { contacts: TripContacts }) {
+  let text: string | null = null;
+  if (contacts.available) {
+    text = `Telefoni dhe kontakti emergjent i pjesëmarrësve të konfirmuar shihen deri më ${windowDate.format(contacts.closesAt)}. Përdorini vetëm për sigurinë e udhëtimit.`;
+  } else if (contacts.reason === "before-window" && contacts.opensAt) {
+    text = `Telefoni dhe kontakti emergjent i pjesëmarrësve të konfirmuar do të shihen nga ${windowDate.format(contacts.opensAt)} (3 ditë para nisjes).`;
+  } else if (contacts.reason === "after-window") {
+    text =
+      "Telefoni dhe kontakti emergjent nuk shihen më: kanë kaluar 2 ditë nga përfundimi i udhëtimit.";
+  }
+  return text ? <p className="text-muted-foreground text-xs">{text}</p> : null;
 }
 
 /** Status badge shown in the status column. */

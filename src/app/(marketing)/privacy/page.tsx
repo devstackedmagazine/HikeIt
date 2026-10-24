@@ -300,9 +300,20 @@ export default function PrivacyPage() {
             </strong>
             , si dhe statusin dhe datën e regjistrimit dhe nëse jeni regjistruar
             sërish pas një anulimi (ose rolin dhe datën e anëtarësimit). Ata nuk
-            shohin numrin e telefonit, datëlindjen, kontaktin e emergjencës apo
-            ecjet tuaja personale. Klubi është kontrollues i pavarur për të
-            dhënat që merr.
+            shohin datëlindjen apo ecjet tuaja personale. Klubi është
+            kontrollues i pavarur për të dhënat që merr.
+          </p>
+          <p>
+            <strong className="text-summit">
+              Telefoni dhe kontakti i emergjencës:
+            </strong>{" "}
+            nëse i keni plotësuar në profil dhe regjistrimi juaj në një udhëtim
+            është i konfirmuar, organizatorët dhe administratorët e klubit që e
+            organizon udhëtimin i shohin, edhe në eksportin CSV, vetëm nga 3
+            ditë para fillimit të udhëtimit deri 2 ditë pas përfundimit të tij,
+            për sigurinë tuaj ditën e ecjes. Për regjistrimet në pritje ose të
+            anuluara, dhe jashtë kësaj periudhe, nuk i shohin. Një skedar CSV i
+            shkarkuar brenda periudhës mbetet te klubi.
           </p>
           <p>
             <strong className="text-summit">Përmbajtja publike:</strong> fotot
