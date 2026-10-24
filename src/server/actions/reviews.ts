@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { reviews, trails } from "@/lib/db/schema";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import {
   type SubmitReviewInput,
   submitReviewSchema,
@@ -34,6 +35,11 @@ export async function submitTrailReview(
     return { success: false, error: "Të dhëna të pavlefshme." };
   }
   const { trailId, rating, comment, conditionReport, hikedAt } = parsed.data;
+
+  const limited = await enforceRateLimit("ratelimit.trail.review", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   const trail = await db.query.trails.findFirst({
     where: eq(trails.id, trailId),

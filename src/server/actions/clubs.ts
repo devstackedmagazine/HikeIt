@@ -2,6 +2,7 @@
 
 import { and, count, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
@@ -23,6 +24,7 @@ import {
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import {
+  clubContactSchema,
   type CreateClubInput,
   createClubSchema,
   redeemInviteCodeSchema,
@@ -38,6 +40,12 @@ export interface ActionResult {
   success: boolean;
   error?: string;
 }
+
+const inviteEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email().max(254));
 
 /** True if no club currently uses this slug. */
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
@@ -79,6 +87,11 @@ export async function createClub(
     return { success: false, error: "Të dhëna të pavlefshme." };
   }
   const input = parsed.data;
+
+  const limited = await enforceRateLimit("ratelimit.club.create", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   // Promote to club_admin if they aren't already (e.g. skipped onboarding).
   const me = await db.query.users.findFirst({
@@ -295,6 +308,11 @@ export async function joinClub(organizationId: string): Promise<ActionResult> {
     return { success: false, error: "Duhet të jeni i kyçur." };
   }
 
+  const limited = await enforceRateLimit("ratelimit.club.join", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const club = await db.query.organizations.findFirst({
     where: eq(organizations.id, organizationId),
     columns: { slug: true },
@@ -351,6 +369,19 @@ export async function updateClub(
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  // Website and Facebook become links on the public club page.
+  const contact = clubContactSchema.safeParse({
+    website: data.website ?? "",
+    instagram: data.instagram ?? "",
+    facebook: data.facebook ?? "",
+  });
+  if (!contact.success) {
+    return {
+      success: false,
+      error: contact.error.issues[0]?.message ?? "Të dhëna të pavlefshme.",
+    };
+  }
+
   await db
     .update(organizations)
     .set({
@@ -358,9 +389,9 @@ export async function updateClub(
       description: data.description,
       city: data.city,
       foundedYear: data.foundedYear ?? null,
-      website: data.website || null,
-      instagram: data.instagram || null,
-      facebook: data.facebook || null,
+      website: contact.data.website || null,
+      instagram: contact.data.instagram || null,
+      facebook: contact.data.facebook || null,
     })
     .where(eq(organizations.id, access.organization.id));
 
@@ -408,6 +439,20 @@ export async function inviteMember(
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  // The type alone doesn't stop a caller passing "admin".
+  if (role !== "member" && role !== "organizer") {
+    return { success: false, error: "Roli është i pavlefshëm." };
+  }
+  const parsedEmail = inviteEmailSchema.safeParse(email);
+  if (!parsedEmail.success) {
+    return { success: false, error: "Email i pavlefshëm." };
+  }
+  // Each invite emails an address the caller picks, from our domain.
+  const limited = await enforceRateLimit("ratelimit.club.invite_member", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   // Free tier: cap at 50 active members. Resolved, not read straight off the
   // row — a club inside its trial is entitled to Pro and must not be capped.
   if (resolveEntitlement(access.organization).tier === "free") {
@@ -429,7 +474,7 @@ export async function inviteMember(
     }
   }
 
-  const normalized = email.trim().toLowerCase();
+  const normalized = parsedEmail.data;
   const clubUrl = `${env.NEXT_PUBLIC_APP_URL}/clubs/${slug}`;
 
   const existingUser = await db.query.users.findFirst({
@@ -595,7 +640,10 @@ export async function setClubImages(
     (await canSetImageField(session.user.id, images.logoUrl, club.logoUrl)) &&
     (await canSetImageField(session.user.id, images.coverUrl, club.coverUrl));
   if (!allowed) {
-    return { success: false, error: "Mund të përdorni vetëm foto që keni ngarkuar vetë." };
+    return {
+      success: false,
+      error: "Mund të përdorni vetëm foto që keni ngarkuar vetë.",
+    };
   }
 
   await db

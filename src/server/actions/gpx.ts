@@ -304,6 +304,11 @@ export async function uploadTripGpx(
     : null;
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  const limited = await enforceRateLimit("ratelimit.trip.gpx.upload", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   let parsed;
   let storedGpx: string;
   try {

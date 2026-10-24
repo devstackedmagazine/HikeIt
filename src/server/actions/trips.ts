@@ -22,9 +22,13 @@ import {
   TripUpdated,
 } from "@/lib/email/templates/trip-updated";
 import { resolveEntitlement } from "@/lib/entitlements";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
-import { type CreateTripInput,createTripSchema } from "@/lib/validations/trips";
+import {
+  type CreateTripInput,
+  createTripSchema,
+} from "@/lib/validations/trips";
 
 export interface CreateTripResult {
   success: boolean;
@@ -43,6 +47,11 @@ export async function createTrip(
 
   const access = await requireClubAdmin(session.user.id, clubSlug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  const limited = await enforceRateLimit("ratelimit.trip.create", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   // Free tier: cap at 3 trips per calendar month. Resolved, not read straight
   // off the row — a club inside its trial is entitled to Pro and isn't capped.
@@ -204,7 +213,10 @@ export async function updateTrip(
 
   const newStart = new Date(input.startDatetime);
   if (newStart.getTime() < Date.now()) {
-    return { success: false, error: "Data e nisjes nuk mund të jetë në të kaluarën." };
+    return {
+      success: false,
+      error: "Data e nisjes nuk mund të jetë në të kaluarën.",
+    };
   }
 
   // Registration-based locks.
@@ -219,10 +231,7 @@ export async function updateTrip(
     );
   const confirmedCount = confirmed?.value ?? 0;
 
-  if (
-    input.maxParticipants != null &&
-    input.maxParticipants < confirmedCount
-  ) {
+  if (input.maxParticipants != null && input.maxParticipants < confirmedCount) {
     return {
       success: false,
       error: `Nuk mund të ulni max nën regjistrimet aktuale (${confirmedCount}).`,
