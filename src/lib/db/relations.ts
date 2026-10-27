@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 
 import {
   accounts,
+  clubInvitations,
   notifications,
   organizationMembers,
   organizations,
@@ -66,6 +67,16 @@ export const organizationMembersRelations = relations(
     user: one(users, {
       fields: [organizationMembers.userId],
       references: [users.id],
+    }),
+  }),
+);
+
+export const clubInvitationsRelations = relations(
+  clubInvitations,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [clubInvitations.organizationId],
+      references: [organizations.id],
     }),
   }),
 );
