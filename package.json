@@ -27,7 +27,7 @@
     "@paddle/paddle-js": "^1.6.5",
     "@paddle/paddle-node-sdk": "^3.10.0",
     "@react-email/components": "^1.0.12",
-    "@sentry/nextjs": "^10.65.0",
+    "@sentry/nextjs": "^10.75.2",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tmcw/togeojson": "^7.1.2",
     "@vercel/analytics": "^2.0.1",
