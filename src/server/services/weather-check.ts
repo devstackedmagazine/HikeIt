@@ -12,11 +12,8 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { WeatherAlert } from "@/lib/email/templates/weather-alert";
-import { formatTripDateTime } from "@/lib/utils/datetime";
-import {
-  getWeatherForLocation,
-  type WeatherData,
-} from "@/lib/weather/client";
+import { formatTripDateTime, kosovoDateKey } from "@/lib/utils/datetime";
+import { getWeatherForLocation, type WeatherData } from "@/lib/weather/client";
 import {
   type AlertLevel,
   evaluateWeatherAlert,
@@ -41,13 +38,13 @@ function passesSensitivity(
   level: AlertLevel,
   sensitivity: "low" | "medium" | "high" | undefined,
 ): boolean {
-  const floor =
-    sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
+  const floor = sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
   return LEVEL_RANK[level] >= floor;
 }
 
+/** Same calendar day in Kosovo (not UTC: a 00:30 start is the next day). */
 function sameDay(a: Date, b: Date): boolean {
-  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+  return kosovoDateKey(a) === kosovoDateKey(b);
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

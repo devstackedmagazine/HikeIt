@@ -10,6 +10,7 @@ import {
   resolveEntitlement,
 } from "@/lib/entitlements";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 
 export const metadata: Metadata = { title: "Faturimi" };
 
@@ -35,6 +36,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "2-digit",
     month: "long",
     year: "numeric",

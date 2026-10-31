@@ -22,6 +22,7 @@ import { TripWeatherWidget } from "@/components/features/weather/trip-weather-wi
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { difficultyLabels, tripStatusLabels } from "@/lib/i18n/labels";
 import { displayTripStatus } from "@/lib/trips/display-status";
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 import { getClubStats } from "@/server/queries/clubs";
 import { isTripFavorited } from "@/server/queries/favorites";
 import { getTripPhotos } from "@/server/queries/photos";
@@ -116,6 +117,7 @@ export default async function PublicTripPage({
   const mapLng = meetingLng ?? (trail ? Number(trail.startLng) : null);
 
   const dateLabel = new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -123,6 +125,7 @@ export default async function PublicTripPage({
     .format(trip.startDatetime)
     .toUpperCase();
   const timeLabel = new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",

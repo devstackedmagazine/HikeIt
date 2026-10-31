@@ -2,6 +2,8 @@
  * Open-Meteo weather client — free, no API key, no account. Their terms require
  * attribution ("Të dhënat nga Open-Meteo.com"), shown in the weather widget.
  */
+import { fromKosovoWallTime } from "@/lib/utils/datetime";
+
 const BASE_URL = "https://api.open-meteo.com/v1/forecast";
 
 /** WMO weather code → simplified condition string. */
@@ -119,10 +121,17 @@ export async function getWeatherForLocation(
 
   const data = (await response.json()) as OpenMeteoResponse;
 
+  // With `timezone` set, Open-Meteo returns Kosovo wall-clock strings
+  // ("2026-10-30T08:00", daily "2026-10-30") with no offset. `new Date()`
+  // would read them in the server's zone (UTC on Vercel), so convert them
+  // as Kosovo time instead.
+  const hourlyTimes = data.hourly.time.map(
+    (t) => fromKosovoWallTime(t) ?? new Date(t),
+  );
   const now = new Date();
   const idx = Math.max(
     0,
-    data.hourly.time.findIndex((t) => new Date(t) >= now),
+    hourlyTimes.findIndex((t) => t >= now),
   );
 
   const current: WeatherData = {
@@ -140,11 +149,12 @@ export async function getWeatherForLocation(
     conditionDescription: wmoToAlbanianDescription(
       data.hourly.weathercode[idx] ?? 0,
     ),
-    forecastFor: new Date(data.hourly.time[idx] ?? now),
+    forecastFor: hourlyTimes[idx] ?? now,
   };
 
   const daily: DailyForecast[] = data.daily.time.map((date, i) => ({
-    date: new Date(date),
+    // Kosovo midnight of that day.
+    date: fromKosovoWallTime(`${date}T00:00`) ?? new Date(date),
     tempMax: Math.round(data.daily.temperature_2m_max[i] ?? 0),
     tempMin: Math.round(data.daily.temperature_2m_min[i] ?? 0),
     precipitationSum: data.daily.precipitation_sum[i] ?? 0,
@@ -155,8 +165,8 @@ export async function getWeatherForLocation(
     ),
   }));
 
-  const hourly: HourlyForecast[] = data.hourly.time.map((time, i) => ({
-    time: new Date(time),
+  const hourly: HourlyForecast[] = hourlyTimes.map((time, i) => ({
+    time,
     temp: Math.round(data.hourly.temperature_2m[i] ?? 0),
     condition: wmoToCondition(data.hourly.weathercode[i] ?? 0),
   }));

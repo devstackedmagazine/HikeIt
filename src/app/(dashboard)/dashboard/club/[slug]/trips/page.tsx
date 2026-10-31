@@ -15,6 +15,7 @@ import type { Trip } from "@/lib/db/schema";
 import { clubTripsParsers } from "@/lib/search-params/club-trips";
 import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE, wallTimeOf } from "@/lib/utils/datetime";
 import { getClubStats } from "@/server/queries/clubs";
 import { getClubTripsAdmin } from "@/server/queries/dashboard";
 
@@ -44,10 +45,11 @@ const STATUS_BADGE: Record<
 
 function formatDate(date: Date): string {
   const dm = new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "2-digit",
     month: "short",
   }).format(date);
-  return `${dm}, ${date.getFullYear()}`.toUpperCase();
+  return `${dm}, ${wallTimeOf(date).year}`.toUpperCase();
 }
 
 const GRID =
