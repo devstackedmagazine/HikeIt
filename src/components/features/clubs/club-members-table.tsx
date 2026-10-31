@@ -34,7 +34,7 @@ import {
 import type { MemberWithUser } from "@/server/queries/clubs";
 
 const LAST_ADMIN_MESSAGE =
-  "Je administratori i vetëm — cakto një admin tjetër fillimisht.";
+  "Jeni administratori i vetëm — caktoni fillimisht një admin tjetër.";
 
 export function ClubMembersTable({
   members,
@@ -76,7 +76,7 @@ export function ClubMembersTable({
   }
 
   async function onRemove(membershipId: string) {
-    if (!confirm("Hiq këtë anëtar?")) return;
+    if (!confirm("Ta hiqni këtë anëtar?")) return;
     setError(null);
     const result = await removeMember(clubSlug, membershipId);
     if (!result.success) {
@@ -91,7 +91,7 @@ export function ClubMembersTable({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Input
           className="h-9 max-w-xs"
-          placeholder="Kërko anëtarë…"
+          placeholder="Kërkoni anëtarë…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -155,7 +155,7 @@ export function ClubMembersTable({
                         </select>
                         {isOnlyAdmin ? (
                           <p className="text-muted-foreground text-xs italic">
-                            Admin i vetëm — nuk mund të ndryshosh rolin
+                            Admin i vetëm — nuk mund ta ndryshoni rolin
                           </p>
                         ) : null}
                       </div>
@@ -176,7 +176,7 @@ export function ClubMembersTable({
                         onClick={() => onRemove(m.membershipId)}
                         disabled={isOnlyAdmin}
                         title={isOnlyAdmin ? LAST_ADMIN_MESSAGE : undefined}
-                        aria-label="Hiq"
+                        aria-label="Hiqni"
                       >
                         <Trash2 className="text-destructive" />
                       </Button>
