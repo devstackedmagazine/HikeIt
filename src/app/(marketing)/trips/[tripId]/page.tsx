@@ -34,11 +34,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { tripId } = await params;
   const trip = await getTripById(tripId);
-  if (!trip) return { title: "Udhëtimi nuk u gjet" };
+  if (!trip || !isPubliclyVisible(trip)) {
+    return { title: "Udhëtimi nuk u gjet" };
+  }
   return {
     title: trip.title,
     description: trip.description ?? `Udhëtim me ${trip.club.name}.`,
   };
+}
+
+/** Drafts and deleted trips have no public page, even by direct URL. */
+function isPubliclyVisible(trip: { status: string; deletedAt: Date | null }) {
+  return trip.status !== "draft" && trip.deletedAt === null;
 }
 
 const EQUIPMENT_ICONS: LucideIcon[] = [Footprints, Droplets, Shirt, Flashlight];
@@ -91,7 +98,7 @@ export default async function PublicTripPage({
 }) {
   const { tripId } = await params;
   const trip = await getTripById(tripId);
-  if (!trip) notFound();
+  if (!trip || !isPubliclyVisible(trip)) notFound();
 
   const [session, photos, clubStats] = await Promise.all([
     getOptionalSession(),
