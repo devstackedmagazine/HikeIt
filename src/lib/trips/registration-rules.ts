@@ -33,6 +33,18 @@ export function decideSignUp(input: {
   return { kind: "confirmed", fillsTrip: confirmed + 1 >= maxParticipants };
 }
 
+/**
+ * A hiker may cancel their own registration until the trip starts. After
+ * that the roster is the organiser's record of who came, and only they change
+ * it. Start times are real instants, so "started" means started in Kosovo.
+ */
+export function hikerCanCancel(startDatetime: Date, now: Date): boolean {
+  return now.getTime() < startDatetime.getTime();
+}
+
+export const CANCEL_AFTER_START_ERROR =
+  "Udhëtimi ka filluar, prandaj regjistrimi nuk mund të anulohet më. Për çdo ndryshim, ju lutemi kontaktoni organizatorin e klubit.";
+
 type RosterInput = {
   status: Trip["status"];
   /** The trip's start has passed. */

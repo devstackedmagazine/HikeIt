@@ -23,7 +23,9 @@ import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
 import {
+  CANCEL_AFTER_START_ERROR,
   decideSignUp,
+  hikerCanCancel,
   isAdminSettableStatus,
 } from "@/lib/trips/registration-rules";
 import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
@@ -303,7 +305,8 @@ export interface ActionResult {
  * Open right up until the trip starts. The old 24h cutoff existed to protect
  * refunds; with no money moving it only converted cancellations into no-shows,
  * which is strictly worse for the club — a no-show keeps the seat blocked,
- * where a late cancellation at least frees it for the waitlist.
+ * where a late cancellation at least frees it for the waitlist. Once the trip
+ * has started only an organiser changes the roster.
  */
 export async function cancelMyRegistration(
   registrationId: string,
@@ -324,9 +327,12 @@ export async function cancelMyRegistration(
 
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, registration.tripId),
-    columns: { slug: true },
+    columns: { slug: true, startDatetime: true },
   });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
+  if (!hikerCanCancel(trip.startDatetime, new Date())) {
+    return { success: false, error: CANCEL_AFTER_START_ERROR };
+  }
 
   const promoted = await db.transaction(async (tx) => {
     const locked = await lockTrip(tx, registration.tripId);
