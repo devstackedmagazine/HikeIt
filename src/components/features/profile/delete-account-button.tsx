@@ -33,7 +33,7 @@ export function DeleteAccountButton({ email }: { email: string }) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={email}
-            aria-label="Konfirmo emailin"
+            aria-label="Konfirmoni emailin"
             className="h-9 w-full border border-danger/30 bg-abyss px-3 text-[11px] text-summit placeholder:text-summit/25 focus:border-danger focus:outline-none"
           />
           <button
@@ -49,7 +49,7 @@ export function DeleteAccountButton({ email }: { email: string }) {
             }
             className="w-full bg-danger py-2.5 text-[11px] font-extrabold tracking-[0.08em] text-summit uppercase transition-colors hover:bg-red-900 disabled:opacity-40"
           >
-            {pending ? "Duke fshirë…" : "Konfirmo fshirjen"}
+            {pending ? "Duke fshirë…" : "Konfirmoni fshirjen"}
           </button>
           {error ? (
             <p role="alert" className="text-[11px] leading-[1.55] text-danger">
@@ -63,7 +63,7 @@ export function DeleteAccountButton({ email }: { email: string }) {
           onClick={() => setConfirming(true)}
           className="w-full bg-danger py-2.5 text-[11px] font-extrabold tracking-[0.08em] text-summit uppercase transition-colors hover:bg-red-900"
         >
-          Fshi llogarinë
+          Fshini llogarinë
         </button>
       )}
     </div>

@@ -88,7 +88,8 @@ export async function requireClubAdmin(
         isNull(organizationMembers.leftAt),
       ),
     )
-    .where(eq(organizations.slug, slug))
+    // A soft-deleted club can't be managed any more.
+    .where(and(eq(organizations.slug, slug), isNull(organizations.deletedAt)))
     .limit(1);
 
   const row = rows[0];
@@ -114,6 +115,7 @@ export async function getUserAdminClub(
       and(
         eq(organizationMembers.userId, userId),
         isNull(organizationMembers.leftAt),
+        isNull(organizations.deletedAt),
         inArray(organizationMembers.role, ["admin", "organizer"]),
       ),
     )
