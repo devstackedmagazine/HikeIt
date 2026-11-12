@@ -440,8 +440,9 @@ export default function PrivacyPage() {
                 .
               </>,
               <>
-                Shtypni <strong className="text-summit">Fshi llogarinë</strong>{" "}
-                dhe konfirmoni fshirjen.
+                Shtypni{" "}
+                <strong className="text-summit">Fshini llogarinë</strong> dhe
+                konfirmoni fshirjen.
               </>,
             ]}
           />
