@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 /**
  * The auth instance can't be imported without a database and secrets, so
@@ -21,6 +21,25 @@ assert.match(
   "/update-user must be in disabledPaths",
 );
 console.log("ok  /update-user is disabled");
+
+// 1a. Nothing in the app depends on it: no caller of `updateUser`, and the
+//     profile form saves the name and avatar through our own server actions.
+const callers = readdirSync("src", { recursive: true, encoding: "utf8" })
+  .filter((f) => /\.tsx?$/.test(f) && f !== "lib/auth/index.ts")
+  .filter((f) =>
+    /updateUser|update-user/.test(readFileSync(`src/${f}`, "utf8")),
+  );
+assert.deepEqual(callers, [], "these files still call /update-user");
+const profileForm = readFileSync(
+  "src/components/features/profile/profile-form.tsx",
+  "utf8",
+);
+assert.match(
+  profileForm,
+  /import \{ updateAvatar, updateProfile \} from "@\/server\/actions\/profile"/,
+  "the profile form must save through the server actions",
+);
+console.log("ok  no caller of /update-user; profile form uses server actions");
 
 // 1b. Email sign-up can't set an avatar URL either (same hole, other door).
 const signUp = source.match(
