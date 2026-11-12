@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
+import { scrubEvent } from "@/lib/sentry/scrub";
+
 // See sentry.server.config.ts for why this is gated at the top level rather
 // than via `enabled: false`.
 if (process.env.NODE_ENV === "production") {
@@ -7,6 +9,12 @@ if (process.env.NODE_ENV === "production") {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0.05,
+
+    // Same safety net as the server config.
+    beforeSend(event) {
+      scrubEvent(event);
+      return event;
+    },
 
     // Kept in sync with the server and client configs. The proxy runs here and
     // calls redirect(), so the Next.js control-flow signals matter most.

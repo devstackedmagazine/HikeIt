@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { scrubQueryParams } from "@/lib/sentry/scrub";
+import { scrubEvent } from "@/lib/sentry/scrub";
 
 // Skip Sentry.init() entirely outside production. `enabled: false` still
 // spins up tracing/transport machinery, which is unnecessary overhead in
@@ -31,17 +31,10 @@ if (process.env.NODE_ENV === "production") {
         }
       }
 
-      // A failed query's message lists the values it was writing (phone
-      // numbers, emergency contacts, emails). Keep the SQL, drop the values.
-      for (const value of event.exception?.values ?? []) {
-        if (value.value) value.value = scrubQueryParams(value.value);
-      }
-      if (event.message) event.message = scrubQueryParams(event.message);
-
-      // Scrub cookies before the event ever leaves the server.
-      if (event.request?.cookies) {
-        delete event.request.cookies;
-      }
+      // Safety net for anything that didn't come through `captureError`:
+      // bound query values, emails, phone numbers, personal fields, request
+      // bodies and cookies are removed before the event leaves the server.
+      scrubEvent(event);
 
       return event;
     },
