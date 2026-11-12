@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
 import { isCronAuthorized } from "@/lib/security/cron-auth";
 import { captureError, captureMessage } from "@/lib/sentry";
+import { sanitizeForLog } from "@/lib/sentry/scrub";
 import { runCompleteTrips } from "@/server/services/complete-trips";
 
 /**
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
       (error as { code?: string })?.code ??
       (error as { cause?: { code?: string } })?.cause?.code;
 
-    console.error("[cron.complete_trips] failed", error);
+    console.error("[cron.complete_trips] failed", sanitizeForLog(error));
     captureError(error, {
       action: "cron.complete_trips",
       extra: { pgCode },
