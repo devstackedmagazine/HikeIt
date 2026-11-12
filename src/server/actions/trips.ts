@@ -29,6 +29,11 @@ import {
   type CreateTripInput,
   createTripSchema,
 } from "@/lib/validations/trips";
+import {
+  emailPromoted,
+  lockTrip,
+  promoteFromWaitlist,
+} from "@/server/services/trip-roster";
 
 export interface CreateTripResult {
   success: boolean;
@@ -228,12 +233,9 @@ export async function updateTrip(
   // The new limit is checked and written under the trip's row lock — the lock
   // sign-ups take — so a hiker confirmed while this runs can't end up above
   // it. Returns the confirmed count when the limit is too low, else null.
+  let promoted: string[] = [];
   const overCapacity = await db.transaction(async (tx) => {
-    await tx
-      .select({ id: trips.id })
-      .from(trips)
-      .where(eq(trips.id, tripId))
-      .for("update");
+    const locked = await lockTrip(tx, tripId);
     const [confirmed] = await tx
       .select({ value: count() })
       .from(tripRegistrations)
@@ -250,10 +252,22 @@ export async function updateTrip(
     ) {
       return confirmedCount;
     }
+    const newMax = input.maxParticipants ?? null;
     await tx
       .update(trips)
-      .set({ maxParticipants: input.maxParticipants ?? null })
+      .set({ maxParticipants: newMax })
       .where(eq(trips.id, tripId));
+    // A raised (or removed) limit frees spots for the waitlist.
+    if (
+      locked &&
+      locked.maxParticipants !== null &&
+      (newMax === null || newMax > locked.maxParticipants)
+    ) {
+      promoted = await promoteFromWaitlist(tx, {
+        ...locked,
+        maxParticipants: newMax,
+      });
+    }
     return null;
   });
   if (overCapacity !== null) {
@@ -309,6 +323,8 @@ export async function updateTrip(
       changes: changes.map((c) => c.label),
     },
   });
+
+  void emailPromoted(promoted, tripId);
 
   // Notify confirmed registrants when date/time or meeting point changed.
   if (changes.length > 0) {

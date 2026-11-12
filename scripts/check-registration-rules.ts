@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   decideSignUp,
   isAdminSettableStatus,
+  rosterStatus,
+  waitlistPromotions,
 } from "../src/lib/trips/registration-rules";
 
 /**
@@ -115,3 +117,119 @@ for (const bad of ["attended", "no_show", "pending", "", null, undefined, 1]) {
   assert.equal(isAdminSettableStatus(bad), false, String(bad));
 }
 console.log("ok  only confirmed / waitlisted / canceled can be set by hand");
+
+// Waitlist promotion: freed spots go to the people waiting, never past the
+// limit, and not once the trip has started or stopped taking people.
+const open = { status: "open" as const, started: false };
+const promotions: [string, Parameters<typeof waitlistPromotions>[0], number][] =
+  [
+    [
+      "one spot freed, three waiting → one promoted",
+      { ...open, maxParticipants: 10, confirmed: 9, waitlisted: 3 },
+      1,
+    ],
+    [
+      "limit raised 10 → 13, two waiting → both promoted",
+      { ...open, maxParticipants: 13, confirmed: 10, waitlisted: 2 },
+      2,
+    ],
+    [
+      "limit raised 10 → 12, five waiting → two promoted",
+      {
+        ...open,
+        status: "full",
+        maxParticipants: 12,
+        confirmed: 10,
+        waitlisted: 5,
+      },
+      2,
+    ],
+    [
+      "limit removed → everyone waiting is promoted",
+      { ...open, maxParticipants: null, confirmed: 10, waitlisted: 4 },
+      4,
+    ],
+    [
+      "still full → nobody",
+      { ...open, maxParticipants: 10, confirmed: 10, waitlisted: 3 },
+      0,
+    ],
+    [
+      "over the limit → nobody",
+      { ...open, maxParticipants: 10, confirmed: 12, waitlisted: 3 },
+      0,
+    ],
+    [
+      "nobody waiting → nobody",
+      { ...open, maxParticipants: 10, confirmed: 4, waitlisted: 0 },
+      0,
+    ],
+    [
+      "trip already started → nobody",
+      {
+        ...open,
+        started: true,
+        maxParticipants: 10,
+        confirmed: 9,
+        waitlisted: 3,
+      },
+      0,
+    ],
+    [
+      "canceled trip → nobody",
+      {
+        ...open,
+        status: "canceled",
+        maxParticipants: 10,
+        confirmed: 9,
+        waitlisted: 3,
+      },
+      0,
+    ],
+  ];
+for (const [name, input, expected] of promotions) {
+  assert.equal(waitlistPromotions(input), expected, name);
+  console.log(`ok  ${name}`);
+}
+
+for (let max = 1; max <= 20; max++) {
+  for (let confirmed = 0; confirmed <= max + 2; confirmed++) {
+    for (let waitlisted = 0; waitlisted <= max + 2; waitlisted++) {
+      const n = waitlistPromotions({
+        ...open,
+        maxParticipants: max,
+        confirmed,
+        waitlisted,
+      });
+      assert.ok(n >= 0 && n <= waitlisted, "promotes only people waiting");
+      assert.ok(confirmed + n <= Math.max(max, confirmed), `max ${max}`);
+      // No free spot is left while someone is still waiting.
+      if (confirmed + n < max) assert.equal(n, waitlisted);
+    }
+  }
+}
+console.log("ok  promotion never exceeds capacity and leaves no gap");
+
+const full = { started: false, maxParticipants: 10 };
+assert.equal(rosterStatus({ ...full, status: "full", confirmed: 9 }), "open");
+assert.equal(rosterStatus({ ...full, status: "open", confirmed: 10 }), "full");
+assert.equal(rosterStatus({ ...full, status: "full", confirmed: 10 }), "full");
+assert.equal(
+  rosterStatus({
+    status: "full",
+    started: false,
+    maxParticipants: null,
+    confirmed: 50,
+  }),
+  "open",
+);
+assert.equal(
+  rosterStatus({ ...full, status: "full", started: true, confirmed: 3 }),
+  "full",
+  "a started trip is not reopened",
+);
+assert.equal(
+  rosterStatus({ ...full, status: "canceled", confirmed: 3 }),
+  "canceled",
+);
+console.log("ok  open / full follows the confirmed count");

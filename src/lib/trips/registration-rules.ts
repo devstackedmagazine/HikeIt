@@ -16,7 +16,7 @@ export type SignUpDecision =
  * - at or over capacity → waitlisted, whatever the stored status says;
  * - a freed spot goes to the people already waiting: while anyone is on the
  *   waitlist a new sign-up joins it, so cancelling and signing up again
- *   can't jump the queue. The organiser confirms from the waitlist.
+ *   can't jump the queue. `waitlistPromotions` moves them up.
  */
 export function decideSignUp(input: {
   status: Trip["status"];
@@ -31,6 +31,42 @@ export function decideSignUp(input: {
     return { kind: "waitlisted" };
   }
   return { kind: "confirmed", fillsTrip: confirmed + 1 >= maxParticipants };
+}
+
+type RosterInput = {
+  status: Trip["status"];
+  /** The trip's start has passed. */
+  started: boolean;
+  maxParticipants: number | null;
+  confirmed: number;
+};
+
+/**
+ * How many waitlisted registrations to confirm, oldest first, once a
+ * confirmed spot is freed or the limit is raised. Only into spots that are
+ * really free, so the confirmed count never passes the limit; none once the
+ * trip has started or stopped taking people.
+ */
+export function waitlistPromotions(
+  input: RosterInput & { waitlisted: number },
+): number {
+  const { status, started, maxParticipants, confirmed, waitlisted } = input;
+  if ((status !== "open" && status !== "full") || started) return 0;
+  const free =
+    maxParticipants === null ? waitlisted : maxParticipants - confirmed;
+  return Math.max(0, Math.min(free, waitlisted));
+}
+
+/**
+ * `open` / `full` follows the confirmed count. Other statuses, and a trip
+ * that has started, are left as they are.
+ */
+export function rosterStatus(input: RosterInput): Trip["status"] {
+  const { status, started, maxParticipants, confirmed } = input;
+  if ((status !== "open" && status !== "full") || started) return status;
+  return maxParticipants !== null && confirmed >= maxParticipants
+    ? "full"
+    : "open";
 }
 
 /**
