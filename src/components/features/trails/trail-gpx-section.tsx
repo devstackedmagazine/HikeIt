@@ -11,7 +11,9 @@ import { uploadTrailGpx } from "@/server/actions/gpx";
 export function TrailGpxSection({ trailId }: { trailId: string }) {
   const router = useRouter();
   const [content, setContent] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "done" | "review"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function upload() {
@@ -24,7 +26,7 @@ export function TrailGpxSection({ trailId }: { trailId: string }) {
       setError(result.error ?? "Ngarkimi dështoi.");
       return;
     }
-    setStatus("done");
+    setStatus(result.needsReview ? "review" : "done");
     router.refresh();
   }
 
@@ -39,10 +41,12 @@ export function TrailGpxSection({ trailId }: { trailId: string }) {
       {error ? (
         <p className="mt-2 text-[11px] font-medium text-danger">{error}</p>
       ) : null}
-      {status === "done" ? (
+      {status === "done" || status === "review" ? (
         <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-moss">
           <CheckCircle2 className="size-3.5" />
-          GPX u ngarkua me sukses.
+          {status === "review"
+            ? "GPX u ngarkua. Shtegu u dërgua sërish për shqyrtim dhe nuk shfaqet publikisht derisa të aprovohet."
+            : "GPX u ngarkua me sukses."}
         </p>
       ) : null}
 
