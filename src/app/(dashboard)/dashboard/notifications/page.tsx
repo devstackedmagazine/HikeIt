@@ -11,8 +11,8 @@ export default async function NotificationsPage() {
   const { notifications } = await getNotifications(user.id);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Njoftimet</h1>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <h1 className="font-heading text-2xl font-black uppercase">Njoftimet</h1>
       <NotificationsList initialItems={notifications} />
     </div>
   );

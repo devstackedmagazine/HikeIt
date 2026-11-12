@@ -91,7 +91,9 @@ export function ProfileForm({
     } catch {
       // The action never ran — typically the body was over the size limit
       // (a format the browser couldn't shrink, e.g. HEIC outside Safari).
-      setAvatarError("Imazhi është shumë i madh. Provo një foto JPG ose PNG.");
+      setAvatarError(
+        "Imazhi është shumë i madh. Provoni një foto JPG ose PNG.",
+      );
       return;
     }
     if (result.success && result.avatarUrl) {
@@ -115,7 +117,7 @@ export function ProfileForm({
             onClick={() => setEditing(true)}
             className={cn(btnCls, "border-sage/40 text-sage hover:border-sage")}
           >
-            Ndrysho
+            Ndryshoni
           </button>
         </div>
         <div className="space-y-2 text-sm">
@@ -133,7 +135,7 @@ export function ProfileForm({
   return (
     <section id="edit-profile" className={cardCls}>
       <div className="mb-3">
-        <CardTitle>Ndrysho profilin</CardTitle>
+        <CardTitle>Ndryshoni profilin</CardTitle>
       </div>
       <div className="space-y-4">
         <div className="flex items-center gap-4">
@@ -171,7 +173,7 @@ export function ProfileForm({
               ) : (
                 <Upload className="size-3.5" />
               )}
-              {avatarUploading ? "Duke ngarkuar…" : "Ngarko foto"}
+              {avatarUploading ? "Duke ngarkuar…" : "Ngarkoni foto"}
             </button>
             {avatarError ? (
               <p role="alert" className="mt-1.5 text-xs text-red-300">
@@ -244,7 +246,7 @@ export function ProfileForm({
             )}
           >
             {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            Ruaj
+            Ruani
           </button>
           <button
             type="button"
@@ -254,7 +256,7 @@ export function ProfileForm({
               "border-summit/20 text-summit/70 hover:text-summit",
             )}
           >
-            Anulo
+            Anuloni
           </button>
         </div>
       </div>

@@ -23,11 +23,11 @@ export function ClubTripsFilter() {
   return (
     <div className="flex items-center gap-2">
       <span className="text-forest/40 text-[10px] font-semibold tracking-[0.1em] uppercase">
-        Filtro:
+        Filtroni:
       </span>
       <div className="relative">
         <select
-          aria-label="Filtro sipas statusit"
+          aria-label="Filtroni sipas statusit"
           value={filters.status}
           onChange={(e) => setFilters({ status: e.target.value, page: 1 })}
           className="border-forest/60 bg-summit text-forest focus:border-forest h-8 appearance-none border pr-7 pl-3 text-[11px] font-semibold uppercase focus:outline-none"

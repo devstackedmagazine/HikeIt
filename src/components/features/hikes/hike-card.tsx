@@ -76,7 +76,7 @@ export function HikeCard({ hike }: { hike: HikeListItem }) {
           {confirming ? (
             <>
               <span className="text-forest/70 mr-auto text-[10px] font-semibold">
-                Fshi ecjen dhe gjurmën përgjithmonë?
+                Ta fshini ecjen dhe gjurmën përgjithmonë?
               </span>
               <button
                 type="button"
@@ -100,7 +100,7 @@ export function HikeCard({ hike }: { hike: HikeListItem }) {
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              aria-label="Fshi ecjen"
+              aria-label="Fshini ecjen"
               className="text-forest/40 hover:text-danger ml-auto"
             >
               <Trash2 className="size-3.5" />

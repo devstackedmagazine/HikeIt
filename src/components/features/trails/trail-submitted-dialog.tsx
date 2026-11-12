@@ -46,7 +46,7 @@ export function TrailSubmittedDialog({
           Shtegu u dërgua për shqyrtim
         </DialogTitle>
         <DialogDescription className="text-summit/80 text-sm leading-[1.6]">
-          Ekipi i HikeIt do ta shqyrtojë. Deri atëherë e sheh vetëm ti; pas
+          Ekipi i HikeIt do ta shqyrtojë. Deri atëherë e shihni vetëm ju; pas
           miratimit shfaqet në listën e shtigjeve.
         </DialogDescription>
         <button

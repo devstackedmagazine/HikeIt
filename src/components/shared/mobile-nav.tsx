@@ -68,7 +68,7 @@ export function MobileNav({
                     render={<Link href="/dashboard" />}
                     className="w-full"
                   >
-                    Shko te paneli
+                    Shkoni te paneli
                   </Button>
                 </>
               ) : (
@@ -78,10 +78,10 @@ export function MobileNav({
                     render={<Link href="/login" />}
                     className="w-full"
                   >
-                    Hyr
+                    Hyni
                   </Button>
                   <Button render={<Link href="/register" />} className="w-full">
-                    Fillo sot
+                    Filloni sot
                   </Button>
                 </>
               )}

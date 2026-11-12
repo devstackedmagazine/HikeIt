@@ -19,7 +19,7 @@ export function TripCancellation({
       </Text>
       <Text style={reasonStyle}>Arsyeja: {reason}</Text>
       <Button href={tripsUrl} style={button}>
-        Gjej Udhëtime të Tjera
+        Gjeni Udhëtime të Tjera
       </Button>
     </EmailLayout>
   );

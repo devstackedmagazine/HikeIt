@@ -21,7 +21,7 @@ export function NewTripNotification({
       </Text>
       <Text style={detail}>📅 {dateLabel}</Text>
       <Button href={tripUrl} style={button}>
-        Shiko & Regjistrohu
+        Shikoni & Regjistrohuni
       </Button>
     </EmailLayout>
   );

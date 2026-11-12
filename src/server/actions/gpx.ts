@@ -7,9 +7,11 @@ import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { db } from "@/lib/db";
 import { organizations, trails, trips, users } from "@/lib/db/schema";
 import { downsampleTrack, parseGpxString } from "@/lib/gpx/parser";
+import { sanitizeGpx } from "@/lib/gpx/sanitize";
 import { enforceRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import { isGpxStorageConfigured, uploadGpx } from "@/lib/storage/gpx-storage";
+import { gpxUploadReview } from "@/lib/trails/gpx-review";
 import { generateSlug } from "@/lib/utils/slug";
 import {
   OTHER_REGION,
@@ -52,7 +54,7 @@ export async function submitTrail(
     }
     return {
       success: false,
-      error: "Kontrollo fushat e shënuara.",
+      error: "Kontrolloni fushat e shënuara.",
       fieldErrors,
     };
   }
@@ -68,8 +70,8 @@ export async function submitTrail(
     if (!regions.includes(input.data.region)) {
       return {
         success: false,
-        error: "Kontrollo fushat e shënuara.",
-        fieldErrors: { region: "Zgjidh një rajon nga lista." },
+        error: "Kontrolloni fushat e shënuara.",
+        fieldErrors: { region: "Zgjidhni një rajon nga lista." },
       };
     }
     region = input.data.region;
@@ -83,9 +85,13 @@ export async function submitTrail(
     };
   }
 
+  // Stats come from the uploaded file; the published copy is the sanitized
+  // one (no timestamps, device or author data — see `sanitizeGpx`).
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(data.gpxContent);
+    storedGpx = await sanitizeGpx(data.gpxContent, name);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "GPX i pavlefshëm.";
@@ -99,7 +105,7 @@ export async function submitTrail(
   // a DB row pointing at a nonexistent URL is not.
   let gpxUrl: string;
   try {
-    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, data.gpxContent);
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, storedGpx);
   } catch (error) {
     captureError(error, {
       action: "submitTrail",
@@ -182,9 +188,14 @@ async function notifySuperAdmins(trailName: string): Promise<void> {
 export interface ActionResult {
   success: boolean;
   error?: string;
+  /** The trail went back to review and is off the public listing. */
+  needsReview?: boolean;
 }
 
-/** Upload GPX to an existing trail. Super admins or the trail's submitter only. */
+/**
+ * Upload GPX to an existing trail. Super admins or the trail's submitter only.
+ * A submitter's file is never public unreviewed: see `gpxUploadReview`.
+ */
 export async function uploadTrailGpx(
   trailId: string,
   gpxContent: string,
@@ -222,8 +233,10 @@ export async function uploadTrailGpx(
   }
 
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(gpxContent);
+    storedGpx = await sanitizeGpx(gpxContent, trail.name);
   } catch (error) {
     return {
       success: false,
@@ -233,17 +246,22 @@ export async function uploadTrailGpx(
 
   let gpxUrl: string;
   try {
-    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, gpxContent);
+    gpxUrl = await uploadGpx(`trails/${trailId}.gpx`, storedGpx);
   } catch (error) {
     captureError(error, { action: "uploadTrailGpx", extra: { trailId } });
     return { success: false, error: "Ngarkimi i skedarit GPX dështoi." };
   }
 
   const gpxTrack = downsampleTrack(parsed.points);
+  const review = gpxUploadReview({
+    verified: trail.verified,
+    bySuperAdmin: isSuperAdmin,
+  });
 
   await db
     .update(trails)
     .set({
+      ...(review.unverify && { verified: false }),
       gpxUrl,
       gpxTrack,
       gpxMetadata: {
@@ -269,9 +287,14 @@ export async function uploadTrailGpx(
     })
     .where(eq(trails.id, trailId));
 
+  if (review.notifyReviewers) {
+    await notifySuperAdmins(trail.name);
+    revalidatePath("/dashboard/admin");
+  }
+
   revalidatePath(`/trails/${trail.slug}`);
   revalidatePath("/trails");
-  return { success: true };
+  return { success: true, needsReview: review.notifyReviewers };
 }
 
 /** Upload a GPX for an existing trip (admin); backfills meeting coordinates. */
@@ -297,9 +320,16 @@ export async function uploadTripGpx(
     : null;
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  const limited = await enforceRateLimit("ratelimit.trip.gpx.upload", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   let parsed;
+  let storedGpx: string;
   try {
     parsed = await parseGpxString(gpxContent);
+    storedGpx = await sanitizeGpx(gpxContent, trip.title);
   } catch (error) {
     return {
       success: false,
@@ -308,7 +338,7 @@ export async function uploadTripGpx(
   }
 
   try {
-    const url = await uploadGpx(`trips/${tripId}/gpx.gpx`, gpxContent);
+    const url = await uploadGpx(`trips/${tripId}/gpx.gpx`, storedGpx);
     await db
       .update(trips)
       .set({

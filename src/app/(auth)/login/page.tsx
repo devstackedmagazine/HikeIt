@@ -8,15 +8,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  InAppBrowserNotice,
+  useInAppBrowser,
+} from "@/components/features/auth/in-app-browser-notice";
 import { signIn } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { safeRedirect } from "@/lib/utils/safe-redirect";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
 
 const LEFT_FEATURES = [
-  "Gjej shtigje të verifikuara",
-  "Bashkohu me udhëtime",
-  "Merr njoftime moti",
+  "Gjeni shtigje të verifikuara",
+  "Bashkohuni me udhëtime",
+  "Merrni njoftime moti",
 ];
 
 const LABEL =
@@ -35,6 +39,8 @@ function LoginForm() {
     tone: "error" | "warning";
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [socialFailed, setSocialFailed] = useState(false);
+  const inAppBrowser = useInAppBrowser();
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -57,8 +63,8 @@ function LoginForm() {
         // never arrived.
         setFormError({
           message:
-            "Llogaria jote nuk është verifikuar ende. Sapo të dërguam një " +
-            "lidhje të re verifikimi — kontrollo inboxin dhe dosjen e spam-it.",
+            "Llogaria juaj nuk është verifikuar ende. Sapo ju dërguam një " +
+            "link të ri verifikimi — kontrolloni email-in dhe dosjen e spam-it.",
           tone: "warning",
         });
       } else {
@@ -74,20 +80,19 @@ function LoginForm() {
     router.refresh();
   }
 
-  async function handleGoogleSignIn() {
-    await signIn.social({
-      provider: "google",
-      callbackURL: redirectTo,
-      errorCallbackURL: "/social-login-error?provider=google",
-    });
-  }
-
-  async function handleFacebookSignIn() {
-    await signIn.social({
-      provider: "facebook",
-      callbackURL: redirectTo,
-      errorCallbackURL: "/social-login-error?provider=facebook",
-    });
+  // A failed request (typically "Failed to fetch" inside an in-app browser)
+  // shows the open-in-browser notice instead of an unhandled rejection.
+  async function handleSocialSignIn(provider: "google" | "facebook") {
+    try {
+      const { error } = await signIn.social({
+        provider,
+        callbackURL: redirectTo,
+        errorCallbackURL: `/social-login-error?provider=${provider}`,
+      });
+      if (error) setSocialFailed(true);
+    } catch {
+      setSocialFailed(true);
+    }
   }
 
   return (
@@ -160,7 +165,7 @@ function LoginForm() {
 
         <div className="w-full max-w-[440px]">
           <h1 className="font-heading text-forest text-[clamp(32px,5vw,56px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
-            Kyçu
+            Kyçuni
           </h1>
           <p className="text-forest/70 mt-1.5 mb-7 text-[14px] leading-[1.5]">
             Mirë se vini përsëri në HikeIt
@@ -206,7 +211,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  aria-label="Shfaq fjalëkalimin"
+                  aria-label="Shfaqni fjalëkalimin"
                   className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                 >
                   {showPassword ? (
@@ -244,7 +249,7 @@ function LoginForm() {
                   Duke u kyçur...
                 </>
               ) : (
-                "Kyçu →"
+                "Kyçuni →"
               )}
             </button>
           </form>
@@ -256,17 +261,19 @@ function LoginForm() {
             </span>
           </div>
 
+          {inAppBrowser || socialFailed ? <InAppBrowserNotice /> : null}
+
           <div className="mb-5 flex gap-2.5">
             <button
               type="button"
-              onClick={handleGoogleSignIn}
+              onClick={() => void handleSocialSignIn("google")}
               className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Google
             </button>
             <button
               type="button"
-              onClick={handleFacebookSignIn}
+              onClick={() => void handleSocialSignIn("facebook")}
               className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
             >
               Facebook
@@ -279,7 +286,7 @@ function LoginForm() {
               href="/register"
               className="text-forest hover:text-pine font-bold uppercase transition-colors"
             >
-              Regjistrohu
+              Regjistrohuni
             </Link>
           </p>
         </div>

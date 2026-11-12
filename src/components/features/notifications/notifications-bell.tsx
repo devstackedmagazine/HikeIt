@@ -108,7 +108,7 @@ export function NotificationsBell({ light = true }: { light?: boolean }) {
       </Button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border bg-background shadow-lg">
+        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden border-2 border-forest bg-summit">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="text-sm font-semibold">Njoftimet</span>
             {unread > 0 ? (
@@ -116,7 +116,7 @@ export function NotificationsBell({ light = true }: { light?: boolean }) {
                 onClick={handleMarkAll}
                 className="text-xs text-primary hover:underline"
               >
-                Shëno të gjitha si të lexuara
+                Shënoni të gjitha si të lexuara
               </button>
             ) : null}
           </div>
@@ -161,7 +161,7 @@ export function NotificationsBell({ light = true }: { light?: boolean }) {
               onClick={() => setOpen(false)}
               className="text-xs text-primary hover:underline"
             >
-              Shiko të gjitha
+              Shikoni të gjitha
             </Link>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { and, count, eq, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { ReactElement } from "react";
+import { z } from "zod";
 
 import { env } from "@/config/env";
 import { getOptionalSession } from "@/lib/auth/helpers";
@@ -22,10 +23,17 @@ import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
 import {
-  formatTripDateTime,
-  googleCalendarUrl,
-} from "@/lib/utils/datetime";
-
+  CANCEL_AFTER_START_ERROR,
+  decideSignUp,
+  hikerCanCancel,
+  isAdminSettableStatus,
+} from "@/lib/trips/registration-rules";
+import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
+import {
+  emailPromoted,
+  lockTrip,
+  promoteFromWaitlist,
+} from "@/server/services/trip-roster";
 
 /**
  * Views that change when a club edits a trip's roster: every club dashboard
@@ -95,8 +103,14 @@ export async function registerForTrip(
 
   const trip = await db.query.trips.findFirst({ where: eq(trips.id, tripId) });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
-  if (trip.status !== "open") {
-    return { success: false, error: "Ky udhëtim nuk është i hapur." };
+  // A full trip still takes sign-ups: `createRegistration` puts them on the
+  // waitlist, which is what the "Lista e pritjes" button on a full trip
+  // promises. Rejecting `full` here left that button a dead end.
+  if (trip.status !== "open" && trip.status !== "full") {
+    return {
+      success: false,
+      error: "Regjistrimet për këtë udhëtim nuk janë të hapura.",
+    };
   }
   // The cron only completes a trip hours after it ends, so `open` alone
   // would still accept sign-ups once the group has left.
@@ -130,31 +144,63 @@ export async function registerForTrip(
   return createRegistration(session.user.id, trip, canceled != null);
 }
 
-/** Confirm (or waitlist) the hiker, email them, revalidate. */
+/**
+ * Confirm (or waitlist) the hiker, email them, revalidate.
+ *
+ * The confirmed count, the insert and the "full" flip happen in one
+ * transaction holding the trip's row lock — the same lock admin roster
+ * changes take — so two hikers racing for the last spot can't both be
+ * confirmed. The one-active-row unique index stops double sign-ups.
+ */
 async function createRegistration(
   userId: string,
   trip: typeof trips.$inferSelect,
   isReregistration: boolean,
 ): Promise<RegisterResult> {
-  const confirmed = await confirmedCountFor(trip.id);
-  const isFull =
-    trip.maxParticipants !== null && confirmed >= trip.maxParticipants;
-  const status = isFull ? "waitlisted" : "confirmed";
+  let status: "confirmed" | "waitlisted";
+  try {
+    const decided = await db.transaction(async (tx) => {
+      const locked = await lockTrip(tx, trip.id);
+      if (!locked) return null;
+      const decision = decideSignUp({
+        status: locked.status,
+        maxParticipants: locked.maxParticipants,
+        confirmed: await confirmedCountFor(locked.id, tx),
+        waitlisted: await countFor(locked.id, "waitlisted", tx),
+      });
+      if (decision.kind === "closed") return null;
 
-  await db.insert(tripRegistrations).values({
-    tripId: trip.id,
-    userId,
-    status,
-    isReregistration,
-    waiverSignedAt: new Date(),
-  });
-
-  if (
-    status === "confirmed" &&
-    trip.maxParticipants !== null &&
-    confirmed + 1 >= trip.maxParticipants
-  ) {
-    await db.update(trips).set({ status: "full" }).where(eq(trips.id, trip.id));
+      await tx.insert(tripRegistrations).values({
+        tripId: locked.id,
+        userId,
+        status: decision.kind,
+        isReregistration,
+        waiverSignedAt: new Date(),
+      });
+      if (
+        decision.kind === "confirmed" &&
+        decision.fillsTrip &&
+        locked.status === "open"
+      ) {
+        await tx
+          .update(trips)
+          .set({ status: "full" })
+          .where(eq(trips.id, locked.id));
+      }
+      return decision.kind;
+    });
+    if (!decided) {
+      return {
+        success: false,
+        error: "Regjistrimet për këtë udhëtim nuk janë të hapura.",
+      };
+    }
+    status = decided;
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { success: false, error: "Jeni tashmë i regjistruar." };
+    }
+    throw error;
   }
 
   await db.insert(auditLogs).values({
@@ -178,19 +224,42 @@ async function createRegistration(
   return { success: true, status };
 }
 
-/** Count of confirmed registrations for a trip. */
-async function confirmedCountFor(tripId: string): Promise<number> {
-  const [row] = await db
+/** Count of a trip's registrations in one status. */
+async function countFor(
+  tripId: string,
+  status: "confirmed" | "waitlisted",
+  executor: Pick<typeof db, "select"> = db,
+): Promise<number> {
+  const [row] = await executor
     .select({ value: count() })
     .from(tripRegistrations)
     .where(
       and(
         eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.status, "confirmed"),
+        eq(tripRegistrations.status, status),
       ),
     );
   return row?.value ?? 0;
 }
+
+/** Count of confirmed registrations for a trip. */
+function confirmedCountFor(
+  tripId: string,
+  executor: Pick<typeof db, "select"> = db,
+): Promise<number> {
+  return countFor(tripId, "confirmed", executor);
+}
+
+/** Postgres unique_violation, unwrapped from Drizzle's query error if needed. */
+function isUniqueViolation(error: unknown): boolean {
+  const code =
+    (error as { code?: string })?.code ??
+    (error as { cause?: { code?: string } })?.cause?.code;
+  return code === "23505";
+}
+
+const ALREADY_ACTIVE_ERROR =
+  "Ky person ka tashmë një regjistrim aktiv në këtë udhëtim. Menaxhoni atë regjistrim në vend të këtij të anuluar.";
 
 async function sendConfirmation(
   userId: string,
@@ -236,7 +305,8 @@ export interface ActionResult {
  * Open right up until the trip starts. The old 24h cutoff existed to protect
  * refunds; with no money moving it only converted cancellations into no-shows,
  * which is strictly worse for the club — a no-show keeps the seat blocked,
- * where a late cancellation at least frees it for the waitlist.
+ * where a late cancellation at least frees it for the waitlist. Once the trip
+ * has started only an organiser changes the roster.
  */
 export async function cancelMyRegistration(
   registrationId: string,
@@ -257,14 +327,31 @@ export async function cancelMyRegistration(
 
   const trip = await db.query.trips.findFirst({
     where: eq(trips.id, registration.tripId),
-    columns: { slug: true },
+    columns: { slug: true, startDatetime: true },
   });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
+  if (!hikerCanCancel(trip.startDatetime, new Date())) {
+    return { success: false, error: CANCEL_AFTER_START_ERROR };
+  }
 
-  await db
-    .update(tripRegistrations)
-    .set({ status: "canceled", canceledAt: new Date() })
-    .where(eq(tripRegistrations.id, registrationId));
+  const promoted = await db.transaction(async (tx) => {
+    const locked = await lockTrip(tx, registration.tripId);
+    const current = await tx.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.id, registrationId),
+      columns: { status: true },
+    });
+
+    await tx
+      .update(tripRegistrations)
+      .set({ status: "canceled", canceledAt: new Date() })
+      .where(eq(tripRegistrations.id, registrationId));
+
+    // The freed spot goes to whoever has waited longest.
+    return locked && current?.status === "confirmed"
+      ? promoteFromWaitlist(tx, locked)
+      : [];
+  });
+  void emailPromoted(promoted, registration.tripId);
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -286,6 +373,9 @@ export async function updateRegistrationStatus(
 ): Promise<ActionResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+  if (!isAdminSettableStatus(status)) {
+    return { success: false, error: "Statusi është i pavlefshëm." };
+  }
 
   const registration = await db.query.tripRegistrations.findFirst({
     where: eq(tripRegistrations.id, registrationId),
@@ -300,16 +390,89 @@ export async function updateRegistrationStatus(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
-    .update(tripRegistrations)
-    .set({
-      status,
-      canceledAt: status === "canceled" ? new Date() : null,
-    })
-    .where(eq(tripRegistrations.id, registrationId));
+  let result: ActionResult;
+  let promoted: string[] = [];
+  try {
+    result = await db.transaction(async (tx): Promise<ActionResult> => {
+      const locked = await lockTrip(tx, registration.tripId);
+      if (!locked) return { success: false, error: "Udhëtimi nuk u gjet." };
 
-  revalidateClubRosterViews(trip.slug);
-  return { success: true };
+      // Re-read under the lock: another admin may have changed this row
+      // between the read above and the lock being granted.
+      const current = await tx.query.tripRegistrations.findFirst({
+        where: eq(tripRegistrations.id, registrationId),
+        columns: { status: true, userId: true },
+      });
+      if (!current) return { success: false, error: "Nuk u gjet." };
+      if (current.status === status) return { success: true };
+
+      // Reviving a canceled row would collide with the one-active-row
+      // unique index if the hiker has since registered again.
+      if (current.status === "canceled") {
+        const active = await tx.query.tripRegistrations.findFirst({
+          where: and(
+            eq(tripRegistrations.tripId, locked.id),
+            eq(tripRegistrations.userId, current.userId),
+            ne(tripRegistrations.status, "canceled"),
+          ),
+          columns: { id: true },
+        });
+        if (active) return { success: false, error: ALREADY_ACTIVE_ERROR };
+      }
+
+      const confirmed =
+        status === "confirmed" ? await confirmedCountFor(locked.id, tx) : 0;
+      if (
+        status === "confirmed" &&
+        locked.maxParticipants !== null &&
+        confirmed >= locked.maxParticipants
+      ) {
+        return {
+          success: false,
+          error: `Udhëtimi është plot: ${confirmed} nga ${locked.maxParticipants} vende janë të konfirmuara. Hiqni një pjesëmarrës para se të konfirmoni një tjetër.`,
+        };
+      }
+
+      await tx
+        .update(tripRegistrations)
+        .set({
+          status,
+          canceledAt: status === "canceled" ? new Date() : null,
+        })
+        .where(eq(tripRegistrations.id, registrationId));
+
+      if (status === "confirmed") {
+        // Same rule as self-registration: taking the last spot fills the trip.
+        if (
+          locked.status === "open" &&
+          locked.maxParticipants !== null &&
+          confirmed + 1 >= locked.maxParticipants
+        ) {
+          await tx
+            .update(trips)
+            .set({ status: "full" })
+            .where(eq(trips.id, locked.id));
+        }
+      } else if (current.status === "confirmed") {
+        promoted = await promoteFromWaitlist(tx, locked, registrationId);
+      }
+
+      return { success: true };
+    });
+  } catch (error) {
+    // The pre-check above runs under the trip lock, but self-registration
+    // doesn't take that lock, so a hiker can still re-register in between.
+    if (isUniqueViolation(error)) {
+      return { success: false, error: ALREADY_ACTIVE_ERROR };
+    }
+    throw error;
+  }
+
+  if (result.success) {
+    void emailPromoted(promoted, registration.tripId);
+    revalidateClubRosterViews(trip.slug);
+  }
+  return result;
 }
 
 /**
@@ -338,10 +501,24 @@ export async function removeRegistration(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
-    .update(tripRegistrations)
-    .set({ status: "canceled", canceledAt: new Date() })
-    .where(eq(tripRegistrations.id, registrationId));
+  const promoted = await db.transaction(async (tx) => {
+    const locked = await lockTrip(tx, trip.id);
+    const current = await tx.query.tripRegistrations.findFirst({
+      where: eq(tripRegistrations.id, registrationId),
+      columns: { status: true },
+    });
+
+    await tx
+      .update(tripRegistrations)
+      .set({ status: "canceled", canceledAt: new Date() })
+      .where(eq(tripRegistrations.id, registrationId));
+
+    // The freed spot goes to whoever has waited longest.
+    return locked && current?.status === "confirmed"
+      ? promoteFromWaitlist(tx, locked)
+      : [];
+  });
+  void emailPromoted(promoted, trip.id);
 
   // In-app notification (best-effort — the removal itself has already committed).
   try {
@@ -388,6 +565,8 @@ export async function removeRegistration(
   return { success: true };
 }
 
+const MAX_CANCEL_REASON_LENGTH = 1000;
+
 /** Admin: cancel a whole trip and email every registrant the reason. */
 export async function cancelTrip(
   tripId: string,
@@ -402,10 +581,19 @@ export async function cancelTrip(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
+  // Canceling emails every registrant, so it must happen once: the status
+  // condition makes a repeat (or a second click) match no row.
+  const cleanReason = String(reason ?? "")
+    .trim()
+    .slice(0, MAX_CANCEL_REASON_LENGTH);
+  const [canceled] = await db
     .update(trips)
-    .set({ status: "canceled", canceledReason: reason })
-    .where(eq(trips.id, tripId));
+    .set({ status: "canceled", canceledReason: cleanReason })
+    .where(and(eq(trips.id, tripId), ne(trips.status, "canceled")))
+    .returning({ id: trips.id });
+  if (!canceled) {
+    return { success: false, error: "Udhëtimi është anuluar tashmë." };
+  }
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -419,7 +607,7 @@ export async function cancelTrip(
     `Udhëtimi u anulua: ${trip.title}`,
     TripCancellation({
       tripTitle: trip.title,
-      reason,
+      reason: cleanReason,
       tripsUrl: `${env.NEXT_PUBLIC_APP_URL}/trips`,
     }),
   );
@@ -432,6 +620,20 @@ export interface EmailResult extends ActionResult {
   sentCount?: number;
 }
 
+const registrantEmailSchema = z.object({
+  tripId: z.uuid("Udhëtim i pavlefshëm."),
+  subject: z
+    .string()
+    .trim()
+    .min(1, "Shkruani një subjekt.")
+    .max(150, "Subjekti: maksimumi 150 karaktere."),
+  message: z
+    .string()
+    .trim()
+    .min(1, "Shkruani një mesazh.")
+    .max(5000, "Mesazhi: maksimumi 5000 karaktere."),
+});
+
 /** Admin: broadcast a free-form message to every registrant of a trip. */
 export async function emailTripRegistrants(
   tripId: string,
@@ -441,18 +643,35 @@ export async function emailTripRegistrants(
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
 
+  const parsed = registrantEmailSchema.safeParse({ tripId, subject, message });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Të dhëna të pavlefshme.",
+    };
+  }
+
   const trip = await db.query.trips.findFirst({
-    where: eq(trips.id, tripId),
+    where: eq(trips.id, parsed.data.tripId),
     columns: { organizationId: true },
   });
   if (!trip || !(await isClubManager(session.user.id, trip.organizationId))) {
     return { success: false, error: "Nuk keni qasje." };
   }
 
+  // Every call emails the whole registrant list.
+  const limited = await enforceRateLimit("ratelimit.trip.email_registrants", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const sent = await emailRegistrants(
-    tripId,
-    subject,
-    GenericMessage({ heading: subject, message }),
+    parsed.data.tripId,
+    parsed.data.subject,
+    GenericMessage({
+      heading: parsed.data.subject,
+      message: parsed.data.message,
+    }),
   );
   return { success: true, sentCount: sent };
 }
@@ -476,9 +695,7 @@ async function emailRegistrants(
       );
 
     await Promise.allSettled(
-      recipients.map((r) =>
-        sendEmail({ to: r.email, subject, template }),
-      ),
+      recipients.map((r) => sendEmail({ to: r.email, subject, template })),
     );
     return recipients.length;
   } catch {

@@ -34,7 +34,7 @@ export function LanguageToggle({ initial }: { initial: Language | undefined }) {
               className={cn(
                 "border px-3.5 py-1.5 text-[10px] font-bold tracking-[0.06em] uppercase transition-colors",
                 active
-                  ? "border-moss/40 bg-moss/20 text-moss"
+                  ? "border-moss/40 bg-moss/20 text-sage"
                   : "border-summit/12 bg-summit/[0.05] text-summit/35 hover:text-summit/60",
               )}
             >

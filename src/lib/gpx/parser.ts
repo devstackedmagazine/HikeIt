@@ -45,7 +45,7 @@ const EARTH_RADIUS_M = 6_371_000;
 export const MAX_GPX_BYTES = 4 * 1024 * 1024;
 
 export const GPX_TOO_LARGE_MESSAGE =
-  "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.";
+  "Skedari GPX është më i madh se 4 MB. Shkurtoni gjurmën ose zvogëloni numrin e pikave në aplikacionin tuaj GPS dhe provoni sërish.";
 const MAX_POINTS = 50_000;
 const DOWNSAMPLE_TARGET = 5_000;
 
@@ -66,7 +66,7 @@ export function haversine(a: GpxPoint, b: GpxPoint): number {
  * Strip DOCTYPE declarations and reject ENTITY definitions to prevent
  * XXE and billion-laughs attacks. xml2js 0.6.2 has no built-in protection.
  */
-function sanitizeXml(content: string): string {
+export function sanitizeXml(content: string): string {
   const stripped = content.replace(/<!DOCTYPE[^>]*>/gi, "");
   if (/<!ENTITY/i.test(stripped)) {
     throw new GpxError("Skedari GPX përmban entitete të palejuara.");

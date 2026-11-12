@@ -81,7 +81,7 @@ export function LinkedAccounts({
                   ) : (
                     <Link2 className="size-2.5" />
                   )}
-                  Lidh {label}
+                  Lidhni {label}
                 </button>
               ) : (
                 <span className="text-summit/25 text-[9px] uppercase">—</span>

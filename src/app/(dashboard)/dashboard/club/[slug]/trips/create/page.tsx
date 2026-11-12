@@ -5,7 +5,7 @@ import { TripForm } from "@/components/features/trips/trip-form";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import { getTrailOptions } from "@/server/queries/trails";
 
-export const metadata: Metadata = { title: "Krijo Udhëtim" };
+export const metadata: Metadata = { title: "Krijoni Udhëtim" };
 
 export default async function CreateTripPage({
   params,
@@ -25,10 +25,10 @@ export default async function CreateTripPage({
         <span className="text-summit/20">·</span>
         <span>Udhëtimet</span>
         <span className="text-summit/20">·</span>
-        <span className="text-summit/55">Krijo të ri</span>
+        <span className="text-summit/55">Krijoni të ri</span>
       </p>
       <h1 className="font-heading mb-6 text-[clamp(24px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.02em] text-summit uppercase">
-        Krijo udhëtim të ri
+        Krijoni udhëtim të ri
       </h1>
 
       <div className="max-w-[640px]">

@@ -62,9 +62,8 @@ function VerifyEmail() {
     return (
       <Card>
         <CardHeader className="items-center text-center">
-          <Loader2 className="mb-2 size-10 animate-spin text-primary" />
-          <CardTitle>Verifying your email…</CardTitle>
-          <CardDescription>Duke verifikuar email-in tuaj…</CardDescription>
+          <Loader2 className="text-primary mb-2 size-10 animate-spin" />
+          <CardTitle>Duke verifikuar email-in tuaj…</CardTitle>
         </CardHeader>
       </Card>
     );
@@ -74,11 +73,9 @@ function VerifyEmail() {
     return (
       <Card>
         <CardHeader className="items-center text-center">
-          <CheckCircle2 className="mb-2 size-10 text-primary" />
-          <CardTitle>Email verified!</CardTitle>
-          <CardDescription>
-            Redirecting to dashboard… · Po ju ridrejtojmë…
-          </CardDescription>
+          <CheckCircle2 className="text-primary mb-2 size-10" />
+          <CardTitle>Email-i u verifikua!</CardTitle>
+          <CardDescription>Po ju dërgojmë te paneli…</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -87,21 +84,24 @@ function VerifyEmail() {
   return (
     <Card>
       <CardHeader className="items-center text-center">
-        <XCircle className="mb-2 size-10 text-destructive" />
-        <CardTitle>Link expired or invalid</CardTitle>
-        <CardDescription>Request a new verification link below.</CardDescription>
+        <XCircle className="text-destructive mb-2 size-10" />
+        <CardTitle>Linku ka skaduar ose është i pavlefshëm</CardTitle>
+        <CardDescription>
+          Shkruani email-in tuaj dhe do t&apos;ju dërgojmë një link të ri.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {resendState === "sent" ? (
-          <p className="text-center text-sm text-muted-foreground">
-            If that account needs verification, a new link is on its way.
+          <p className="text-muted-foreground text-center text-sm">
+            Nëse kjo llogari ka nevojë për verifikim, një link i ri është
+            rrugës. Kontrolloni edhe dosjen e spam-it.
           </p>
         ) : (
           <>
             <Input
               className="h-9"
               type="email"
-              placeholder="you@example.com"
+              placeholder="adresa@email.com"
               autoComplete="email"
               value={resendEmail}
               onChange={(e) => setResendEmail(e.target.value)}
@@ -115,10 +115,10 @@ function VerifyEmail() {
               {resendState === "sending" ? (
                 <>
                   <Loader2 className="animate-spin" />
-                  Sending…
+                  Duke dërguar…
                 </>
               ) : (
-                "Resend verification email"
+                "Dërgoni sërish linkun"
               )}
             </Button>
           </>

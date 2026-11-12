@@ -108,7 +108,7 @@ export function GpxUploader({
           <span className={dark ? "text-sm font-semibold" : "text-sm"}>
             {parsing
               ? "Duke lexuar…"
-              : "Zgjidh një skedar GPX (.gpx, max 4 MB)"}
+              : "Zgjidhni një skedar GPX (.gpx, max 4 MB)"}
           </span>
         </button>
       ) : (
@@ -148,14 +148,14 @@ export function GpxUploader({
                 className="border-summit/40 text-summit hover:border-sage flex h-9 shrink-0 items-center gap-1 border-2 px-3 text-[10px] font-bold tracking-[0.08em] uppercase"
               >
                 <X className="size-3.5" />
-                Hiq
+                Hiqni
               </button>
             ) : (
               <Button
                 variant="ghost"
                 size="icon-sm"
                 onClick={clear}
-                aria-label="Hiq"
+                aria-label="Hiqni"
               >
                 <X />
               </Button>

@@ -52,19 +52,19 @@ function ForgotPasswordForm() {
     return (
       <Card>
         <CardHeader className="items-center text-center">
-          <CheckCircle2 className="mb-2 size-10 text-primary" />
-          <CardTitle>Check your email</CardTitle>
-          <CardDescription>Kontrolloni email-in tuaj</CardDescription>
+          <CheckCircle2 className="text-primary mb-2 size-10" />
+          <CardTitle>Kontrolloni email-in tuaj</CardTitle>
         </CardHeader>
-        <CardContent className="text-center text-sm text-muted-foreground">
-          If an account exists for that address, we sent a password reset link.
+        <CardContent className="text-muted-foreground text-center text-sm">
+          Nëse ka një llogari me këtë adresë, ju kemi dërguar një link për të
+          ndryshuar fjalëkalimin. Kontrolloni edhe dosjen e spam-it.
         </CardContent>
         <CardFooter className="justify-center">
           <Link
             href="/login"
-            className="text-sm text-primary underline-offset-4 hover:underline"
+            className="text-primary text-sm underline-offset-4 hover:underline"
           >
-            Back to login
+            Kthehuni te hyrja
           </Link>
         </CardFooter>
       </Card>
@@ -74,9 +74,10 @@ function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Forgot your password?</CardTitle>
+        <CardTitle>Keni harruar fjalëkalimin?</CardTitle>
         <CardDescription>
-          Enter your email and we&apos;ll send a reset link.
+          Shkruani email-in tuaj dhe do t&apos;ju dërgojmë një link për ta
+          ndryshuar.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -92,7 +93,7 @@ function ForgotPasswordForm() {
                     <Input
                       className="h-9"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="adresa@email.com"
                       autoComplete="email"
                       {...field}
                     />
@@ -110,10 +111,10 @@ function ForgotPasswordForm() {
               {form.formState.isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" />
-                  Sending…
+                  Duke dërguar…
                 </>
               ) : (
-                "Send reset link"
+                "Dërgoni linkun"
               )}
             </Button>
           </form>
@@ -122,9 +123,9 @@ function ForgotPasswordForm() {
       <CardFooter className="justify-center">
         <Link
           href="/login"
-          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          className="text-muted-foreground text-sm underline-offset-4 hover:underline"
         >
-          Back to login
+          Kthehuni te hyrja
         </Link>
       </CardFooter>
     </Card>

@@ -102,7 +102,7 @@ export default async function ProfilePage({
   const clubsById = new Map(profile.clubs.map((c) => [c.id, c.name]));
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-5xl space-y-4">
       {/* Breadcrumb */}
       <p className="text-summit/35 flex items-center gap-1.5 text-[10px] font-medium tracking-[0.08em] uppercase">
         <Link href="/dashboard" className="hover:text-summit/60">
@@ -128,7 +128,7 @@ export default async function ProfilePage({
         </span>
 
         <div className="min-w-0 flex-1">
-          <span className="border-moss/30 bg-moss/15 text-moss inline-block border px-2.5 py-[3px] text-[9px] font-bold tracking-[0.1em] uppercase">
+          <span className="border-moss/30 bg-moss/15 text-sage inline-block border px-2.5 py-[3px] text-[9px] font-bold tracking-[0.1em] uppercase">
             {ROLE_LABELS[profile.role] ?? profile.role}
           </span>
           <h1 className="font-heading text-summit mt-2 text-[clamp(20px,3vw,32px)] leading-[1.2] font-extrabold tracking-[-0.02em] uppercase">
@@ -144,7 +144,7 @@ export default async function ProfilePage({
           href="#edit-profile"
           className="border-summit/40 text-summit/60 hover:border-summit/60 hover:text-summit/80 flex w-full items-center justify-center border px-4 py-2.5 text-[10px] font-bold tracking-[0.08em] uppercase transition-colors sm:w-auto"
         >
-          Ndrysho profilin →
+          Ndryshoni profilin →
         </Link>
       </div>
 
@@ -218,7 +218,7 @@ export default async function ProfilePage({
                         className={cn(
                           "mt-1 inline-block border px-[7px] py-0.5 text-[8px] font-bold tracking-[0.08em] uppercase",
                           isOrganizer
-                            ? "border-moss/25 bg-moss/15 text-moss"
+                            ? "border-moss/25 bg-moss/15 text-sage"
                             : "border-summit/15 bg-summit/[0.06] text-summit/50",
                         )}
                       >
@@ -232,7 +232,7 @@ export default async function ProfilePage({
             </div>
           ) : (
             <p className="border-summit/8 bg-summit/[0.03] text-summit/40 border px-4 py-6 text-center text-xs">
-              Nuk je anëtar i asnjë klubi ende.
+              Nuk jeni anëtar i asnjë klubi ende.
             </p>
           )}
         </div>
@@ -265,7 +265,7 @@ export default async function ProfilePage({
                     </span>
                     <Link
                       href={`/trips/${trip.slug}`}
-                      aria-label="Shiko udhëtimin"
+                      aria-label="Shikoni udhëtimin"
                       className="text-summit/25 hover:text-moss flex justify-end"
                     >
                       <ArrowUpRight className="size-3.5" />
@@ -284,7 +284,7 @@ export default async function ProfilePage({
         {/* Account: last on phones, right sidebar spanning all rows on lg */}
         <aside className="border-summit/8 bg-summit/[0.03] flex flex-col gap-4 border p-4 lg:col-start-2 lg:row-span-3 lg:row-start-1">
           <div className="flex items-center gap-2">
-            <Shield className="text-moss size-3.5" />
+            <Shield className="text-sage size-3.5" />
             <span className="text-summit text-[11px] font-bold tracking-[0.1em] uppercase">
               Llogaria
             </span>

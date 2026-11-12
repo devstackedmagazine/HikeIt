@@ -5,7 +5,7 @@ import { PricingToggle } from "@/components/features/pricing/pricing-toggle";
 export const metadata: Metadata = {
   title: "Çmimet",
   description:
-    "Plane të thjeshta për hikerë dhe klube alpinizmi. Fillo falas ose provo Pro Club 14 ditë.",
+    "Plane të thjeshta për hikerë dhe klube alpinizmi. Filloni falas ose provoni Pro Club 14 ditë.",
   alternates: { canonical: "https://hikeit.app/pricing" },
 };
 
@@ -18,7 +18,7 @@ export default function PricingPage() {
           Çmimet
         </p>
         <h1 className="font-heading mb-3 text-[28px] font-black tracking-[-0.01em] text-forest uppercase">
-          Zgjidh Planin Tënd
+          Zgjidhni Planin Tuaj
         </h1>
         <p className="mx-auto max-w-md text-[14px] text-forest/70">
           Zgjidhni paketën që i përshtatet stilit tuaj të eksplorimit.

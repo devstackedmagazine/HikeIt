@@ -8,27 +8,39 @@ export function TripConfirmation({
   meetingPoint,
   tripUrl,
   calendarUrl,
+  fromWaitlist = false,
 }: {
   tripTitle: string;
   dateLabel: string;
   meetingPoint?: string | null;
   tripUrl: string;
   calendarUrl: string;
+  /** Confirmed automatically because a spot was freed. */
+  fromWaitlist?: boolean;
 }) {
   return (
     <EmailLayout preview={`Regjistrimi u konfirmua: ${tripTitle}`}>
       <Heading style={heading}>Regjistrimi juaj është konfirmuar!</Heading>
       <Text style={text}>
-        Jeni regjistruar me sukses për <strong>{tripTitle}</strong>.
+        {fromWaitlist
+          ? "U lirua një vend dhe regjistrimi juaj kaloi nga lista e pritjes në të konfirmuar për "
+          : "Jeni regjistruar me sukses për "}
+        <strong>{tripTitle}</strong>.
       </Text>
+      {fromWaitlist ? (
+        <Text style={text}>
+          Nëse nuk mund të merrni pjesë, ju lutemi anuloni regjistrimin, që
+          vendi t&apos;i kalojë personit tjetër në listë.
+        </Text>
+      ) : null}
       <Text style={detail}>📅 {dateLabel}</Text>
       {meetingPoint ? <Text style={detail}>📍 {meetingPoint}</Text> : null}
       <Button href={tripUrl} style={button}>
-        Shiko Udhëtimin
+        Shikoni Udhëtimin
       </Button>
       <Text style={fallback}>
         <Link href={calendarUrl} style={link}>
-          Shto në Google Calendar
+          Shtoni në Google Calendar
         </Link>
       </Text>
     </EmailLayout>

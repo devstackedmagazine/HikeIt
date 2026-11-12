@@ -49,7 +49,7 @@ export function FavoriteButton({
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      aria-label={optimisticSaved ? "Hiq nga të ruajtura" : "Ruaj"}
+      aria-label={optimisticSaved ? "Hiqni nga të ruajturat" : "Ruani"}
       className={cn(
         "flex items-center justify-center border transition-colors",
         optimisticSaved
