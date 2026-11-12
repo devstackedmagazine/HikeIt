@@ -7,6 +7,7 @@ import { z } from "zod";
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { canSetImageField } from "@/lib/cloudinary/ownership";
+import { leavesClubWithoutAdmin } from "@/lib/clubs/admin-rules";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -530,19 +531,65 @@ export async function inviteMember(
 const LAST_ADMIN_ERROR =
   "Nuk mund ta ndryshoni rolin tuaj — jeni administratori i vetëm i klubit. Caktoni fillimisht një admin tjetër.";
 
-/** True if this organization currently has one active admin or fewer. */
-async function isOnlyAdmin(organizationId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(organizationMembers)
-    .where(
-      and(
+/**
+ * Apply `change` to a membership with the club's active admin rows locked.
+ * The lock is what makes the last-admin rule hold when two admins act at the
+ * same moment: each demoting or removing the other (or themselves) used to
+ * pass a plain count and leave the club with no admin.
+ */
+async function updateMembership(
+  organizationId: string,
+  actorUserId: string,
+  membershipId: string,
+  change: { role: "member" | "organizer" | "admin" } | { leftAt: Date },
+): Promise<ActionResult> {
+  return db.transaction(async (tx): Promise<ActionResult> => {
+    const admins = await tx
+      .select({
+        id: organizationMembers.id,
+        userId: organizationMembers.userId,
+      })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.role, "admin"),
+          isNull(organizationMembers.leftAt),
+        ),
+      )
+      // One lock order for every caller, so two of these can't deadlock.
+      .orderBy(organizationMembers.id)
+      .for("update");
+    // Re-checked under the lock: the caller may have just been demoted.
+    if (!admins.some((admin) => admin.userId === actorUserId)) {
+      return { success: false, error: "Nuk keni qasje." };
+    }
+
+    const target = await tx.query.organizationMembers.findFirst({
+      where: and(
+        eq(organizationMembers.id, membershipId),
         eq(organizationMembers.organizationId, organizationId),
-        eq(organizationMembers.role, "admin"),
-        isNull(organizationMembers.leftAt),
       ),
-    );
-  return (row?.value ?? 0) <= 1;
+      columns: { id: true },
+    });
+    if (!target) return { success: false, error: "Anëtari nuk u gjet." };
+
+    if (
+      leavesClubWithoutAdmin({
+        activeAdminIds: admins.map((admin) => admin.id),
+        targetId: target.id,
+        staysAdmin: "role" in change && change.role === "admin",
+      })
+    ) {
+      return { success: false, error: LAST_ADMIN_ERROR };
+    }
+
+    await tx
+      .update(organizationMembers)
+      .set(change)
+      .where(eq(organizationMembers.id, membershipId));
+    return { success: true };
+  });
 }
 
 export async function changeMemberRole(
@@ -558,32 +605,21 @@ export async function changeMemberRole(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  const target = await db.query.organizationMembers.findFirst({
-    where: and(
-      eq(organizationMembers.id, membershipId),
-      eq(organizationMembers.organizationId, access.organization.id),
-    ),
-  });
-  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
-
-  // Prevent an admin demoting themselves when they're the only admin left —
-  // that would lock the club out of management entirely.
-  if (
-    target.userId === session.user.id &&
-    target.role === "admin" &&
-    role !== "admin" &&
-    (await isOnlyAdmin(access.organization.id))
-  ) {
-    return { success: false, error: LAST_ADMIN_ERROR };
+  // The type alone doesn't stop a caller passing something else.
+  if (role !== "member" && role !== "organizer" && role !== "admin") {
+    return { success: false, error: "Roli është i pavlefshëm." };
   }
 
-  await db
-    .update(organizationMembers)
-    .set({ role })
-    .where(eq(organizationMembers.id, membershipId));
-
-  revalidatePath(`/dashboard/club/${slug}`);
-  return { success: true };
+  // The only admin can't be demoted — that would lock the club out of
+  // management entirely.
+  const result = await updateMembership(
+    access.organization.id,
+    session.user.id,
+    membershipId,
+    { role },
+  );
+  if (result.success) revalidatePath(`/dashboard/club/${slug}`);
+  return result;
 }
 
 /** Admin: remove a member (marks them as left). */
@@ -599,30 +635,15 @@ export async function removeMember(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  const target = await db.query.organizationMembers.findFirst({
-    where: and(
-      eq(organizationMembers.id, membershipId),
-      eq(organizationMembers.organizationId, access.organization.id),
-    ),
-  });
-  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
-
-  // Same guard as changeMemberRole — the only admin can't remove themselves.
-  if (
-    target.userId === session.user.id &&
-    target.role === "admin" &&
-    (await isOnlyAdmin(access.organization.id))
-  ) {
-    return { success: false, error: LAST_ADMIN_ERROR };
-  }
-
-  await db
-    .update(organizationMembers)
-    .set({ leftAt: new Date() })
-    .where(eq(organizationMembers.id, membershipId));
-
-  revalidatePath(`/dashboard/club/${slug}`);
-  return { success: true };
+  // Same guard as changeMemberRole — the only admin can't be removed.
+  const result = await updateMembership(
+    access.organization.id,
+    session.user.id,
+    membershipId,
+    { leftAt: new Date() },
+  );
+  if (result.success) revalidatePath(`/dashboard/club/${slug}`);
+  return result;
 }
 
 /** Admin: set club logo / cover Cloudinary public ids. */
