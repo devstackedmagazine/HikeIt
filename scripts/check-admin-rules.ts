@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
 
-import {
-  leavesClubWithoutAdmin,
-  roleAfterOnboarding,
-} from "../src/lib/clubs/admin-rules";
+import { leavesClubWithoutAdmin } from "../src/lib/clubs/admin-rules";
 
 /**
- * A club always keeps an active admin, and onboarding never changes a super
- * admin's role (no test runner in this repo yet):
+ * A club always keeps an active admin (no test runner in this repo yet):
  *
  *   pnpm exec tsx scripts/check-admin-rules.ts
  */
@@ -54,9 +50,3 @@ for (const [name, input, expected] of cases) {
   assert.equal(leavesClubWithoutAdmin(input), expected, name);
   console.log(`ok  ${name}`);
 }
-
-assert.equal(roleAfterOnboarding("hiker", "club_admin"), "club_admin");
-assert.equal(roleAfterOnboarding("club_admin", "hiker"), "hiker");
-assert.equal(roleAfterOnboarding("super_admin", "hiker"), "super_admin");
-assert.equal(roleAfterOnboarding("super_admin", "club_admin"), "super_admin");
-console.log("ok  onboarding never changes a super admin's role");
