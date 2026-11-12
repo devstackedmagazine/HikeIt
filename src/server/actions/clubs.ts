@@ -107,7 +107,10 @@ export async function createClub(
   }
 
   if (!(await checkSlugAvailability(input.slug))) {
-    return { success: false, error: "Ky emër është i zënë, provo një tjetër" };
+    return {
+      success: false,
+      error: "Ky emër është i zënë, provoni një tjetër",
+    };
   }
 
   // Club creation, membership and any invite-code claim commit together: a
@@ -526,7 +529,7 @@ export async function inviteMember(
 
 /** Admin: change a member's role. */
 const LAST_ADMIN_ERROR =
-  "Nuk mund të ndryshosh rolin tënd — je administratori i vetëm i klubit. Cakto një admin tjetër fillimisht.";
+  "Nuk mund ta ndryshoni rolin tuaj — jeni administratori i vetëm i klubit. Caktoni fillimisht një admin tjetër.";
 
 /**
  * Apply `change` to a membership with the club's active admin rows locked.

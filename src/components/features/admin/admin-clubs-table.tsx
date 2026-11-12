@@ -242,7 +242,7 @@ function TrialDialog({
                 disabled={saving}
                 className="border-2 border-danger bg-summit px-4 py-2.5 text-[11px] font-bold tracking-[0.06em] text-danger uppercase transition-colors hover:bg-danger hover:text-summit disabled:opacity-50"
               >
-                Përfundo provën
+                Përfundoni provën
               </button>
             ) : (
               <span />
@@ -257,7 +257,7 @@ function TrialDialog({
                   />
                 }
               >
-                Anulo
+                Anuloni
               </Dialog.Close>
               <button
                 type="button"
@@ -266,7 +266,7 @@ function TrialDialog({
                 className="flex items-center gap-2 border-2 border-forest bg-forest px-4 py-2.5 text-[11px] font-bold tracking-[0.06em] text-summit uppercase transition-colors hover:bg-pine disabled:opacity-50"
               >
                 {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                Ruaj
+                Ruani
               </button>
             </div>
           </div>
