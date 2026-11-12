@@ -147,7 +147,7 @@ export function TrailCard({ trail }: { trail: Trail }) {
           href={`/trails/${trail.slug}`}
           className="mt-auto block border border-moss/35 bg-moss/15 px-0 py-2.75 text-center text-[11px] font-bold tracking-widest text-moss uppercase transition-colors hover:border-moss/50 hover:bg-moss/20"
         >
-          Shiko Shtegun →
+          Shikoni Shtegun →
         </Link>
       </div>
     </div>

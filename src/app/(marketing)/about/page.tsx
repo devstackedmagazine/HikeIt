@@ -33,9 +33,9 @@ export default function AboutPage() {
           Facebook dhe WhatsApp, ku informacioni humbej lehtë.
         </p>
         <p>
-          HikeIt e ndryshon këtë: një vend i vetëm ku zbulon shtigje, bashkohesh
-          me klube dhe rezervon udhëtime — me siguri, njoftime moti dhe një
-          komunitet që rritet bashkë.
+          HikeIt e ndryshon këtë: një vend i vetëm ku zbuloni shtigje,
+          bashkoheni me klube dhe rezervoni udhëtime — me siguri, njoftime moti
+          dhe një komunitet që rritet bashkë.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function AboutPage() {
 
       <div className="border-forest bg-abyss border-t-2 px-6 py-12 text-center">
         <h2 className="text-sage text-xs font-bold tracking-[0.15em] uppercase">
-          Na kontakto
+          Na kontaktoni
         </h2>
         <Link
           href="mailto:hello@hikeit.app"

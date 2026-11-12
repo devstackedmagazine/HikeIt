@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils/cn";
 
 const FREE_FEATURES = {
   included: [
-    "Shfleto shtigjet",
-    "Bashkohu udhëtime falas",
+    "Shfletoni shtigjet",
+    "Bashkohuni në udhëtime falas",
     "Profil personal",
     "Njoftime moti",
   ],
-  excluded: ["Krijo udhëtime", "Menaxho klub"],
+  excluded: ["Krijoni udhëtime", "Menaxhoni klubin"],
 };
 
 const PRO_FEATURES = [
@@ -154,7 +154,7 @@ export function PricingToggle() {
             href="/register"
             className="border-summit/40 text-summit/60 hover:border-summit/60 hover:text-summit/80 mt-6 block border py-[13px] text-center text-[12px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
-            Fillo Falas
+            Filloni Falas
           </Link>
         </div>
 
@@ -241,7 +241,7 @@ export function PricingToggle() {
             href="mailto:hello@hikeit.app"
             className="border-sunset text-sunset hover:bg-sunset/10 mt-6 block border-2 py-[13px] text-center text-[12px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
-            Kontakto Ne
+            Na Kontaktoni
           </Link>
         </div>
       </div>

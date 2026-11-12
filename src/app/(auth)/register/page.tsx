@@ -181,11 +181,11 @@ export default function RegisterPage() {
 
         <div className="relative z-10">
           <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[1.2] font-extrabold tracking-[-0.04em] uppercase">
-            Fillo
+            Filloni
             <br />
             Udhëtimin
             <br />
-            Tënd
+            Tuaj
           </h2>
           <ul className="mt-8 space-y-3">
             {LEFT_FEATURES.map((f) => (
@@ -239,7 +239,7 @@ export default function RegisterPage() {
           ) : (
             <>
               <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
-                Regjistrohu
+                Regjistrohuni
               </h1>
               <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
                 Krijoni llogarinë tuaj për të gjetur shtigje dhe udhëtime me
@@ -293,7 +293,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      aria-label="Shfaq fjalëkalimin"
+                      aria-label="Shfaqni fjalëkalimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showPassword ? (
@@ -326,7 +326,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className={LABEL}>Konfirmo fjalëkalimin</label>
+                  <label className={LABEL}>Konfirmoni fjalëkalimin</label>
                   <div className="relative">
                     <input
                       className={cn(INPUT, "pr-12")}
@@ -337,7 +337,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
-                      aria-label="Shfaq konfirmimin"
+                      aria-label="Shfaqni konfirmimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showConfirm ? (
@@ -415,7 +415,7 @@ export default function RegisterPage() {
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}
-                  Regjistrohu →
+                  Regjistrohuni →
                 </button>
               </form>
 
@@ -423,7 +423,7 @@ export default function RegisterPage() {
                 <p className="text-forest/70 text-center text-[13px]">
                   Keni llogari?{" "}
                   <Link href="/login" className="text-forest font-bold">
-                    KYÇU
+                    KYÇUNI
                   </Link>
                 </p>
                 {inAppBrowser || socialFailed ? (

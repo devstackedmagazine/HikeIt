@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { ClubWizard } from "@/components/features/clubs/club-wizard";
 
-export const metadata: Metadata = { title: "Krijo Klub" };
+export const metadata: Metadata = { title: "Krijoni Klub" };
 
 export default function CreateClubPage() {
   return (

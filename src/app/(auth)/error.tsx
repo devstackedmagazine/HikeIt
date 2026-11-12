@@ -34,7 +34,7 @@ export default function AuthError({
         <p className="text-sm text-muted-foreground">
           {error.message || "An unexpected error occurred. Please try again."}
         </p>
-        <Button onClick={reset}>Try again · Provo përsëri</Button>
+        <Button onClick={reset}>Try again · Provoni përsëri</Button>
       </CardContent>
     </Card>
   );

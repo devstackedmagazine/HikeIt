@@ -52,7 +52,7 @@ export function InAppBrowserNotice() {
       className="border-forest bg-mist text-forest mb-3 border-2 p-3"
     >
       <p className="text-[13px] leading-[1.5] font-semibold">
-        Për hyrje me Google, hape faqen në Chrome ose Safari
+        Për hyrje me Google, hapeni faqen në Chrome ose Safari
       </p>
       <button
         type="button"
@@ -66,7 +66,7 @@ export function InAppBrowserNotice() {
         ) : (
           <>
             <Copy className="size-3.5" />
-            Kopjo linkun
+            Kopjoni linkun
           </>
         )}
       </button>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { globalSearch, type SearchResult } from "@/server/queries/search";
 
-export const metadata: Metadata = { title: "Kërko" };
+export const metadata: Metadata = { title: "Kërkim" };
 
 const SECTION = {
   trails: { heading: "Shtigjet", icon: Map, base: "/trails" },

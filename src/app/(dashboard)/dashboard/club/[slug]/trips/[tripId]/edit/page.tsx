@@ -10,7 +10,7 @@ import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
 import { getTrailOptions } from "@/server/queries/trails";
 import { getTripById } from "@/server/queries/trips";
 
-export const metadata: Metadata = { title: "Ndrysho Udhëtimin" };
+export const metadata: Metadata = { title: "Ndryshoni Udhëtimin" };
 
 /** Convert a Date to the `YYYY-MM-DDTHH:mm` value a datetime-local input wants. */
 function toLocalInput(date: Date): string {
@@ -50,11 +50,11 @@ export default async function EditTripPage({
             {trip.title}
           </Link>
           <ChevronRight className="size-3.5" />
-          <span className="text-summit/70">Ndrysho</span>
+          <span className="text-summit/70">Ndryshoni</span>
         </nav>
 
         <h1 className="font-heading text-summit text-2xl font-extrabold tracking-tight uppercase">
-          Ndrysho Udhëtimin
+          Ndryshoni Udhëtimin
         </h1>
 
         <TripForm

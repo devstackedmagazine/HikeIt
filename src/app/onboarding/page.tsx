@@ -11,16 +11,16 @@ import {
 export const metadata: Metadata = { title: "Mirë se vini" };
 
 const HIKER_POINTS = [
-  "Gjej shtigje",
-  "Bashkohu me udhëtime",
-  "Ndiq historinë",
-  "Merr njoftime moti",
+  "Gjeni shtigje",
+  "Bashkohuni me udhëtime",
+  "Ndiqni historinë",
+  "Merrni njoftime moti",
 ];
 const CLUB_POINTS = [
-  "Menaxho anëtarët",
-  "Krijo udhëtime",
-  "Menaxho regjistrimet",
-  "Njofto anëtarët",
+  "Menaxhoni anëtarët",
+  "Krijoni udhëtime",
+  "Menaxhoni regjistrimet",
+  "Njoftoni anëtarët",
 ];
 
 
@@ -63,7 +63,7 @@ export default async function OnboardingPage() {
               type="submit"
               className="flex w-full items-center justify-center gap-2 bg-moss py-3.5 text-[13px] font-extrabold tracking-[0.06em] text-abyss uppercase transition-colors hover:bg-pine hover:text-summit"
             >
-              Fillo si Hiker →
+              Filloni si Hiker →
             </button>
           </form>
         </div>
@@ -92,7 +92,7 @@ export default async function OnboardingPage() {
               type="submit"
               className="flex w-full items-center justify-center gap-2 bg-sunset py-3.5 text-[13px] font-extrabold tracking-[0.06em] text-summit uppercase transition-colors hover:bg-sunset/85"
             >
-              Regjistro Klubin →
+              Regjistroni Klubin →
             </button>
           </form>
         </div>

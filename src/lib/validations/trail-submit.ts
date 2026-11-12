@@ -8,9 +8,9 @@ export const submitTrailSchema = z
     name: z
       .string()
       .trim()
-      .min(1, "Shkruaj emrin e shtegut.")
+      .min(1, "Shkruani emrin e shtegut.")
       .max(120, "Emri është shumë i gjatë."),
-    region: z.string().min(1, "Zgjidh rajonin."),
+    region: z.string().min(1, "Zgjidhni rajonin."),
     regionOther: z.string().trim().optional(),
     city: z.string().trim().max(80, "Qyteti është shumë i gjatë.").optional(),
     difficulty: z.enum(["easy", "moderate", "hard", "expert"]),
@@ -27,7 +27,7 @@ export const submitTrailSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["regionOther"],
-        message: "Shkruaj rajonin (2–60 karaktere).",
+        message: "Shkruani rajonin (2–60 karaktere).",
       });
     }
   });

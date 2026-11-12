@@ -221,7 +221,7 @@ export function ClubWizard() {
                           className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                           {...field}
                         >
-                          <option value="">Zgjidh qytetin</option>
+                          <option value="">Zgjidhni qytetin</option>
                           {CLUB_CITIES.map((c) => (
                             <option key={c} value={c}>
                               {c}
@@ -355,7 +355,7 @@ export function ClubWizard() {
           {step === 3 ? (
             <Card>
               <CardHeader>
-                <CardTitle>Rishiko & krijo</CardTitle>
+                <CardTitle>Rishikoni & krijoni</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <Row label="Emri" value={values.name ?? ""} />
@@ -397,7 +397,7 @@ export function ClubWizard() {
               onClick={() => setStep((s) => Math.max(1, s - 1))}
               disabled={step === 1 || createdSlug !== null}
             >
-              Kthehu
+              Kthehuni
             </Button>
             {createdSlug ? (
               // Club already exists — the only thing left is to go to it.
@@ -405,11 +405,11 @@ export function ClubWizard() {
                 type="button"
                 onClick={() => router.push("/dashboard")}
               >
-                Vazhdo te klubi →
+                Vazhdoni te klubi →
               </Button>
             ) : step < 3 ? (
               <Button type="button" onClick={next}>
-                Vazhdo
+                Vazhdoni
               </Button>
             ) : (
               <Button type="submit" disabled={form.formState.isSubmitting}>
@@ -419,7 +419,7 @@ export function ClubWizard() {
                     Duke krijuar…
                   </>
                 ) : (
-                  "Krijo Klubin"
+                  "Krijoni Klubin"
                 )}
               </Button>
             )}

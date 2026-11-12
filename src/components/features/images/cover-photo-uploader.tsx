@@ -54,7 +54,7 @@ export function CoverPhotoUploader() {
           <>
             <ImagePlus className="text-summit/20 size-8" />
             <span className="text-summit/40 text-[11px] font-semibold tracking-[0.08em] uppercase">
-              Zvarrit dhe lësho foton këtu
+              Zvarritni dhe lëshoni foton këtu
             </span>
             <span className="text-summit/20 text-[10px]">
               JPG, PNG deri në 10MB

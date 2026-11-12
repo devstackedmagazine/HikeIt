@@ -41,8 +41,8 @@ export default async function SavedTrailsPage() {
         <EmptyState
           icon={Map}
           title="Asnjë shteg i ruajtur"
-          description="Ruaj shtigjet që dëshiron t'i vizitosh më vonë."
-          action={{ label: "Zbulo shtigjet", href: "/trails" }}
+          description="Ruani shtigjet që dëshironi t'i vizitoni më vonë."
+          action={{ label: "Zbuloni shtigjet", href: "/trails" }}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

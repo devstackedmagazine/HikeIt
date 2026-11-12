@@ -24,11 +24,11 @@ export function TripConfirmation({
       <Text style={detail}>📅 {dateLabel}</Text>
       {meetingPoint ? <Text style={detail}>📍 {meetingPoint}</Text> : null}
       <Button href={tripUrl} style={button}>
-        Shiko Udhëtimin
+        Shikoni Udhëtimin
       </Button>
       <Text style={fallback}>
         <Link href={calendarUrl} style={link}>
-          Shto në Google Calendar
+          Shtoni në Google Calendar
         </Link>
       </Text>
     </EmailLayout>

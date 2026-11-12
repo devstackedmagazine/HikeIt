@@ -16,7 +16,7 @@ import { WaitlistForm } from "@/components/features/waitlist/waitlist-form";
 export const metadata: Metadata = {
   title: { absolute: "HikeIt — Shtigjet dhe Klubet e Alpinizmit në Kosovë" },
   description:
-    "Zbulo shtigje të verifikuara, bashkohu me klube alpinizmi dhe rezervo udhëtime malore në Kosovë dhe Ballkan. Falas për hikerët.",
+    "Zbuloni shtigje të verifikuara, bashkohuni me klube alpinizmi dhe rezervoni udhëtime malore në Kosovë dhe Ballkan. Falas për hikerët.",
   alternates: { canonical: "https://hikeit.app" },
   openGraph: {
     type: "website",
@@ -45,21 +45,21 @@ const STEPS = [
   {
     number: "01",
     icon: UserPlus,
-    title: "Regjistrohu",
-    description: "Krijo profilin tënd falas në më pak se dy minuta.",
+    title: "Regjistrohuni",
+    description: "Krijoni profilin tuaj falas në më pak se dy minuta.",
   },
   {
     number: "02",
     icon: Compass,
-    title: "Zgjidh Aventurën",
+    title: "Zgjidhni Aventurën",
     description:
-      "Shfleto shtigje të verifikuara dhe udhëtime nga klubet lokale.",
+      "Shfletoni shtigje të verifikuara dhe udhëtime nga klubet lokale.",
   },
   {
     number: "03",
     icon: Users,
     title: "Hik Bashkë",
-    description: "Bashkohu me komunitetin dhe ngjit majat së bashku.",
+    description: "Bashkohuni me komunitetin dhe ngjituni në maja së bashku.",
   },
 ];
 
@@ -79,7 +79,7 @@ const FEATURES = [
   {
     icon: Map,
     title: "Shtigje GPS",
-    description: "Shkarko skedarë GPX për navigim offline kudo që shkon.",
+    description: "Shkarkoni skedarë GPX për navigim offline kudo që shkoni.",
   },
 ];
 
@@ -92,12 +92,12 @@ const CLUB_BENEFITS = [
   {
     title: "Analitika e Performancës",
     description:
-      "Ndiq pjesëmarrjen, të ardhurat dhe rritjen e klubit me të dhëna të qarta.",
+      "Ndiqni pjesëmarrjen, të ardhurat dhe rritjen e klubit me të dhëna të qarta.",
   },
   {
     title: "Promovim i Targetuar",
     description:
-      "Arri te hiker-at e duhur dhe mbush udhëtimet më shpejt se kurrë.",
+      "Arrini te hikerët e duhur dhe mbushni udhëtimet më shpejt se kurrë.",
   },
 ];
 
@@ -138,11 +138,11 @@ export default function LandingPage() {
             🇽🇰 Kosovo · Ballkan · Alpet
           </p>
           <h1 className="text-summit mb-6 text-[clamp(52px,7vw,88px)] leading-[0.92] font-extrabold tracking-[-0.04em] uppercase">
-            Zbulo.
+            Zbuloni.
             <br />
-            <span className="text-sage">Ngjit.</span>
+            <span className="text-sage">Ngjituni.</span>
             <br />
-            Gjej Paqen.
+            Gjeni Paqen.
           </h1>
           <p className="text-summit/75 mb-9 max-w-[480px] text-[15px] leading-[1.65] font-normal">
             Platforma e alpinizmit për Kosovën dhe Ballkanin. Gjeni shtigje të
@@ -150,20 +150,20 @@ export default function LandingPage() {
             egër si kurrë më parë.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-            {/* Butoni i parë: Fillo Falas */}
+            {/* Butoni i parë: Filloni Falas */}
             <Link
               href="/register"
               className="flex w-full items-center justify-center border-2 border-transparent gap-2 bg-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-abyss uppercase transition-all hover:bg-transparent hover:border-sage hover:text-sage sm:w-auto"
             >
-              Fillo Falas <span>→</span>
+              Filloni Falas <span>→</span>
             </Link>
 
-            {/* Butoni i dytë: Shfleto Shtigjet */}
+            {/* Butoni i dytë: Shfletoni Shtigjet */}
             <Link
               href="/trails"
               className="flex w-full items-center justify-center border-2 border-sage px-7 py-3.5 text-[13px] font-bold tracking-[0.08em] text-sage uppercase transition-colors hover:bg-sage hover:text-abyss sm:w-auto"
             >
-              Shfleto Shtigjet
+              Shfletoni Shtigjet
             </Link>
           </div>
         </div>
@@ -275,14 +275,13 @@ export default function LandingPage() {
               Gati të Rriteni?
             </h3>
             <p className="text-summit/55 mb-7 text-[13px] leading-[1.65] font-normal">
-              Regjistro klubin tënd falas dhe fillo të organizosh udhëtime
-              brenda minutash.
+              Regjistroni klubin tuaj falas dhe filloni të organizoni udhëtime brenda minutash.
             </p>
             <Link
               href="/register?type=club"
               className="border-summit/40 text-summit hover:border-sage hover:text-sage block w-full border px-7 py-3.5 text-xs font-bold tracking-[0.1em] uppercase transition-colors"
             >
-              Regjistro Klubin →
+              Regjistroni Klubin →
             </Link>
           </div>
         </div>
@@ -291,7 +290,7 @@ export default function LandingPage() {
       {/* ── Waitlist / Beta ─────────────────────────────────────────────── */}
       <section className="bg-forest px-6 py-[100px] text-center sm:px-20">
         <h2 className="text-summit mb-5 text-[clamp(48px,7vw,88px)] font-extrabold tracking-[-0.04em] uppercase">
-          Bëhu i Pari.
+          Bëhuni i Pari.
         </h2>
         <p className="text-summit/60 mx-auto mb-10 max-w-[560px] text-[15px] leading-[1.65] font-normal">
           HikeIt është aktualisht në fazën BETA. Lini email-in tuaj për të marrë

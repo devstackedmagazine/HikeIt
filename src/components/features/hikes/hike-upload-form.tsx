@@ -55,7 +55,7 @@ export function HikeUploadForm({
     }
     if (file.size > MAX_BYTES) {
       setError(
-        "Skedari GPX është më i madh se 4 MB. Shkurtoje gjurmën ose zvogëlo numrin e pikave në aplikacionin tënd GPS dhe provo sërish.",
+        "Skedari GPX është më i madh se 4 MB. Shkurtoni gjurmën ose zvogëloni numrin e pikave në aplikacionin tuaj GPS dhe provoni sërish.",
       );
       return;
     }
@@ -121,7 +121,7 @@ export function HikeUploadForm({
             <FileUp className="size-6" />
           )}
           <span className="text-[11px] font-bold tracking-[0.08em] uppercase">
-            {busy === "parsing" ? "Duke lexuar…" : "Zgjidh skedarin GPX të ecjes"}
+            {busy === "parsing" ? "Duke lexuar…" : "Zgjidhni skedarin GPX të ecjes"}
           </span>
           <span className="text-forest/50 text-[10px]">
             Gjurma e regjistruar nga ora ose aplikacioni GPS · .gpx · max 4 MB
@@ -131,12 +131,12 @@ export function HikeUploadForm({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-forest text-[11px] font-bold tracking-[0.08em] uppercase">
-              Konfirmo ecjen
+              Konfirmoni ecjen
             </p>
             <button
               type="button"
               onClick={reset}
-              aria-label="Anulo"
+              aria-label="Anuloni"
               className="text-forest/50 hover:text-forest"
             >
               <X className="size-4" />
@@ -171,7 +171,7 @@ export function HikeUploadForm({
           ) : null}
           <p className="text-forest/55 text-[10px] leading-[1.5]">
             Për privatësi, rreth 200 m në fillim dhe në fund të gjurmës nuk
-            shfaqen në hartë. Ecja është private — vetëm ti e sheh. Skedari
+            shfaqen në hartë. Ecja është private — vetëm ju e shihni. Skedari
             GPX nuk ruhet: ruajmë vetëm statistikat dhe vijën në hartë.
           </p>
 
@@ -205,7 +205,7 @@ export function HikeUploadForm({
                 ))}
               </select>
               <span className="text-forest/50 mt-1 block text-[10px]">
-                Nëse e lidh, distanca e kësaj gjurme zëvendëson distancën e
+                Nëse e lidhni, distanca e kësaj gjurme zëvendëson distancën e
                 shtegut të udhëtimit — nuk numërohet dy herë.
               </span>
             </label>
@@ -218,7 +218,7 @@ export function HikeUploadForm({
             className="border-moss bg-moss text-abyss hover:bg-pine hover:text-summit flex w-full items-center justify-center gap-2 border-2 py-2.5 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors disabled:opacity-50 sm:w-auto sm:px-6"
           >
             {busy === "saving" ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            Ruaj ecjen
+            Ruani ecjen
           </button>
         </div>
       )}

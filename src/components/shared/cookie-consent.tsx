@@ -36,7 +36,7 @@ export function CookieConsent() {
       </p>
       <div className="flex shrink-0 gap-2">
         <Button variant="outline" size="sm" render={<Link href="/privacy" />}>
-          Mëso më shumë
+          Mësoni më shumë
         </Button>
         <Button size="sm" onClick={accept}>
           Në rregull

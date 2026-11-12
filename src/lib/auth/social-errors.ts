@@ -21,7 +21,7 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
   account_not_linked: {
     title: "Llogaria ekziston tashmë",
     message:
-      "Një llogari me këtë email ekziston tashmë në HikeIt — e krijuar me email/fjalëkalim ose me një ofrues tjetër social. Kyçu me metodën origjinale, pastaj lidh këtë llogari shtesë nga Cilësimet e profilit.",
+      "Një llogari me këtë email ekziston tashmë në HikeIt — e krijuar me email/fjalëkalim ose me një ofrues tjetër social. Kyçuni me metodën origjinale, pastaj lidheni këtë llogari shtesë nga Cilësimet e profilit.",
   },
   // Social providers don't create accounts implicitly (see lib/auth): a new
   // user who picks Google/Facebook on the login page lands here.
@@ -38,7 +38,7 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
   email_not_found: {
     title: "Mungon email-i",
     message:
-      "Ofruesi nuk na dërgoi adresën tënde email. Kontrollo lejet e llogarisë dhe provo përsëri.",
+      "Ofruesi nuk na dërgoi adresën tuaj email. Kontrolloni lejet e llogarisë dhe provoni përsëri.",
   },
   access_denied: {
     title: "Kyçja u anulua",
@@ -46,7 +46,7 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
   },
   unable_to_get_user_info: {
     title: "Gabim gjatë kyçjes",
-    message: "Nuk arritëm të marrim të dhënat e llogarisë. Provo përsëri.",
+    message: "Nuk arritëm të marrim të dhënat e llogarisë. Provoni përsëri.",
   },
   oauth_provider_not_found: {
     title: "Ofruesi s'u gjet",
@@ -54,23 +54,23 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
   },
   invalid_code: {
     title: "Kyçja skadoi",
-    message: "Kodi i kyçjes skadoi ose është i pavlefshëm. Provo përsëri.",
+    message: "Kodi i kyçjes skadoi ose është i pavlefshëm. Provoni përsëri.",
   },
   no_code: {
     title: "Kyçja u ndërpre",
-    message: "Diçka e ndërpreu procesin e kyçjes. Provo përsëri.",
+    message: "Diçka e ndërpreu procesin e kyçjes. Provoni përsëri.",
   },
   // From here down: raised by the *linking* flow (settings), not plain
   // sign-in, but they share the same `?error=` shape so they live here too.
   unable_to_link_account: {
     title: "Lidhja dështoi",
     message:
-      "Nuk arritëm ta lidhim llogarinë e re. Provo përsëri, ose kontakto suportin nëse problemi vazhdon.",
+      "Nuk arritëm ta lidhim llogarinë e re. Provoni përsëri, ose kontaktoni suportin nëse problemi vazhdon.",
   },
   "email_doesn't_match": {
     title: "Email-et nuk përputhen",
     message:
-      "Email-i i kësaj llogarie nuk përputhet me email-in e llogarisë tënde në HikeIt. Për arsye sigurie, mund të lidhësh vetëm një llogari me të njëjtin email.",
+      "Email-i i kësaj llogarie nuk përputhet me email-in e llogarisë suaj në HikeIt. Për arsye sigurie, mund të lidhni vetëm një llogari me të njëjtin email.",
   },
   account_already_linked_to_different_user: {
     title: "Llogari e zënë",
@@ -87,7 +87,8 @@ const SOCIAL_ERROR_COPY: Record<string, SocialErrorCopy> = {
 
 const DEFAULT_COPY: SocialErrorCopy = {
   title: "Diçka shkoi keq",
-  message: "Kyçja nuk u realizua. Provo përsëri ose përdor email/fjalëkalim.",
+  message:
+    "Kyçja nuk u realizua. Provoni përsëri ose përdorni email/fjalëkalim.",
 };
 
 export function getSocialErrorCopy(

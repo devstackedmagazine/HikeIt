@@ -23,7 +23,7 @@ export default function Error({
         Ndodhi një gabim
       </h1>
       <p className="text-muted-foreground mt-2 max-w-md">
-        Diçka shkoi keq. Provo përsëri ose kthehu në faqen kryesore.
+        Diçka shkoi keq. Provoni përsëri ose kthehuni në faqen kryesore.
       </p>
       {process.env.NODE_ENV === "development" ? (
         <pre className="bg-muted text-destructive mt-4 max-w-lg overflow-auto rounded-lg p-4 text-left text-xs">
@@ -31,7 +31,7 @@ export default function Error({
         </pre>
       ) : null}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button onClick={reset}>Provo Përsëri</Button>
+        <Button onClick={reset}>Provoni Përsëri</Button>
         <Button variant="outline" render={<Link href="/" />}>
           Faqja Kryesore
         </Button>

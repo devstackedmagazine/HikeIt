@@ -222,7 +222,7 @@ function TripRow({
                 size="sm"
                 onClick={() => setShowUpload((v) => !v)}
               >
-                Shto Kujtimet Tuaja
+                Shtoni Kujtimet Tuaja
               </Button>
             ) : (
               <span className="text-muted-foreground text-xs">
@@ -237,7 +237,7 @@ function TripRow({
               disabled={loading}
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              {variant === "waitlisted" ? "Hiq nga Lista" : "Anulo"}
+              {variant === "waitlisted" ? "Hiqni nga Lista" : "Anuloni"}
             </Button>
           )}
         </div>

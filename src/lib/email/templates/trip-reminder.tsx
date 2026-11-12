@@ -31,7 +31,7 @@ export function TripReminder({
       {meetingPoint ? <Text style={detail}>📍 {meetingPoint}</Text> : null}
       {weatherNote ? <Text style={weather}>🌤️ {weatherNote}</Text> : null}
       <Button href={tripUrl} style={button}>
-        Shiko Detajet
+        Shikoni Detajet
       </Button>
       <Text style={footer}>
         Mbani me vete numrin e kontaktit të emergjencës dhe pajisjet e

@@ -139,7 +139,7 @@ export function ImageUploader({
         const shrunk = await downscaleImage(item.file, MAX_DIMENSION, 0.85);
         if (shrunk.size > MAX_UPLOAD_BYTES) {
           // Typically HEIC outside Safari, which the browser can't shrink.
-          return fail("Foto është shumë e madhe. Provo JPG ose PNG.");
+          return fail("Foto është shumë e madhe. Provoni JPG ose PNG.");
         }
         const publicId = await uploadOne(shrunk, entityType, entityId);
 
@@ -270,7 +270,7 @@ export function ImageUploader({
                 type="button"
                 onClick={() => remove(publicId)}
                 className="absolute top-1 right-1 flex size-6 items-center justify-center border border-forest/20 bg-background/90 text-destructive"
-                aria-label="Hiq"
+                aria-label="Hiqni"
               >
                 <X className="size-3.5" />
               </button>
@@ -319,13 +319,13 @@ export function ImageUploader({
                       className="flex items-center gap-1 rounded px-2 py-1 font-medium hover:bg-muted"
                     >
                       <RotateCcw className="size-3.5" />
-                      Provo sërish
+                      Provoni sërish
                     </button>
                   ) : null}
                   <button
                     type="button"
                     onClick={() => dismiss(item.key)}
-                    aria-label="Hiq"
+                    aria-label="Hiqni"
                     className="rounded p-1 text-muted-foreground hover:bg-muted"
                   >
                     <X className="size-3.5" />
@@ -357,7 +357,7 @@ export function ImageUploader({
         >
           <input {...getInputProps()} />
           <ImagePlus className="size-6" />
-          <span className="text-sm">Tërhiq foto këtu ose kliko për të zgjedhur</span>
+          <span className="text-sm">Tërhiqni foto këtu ose klikoni për të zgjedhur</span>
           <span className="text-xs">
             JPG, PNG, WebP, HEIC{maxFiles > 1 ? ` · deri ${maxFiles}` : ""}
           </span>

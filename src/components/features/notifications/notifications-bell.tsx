@@ -116,7 +116,7 @@ export function NotificationsBell({ light = true }: { light?: boolean }) {
                 onClick={handleMarkAll}
                 className="text-xs text-primary hover:underline"
               >
-                Shëno të gjitha si të lexuara
+                Shënoni të gjitha si të lexuara
               </button>
             ) : null}
           </div>
@@ -161,7 +161,7 @@ export function NotificationsBell({ light = true }: { light?: boolean }) {
               onClick={() => setOpen(false)}
               className="text-xs text-primary hover:underline"
             >
-              Shiko të gjitha
+              Shikoni të gjitha
             </Link>
           </div>
         </div>
