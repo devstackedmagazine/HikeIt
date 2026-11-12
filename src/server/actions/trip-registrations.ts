@@ -22,8 +22,16 @@ import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
-import { decideSignUp } from "@/lib/trips/registration-rules";
+import {
+  decideSignUp,
+  isAdminSettableStatus,
+} from "@/lib/trips/registration-rules";
 import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
+import {
+  emailPromoted,
+  lockTrip,
+  promoteFromWaitlist,
+} from "@/server/services/trip-roster";
 
 /**
  * Views that change when a club edits a trip's roster: every club dashboard
@@ -156,6 +164,7 @@ async function createRegistration(
         status: locked.status,
         maxParticipants: locked.maxParticipants,
         confirmed: await confirmedCountFor(locked.id, tx),
+        waitlisted: await countFor(locked.id, "waitlisted", tx),
       });
       if (decision.kind === "closed") return null;
 
@@ -213,9 +222,10 @@ async function createRegistration(
   return { success: true, status };
 }
 
-/** Count of confirmed registrations for a trip. */
-async function confirmedCountFor(
+/** Count of a trip's registrations in one status. */
+async function countFor(
   tripId: string,
+  status: "confirmed" | "waitlisted",
   executor: Pick<typeof db, "select"> = db,
 ): Promise<number> {
   const [row] = await executor
@@ -224,49 +234,18 @@ async function confirmedCountFor(
     .where(
       and(
         eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.status, "confirmed"),
+        eq(tripRegistrations.status, status),
       ),
     );
   return row?.value ?? 0;
 }
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/**
- * Read the trip and hold a row lock on it until the transaction ends. Every
- * roster change that reads the confirmed count and then writes takes this
- * lock first, so two admins acting at once are serialized instead of both
- * seeing the last free spot.
- */
-async function lockTrip(tx: Tx, tripId: string) {
-  const [trip] = await tx
-    .select({
-      id: trips.id,
-      status: trips.status,
-      startDatetime: trips.startDatetime,
-      maxParticipants: trips.maxParticipants,
-    })
-    .from(trips)
-    .where(eq(trips.id, tripId))
-    .for("update");
-  return trip;
-}
-
-/**
- * After a registration has left `confirmed`, put a trip marked full back to
- * open — but only if a spot really is free now and the trip hasn't started.
- * A full trip refuses new sign-ups, so without this it stays closed forever.
- */
-async function reopenIfSpotFreed(
-  tx: Tx,
-  trip: NonNullable<Awaited<ReturnType<typeof lockTrip>>>,
-): Promise<void> {
-  if (trip.status !== "full" || trip.startDatetime <= new Date()) return;
-  if (trip.maxParticipants !== null) {
-    const confirmed = await confirmedCountFor(trip.id, tx);
-    if (confirmed >= trip.maxParticipants) return;
-  }
-  await tx.update(trips).set({ status: "open" }).where(eq(trips.id, trip.id));
+/** Count of confirmed registrations for a trip. */
+function confirmedCountFor(
+  tripId: string,
+  executor: Pick<typeof db, "select"> = db,
+): Promise<number> {
+  return countFor(tripId, "confirmed", executor);
 }
 
 /** Postgres unique_violation, unwrapped from Drizzle's query error if needed. */
@@ -349,7 +328,7 @@ export async function cancelMyRegistration(
   });
   if (!trip) return { success: false, error: "Udhëtimi nuk u gjet." };
 
-  await db.transaction(async (tx) => {
+  const promoted = await db.transaction(async (tx) => {
     const locked = await lockTrip(tx, registration.tripId);
     const current = await tx.query.tripRegistrations.findFirst({
       where: eq(tripRegistrations.id, registrationId),
@@ -361,10 +340,12 @@ export async function cancelMyRegistration(
       .set({ status: "canceled", canceledAt: new Date() })
       .where(eq(tripRegistrations.id, registrationId));
 
-    if (locked && current?.status === "confirmed") {
-      await reopenIfSpotFreed(tx, locked);
-    }
+    // The freed spot goes to whoever has waited longest.
+    return locked && current?.status === "confirmed"
+      ? promoteFromWaitlist(tx, locked)
+      : [];
   });
+  void emailPromoted(promoted, registration.tripId);
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -386,6 +367,9 @@ export async function updateRegistrationStatus(
 ): Promise<ActionResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+  if (!isAdminSettableStatus(status)) {
+    return { success: false, error: "Statusi është i pavlefshëm." };
+  }
 
   const registration = await db.query.tripRegistrations.findFirst({
     where: eq(tripRegistrations.id, registrationId),
@@ -401,6 +385,7 @@ export async function updateRegistrationStatus(
   }
 
   let result: ActionResult;
+  let promoted: string[] = [];
   try {
     result = await db.transaction(async (tx): Promise<ActionResult> => {
       const locked = await lockTrip(tx, registration.tripId);
@@ -463,7 +448,7 @@ export async function updateRegistrationStatus(
             .where(eq(trips.id, locked.id));
         }
       } else if (current.status === "confirmed") {
-        await reopenIfSpotFreed(tx, locked);
+        promoted = await promoteFromWaitlist(tx, locked, registrationId);
       }
 
       return { success: true };
@@ -477,7 +462,10 @@ export async function updateRegistrationStatus(
     throw error;
   }
 
-  if (result.success) revalidateClubRosterViews(trip.slug);
+  if (result.success) {
+    void emailPromoted(promoted, registration.tripId);
+    revalidateClubRosterViews(trip.slug);
+  }
   return result;
 }
 
@@ -507,7 +495,7 @@ export async function removeRegistration(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db.transaction(async (tx) => {
+  const promoted = await db.transaction(async (tx) => {
     const locked = await lockTrip(tx, trip.id);
     const current = await tx.query.tripRegistrations.findFirst({
       where: eq(tripRegistrations.id, registrationId),
@@ -519,10 +507,12 @@ export async function removeRegistration(
       .set({ status: "canceled", canceledAt: new Date() })
       .where(eq(tripRegistrations.id, registrationId));
 
-    if (locked && current?.status === "confirmed") {
-      await reopenIfSpotFreed(tx, locked);
-    }
+    // The freed spot goes to whoever has waited longest.
+    return locked && current?.status === "confirmed"
+      ? promoteFromWaitlist(tx, locked)
+      : [];
   });
+  void emailPromoted(promoted, trip.id);
 
   // In-app notification (best-effort — the removal itself has already committed).
   try {
@@ -569,6 +559,8 @@ export async function removeRegistration(
   return { success: true };
 }
 
+const MAX_CANCEL_REASON_LENGTH = 1000;
+
 /** Admin: cancel a whole trip and email every registrant the reason. */
 export async function cancelTrip(
   tripId: string,
@@ -583,10 +575,19 @@ export async function cancelTrip(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
+  // Canceling emails every registrant, so it must happen once: the status
+  // condition makes a repeat (or a second click) match no row.
+  const cleanReason = String(reason ?? "")
+    .trim()
+    .slice(0, MAX_CANCEL_REASON_LENGTH);
+  const [canceled] = await db
     .update(trips)
-    .set({ status: "canceled", canceledReason: reason })
-    .where(eq(trips.id, tripId));
+    .set({ status: "canceled", canceledReason: cleanReason })
+    .where(and(eq(trips.id, tripId), ne(trips.status, "canceled")))
+    .returning({ id: trips.id });
+  if (!canceled) {
+    return { success: false, error: "Udhëtimi është anuluar tashmë." };
+  }
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -600,7 +601,7 @@ export async function cancelTrip(
     `Udhëtimi u anulua: ${trip.title}`,
     TripCancellation({
       tripTitle: trip.title,
-      reason,
+      reason: cleanReason,
       tripsUrl: `${env.NEXT_PUBLIC_APP_URL}/trips`,
     }),
   );
