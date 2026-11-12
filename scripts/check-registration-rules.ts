@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 
 import {
+  CANCEL_AFTER_START_ERROR,
   decideSignUp,
+  hikerCanCancel,
   isAdminSettableStatus,
   rosterStatus,
   waitlistPromotions,
@@ -233,3 +235,17 @@ assert.equal(
   "canceled",
 );
 console.log("ok  open / full follows the confirmed count");
+
+// A hiker cancels until the trip starts, not after. Starts are instants, so
+// 08:00 in Kosovo is 07:00 UTC in winter and 06:00 UTC in summer.
+const winterStart = new Date("2026-11-15T08:00:00+01:00");
+const summerStart = new Date("2026-07-12T08:00:00+02:00");
+const at = (iso: string) => new Date(iso);
+assert.equal(hikerCanCancel(winterStart, at("2026-11-15T06:59:59Z")), true);
+assert.equal(hikerCanCancel(winterStart, at("2026-11-15T07:00:00Z")), false);
+assert.equal(hikerCanCancel(winterStart, at("2026-11-15T09:30:00Z")), false);
+assert.equal(hikerCanCancel(summerStart, at("2026-07-12T05:59:59Z")), true);
+assert.equal(hikerCanCancel(summerStart, at("2026-07-12T06:00:00Z")), false);
+assert.equal(hikerCanCancel(winterStart, at("2026-11-14T20:00:00Z")), true);
+assert.match(CANCEL_AFTER_START_ERROR, /Udhëtimi ka filluar/);
+console.log("ok  a hiker can cancel until the start in Kosovo time, not after");
