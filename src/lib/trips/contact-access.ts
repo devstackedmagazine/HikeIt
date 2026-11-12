@@ -13,6 +13,12 @@ import { NO_END_DURATION_HOURS } from "@/lib/trips/display-status";
 
 export const CONTACT_WINDOW_DAYS_BEFORE = 3;
 export const CONTACT_WINDOW_DAYS_AFTER = 2;
+/**
+ * The end time is the organiser's own input. However far ahead it is set,
+ * the window counts at most this many days of trip, so an edited end date
+ * can't keep contact details open for months.
+ */
+export const CONTACT_WINDOW_MAX_TRIP_DAYS = 14;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,16 +28,15 @@ export function contactWindow(trip: TripTimes): {
   opensAt: Date;
   closesAt: Date;
 } {
-  const end =
-    trip.endDatetime ??
-    new Date(
-      trip.startDatetime.getTime() + NO_END_DURATION_HOURS * 60 * 60 * 1000,
-    );
+  const start = trip.startDatetime.getTime();
+  const end = Math.min(
+    trip.endDatetime?.getTime() ??
+      start + NO_END_DURATION_HOURS * 60 * 60 * 1000,
+    start + CONTACT_WINDOW_MAX_TRIP_DAYS * DAY_MS,
+  );
   return {
-    opensAt: new Date(
-      trip.startDatetime.getTime() - CONTACT_WINDOW_DAYS_BEFORE * DAY_MS,
-    ),
-    closesAt: new Date(end.getTime() + CONTACT_WINDOW_DAYS_AFTER * DAY_MS),
+    opensAt: new Date(start - CONTACT_WINDOW_DAYS_BEFORE * DAY_MS),
+    closesAt: new Date(end + CONTACT_WINDOW_DAYS_AFTER * DAY_MS),
   };
 }
 
