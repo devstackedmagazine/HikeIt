@@ -14,7 +14,10 @@ import {
 import { sendEmail } from "@/lib/email";
 import { WeatherAlert } from "@/lib/email/templates/weather-alert";
 import { formatTripDateTime } from "@/lib/utils/datetime";
-import { getWeatherForLocation, type WeatherData } from "@/lib/weather/client";
+import {
+  getWeatherForLocation,
+  type WeatherData,
+} from "@/lib/weather/client";
 import {
   type AlertLevel,
   evaluateWeatherAlert,
