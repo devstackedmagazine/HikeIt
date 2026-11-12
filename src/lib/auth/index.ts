@@ -60,11 +60,24 @@ export const auth = betterAuth({
       // targets, so they stay tighter than the baseline.
       "/sign-in/email": { window: 15 * 60, max: 10 },
       "/sign-up/email": { window: 60 * 60, max: 5 },
-      "/forget-password": { window: 60 * 60, max: 5 },
+      // The endpoint behind "forgot password". (It used to be listed here as
+      // "/forget-password", a path this Better Auth version doesn't have, so
+      // reset emails only got the looser baseline.)
+      "/request-password-reset": { window: 60 * 60, max: 5 },
+      // Verifies the current password, so it's a guessing target. Same limit
+      // as the `changePassword` server action the app itself uses.
+      "/change-password": { window: 60 * 60, max: 5 },
       "/reset-password": { window: 60 * 60, max: 5 },
       "/send-verification-email": { window: 60 * 60, max: 5 },
     },
   },
+
+  // Better Auth's own profile endpoint takes any `name` and any `image` URL
+  // straight from the client. The app never calls it: names go through
+  // `updateProfile` and avatars through the validated upload pipeline
+  // (`updateAvatar`). Left on, a user could point their avatar at any host,
+  // which is then loaded by everyone who sees them in a roster.
+  disabledPaths: ["/update-user"],
 
   advanced: {
     // Postgres generates the uuid primary keys via `defaultRandom()`.
