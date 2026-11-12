@@ -24,6 +24,7 @@ import {
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import {
+  canInviteAs,
   clubContactSchema,
   type CreateClubInput,
   createClubSchema,
@@ -453,6 +454,13 @@ export async function inviteMember(
   // The type alone doesn't stop a caller passing "admin".
   if (role !== "member" && role !== "organizer") {
     return { success: false, error: "Roli është i pavlefshëm." };
+  }
+  // `requireClubAdmin` also lets organizers through; they invite members only.
+  if (!canInviteAs(access.role, role)) {
+    return {
+      success: false,
+      error: "Vetëm administratori i klubit mund të ftojë organizatorë.",
+    };
   }
   const parsedEmail = inviteEmailSchema.safeParse(email);
   if (!parsedEmail.success) {
