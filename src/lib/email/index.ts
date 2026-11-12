@@ -59,7 +59,8 @@ export async function sendEmail({
     // Report here so the failure is visible instead of dying in the logs.
     captureError(failure, {
       action: "email.send",
-      extra: { to, from, subject, resendError: error.name },
+      // No recipient: an email address is personal data.
+      extra: { from, subject, resendError: error.name },
     });
     throw failure;
   }

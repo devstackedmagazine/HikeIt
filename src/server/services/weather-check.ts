@@ -12,11 +12,9 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { WeatherAlert } from "@/lib/email/templates/weather-alert";
+import { captureError } from "@/lib/sentry";
 import { formatTripDateTime } from "@/lib/utils/datetime";
-import {
-  getWeatherForLocation,
-  type WeatherData,
-} from "@/lib/weather/client";
+import { getWeatherForLocation, type WeatherData } from "@/lib/weather/client";
 import {
   type AlertLevel,
   evaluateWeatherAlert,
@@ -41,8 +39,7 @@ function passesSensitivity(
   level: AlertLevel,
   sensitivity: "low" | "medium" | "high" | undefined,
 ): boolean {
-  const floor =
-    sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
+  const floor = sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
   return LEVEL_RANK[level] >= floor;
 }
 
@@ -133,8 +130,16 @@ export async function runWeatherCheck(): Promise<WeatherCheckResult> {
         }
       }
     } catch (error) {
+      // The result is returned to the cron caller and stored in audit_logs,
+      // so it gets the trip and the error's type only. The error itself (a
+      // failed query's message carries its bound values) goes to Sentry,
+      // which scrubs those.
+      captureError(error, {
+        action: "cron.weather_check",
+        extra: { tripId: trip.id },
+      });
       result.errors.push(
-        `Trip ${trip.slug}: ${error instanceof Error ? error.message : "unknown"}`,
+        `Trip ${trip.slug}: ${error instanceof Error ? error.name : "unknown"}`,
       );
     }
     await sleep(500);

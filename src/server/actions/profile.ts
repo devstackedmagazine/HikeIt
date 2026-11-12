@@ -65,26 +65,37 @@ export async function updateProfile(
   }
   const d = parsed.data;
 
-  await db
-    .update(users)
-    // Partial update: only fields the caller sent are written (an empty
-    // string clears a field). Preferences are never touched here — they have
-    // their own merge-based action, `updatePreferences`.
-    .set({
-      ...(d.name !== undefined && { name: d.name }),
-      ...(d.bio !== undefined && { bio: d.bio || null }),
-      ...(d.phone !== undefined && { phone: d.phone || null }),
-      ...(d.dateOfBirth !== undefined && {
-        dateOfBirth: d.dateOfBirth || null,
-      }),
-      ...(d.emergencyContactName !== undefined && {
-        emergencyContactName: d.emergencyContactName || null,
-      }),
-      ...(d.emergencyContactPhone !== undefined && {
-        emergencyContactPhone: d.emergencyContactPhone || null,
-      }),
-    })
-    .where(eq(users.id, session.user.id));
+  try {
+    await db
+      .update(users)
+      // Partial update: only fields the caller sent are written (an empty
+      // string clears a field). Preferences are never touched here — they have
+      // their own merge-based action, `updatePreferences`.
+      .set({
+        ...(d.name !== undefined && { name: d.name }),
+        ...(d.bio !== undefined && { bio: d.bio || null }),
+        ...(d.phone !== undefined && { phone: d.phone || null }),
+        ...(d.dateOfBirth !== undefined && {
+          dateOfBirth: d.dateOfBirth || null,
+        }),
+        ...(d.emergencyContactName !== undefined && {
+          emergencyContactName: d.emergencyContactName || null,
+        }),
+        ...(d.emergencyContactPhone !== undefined && {
+          emergencyContactPhone: d.emergencyContactPhone || null,
+        }),
+      })
+      .where(eq(users.id, session.user.id));
+  } catch (error) {
+    // Handled here rather than thrown: an uncaught query error is printed to
+    // the server log with the values it was writing (phone, emergency
+    // contact). Sentry gets it with those values removed.
+    captureError(error, { action: "updateProfile" });
+    return {
+      success: false,
+      error: "Profili nuk u ruajt. Ju lutemi provoni sërish.",
+    };
+  }
 
   return { success: true };
 }
