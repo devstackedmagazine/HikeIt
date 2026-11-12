@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { env } from "@/config/env";
 import { db } from "@/lib/db";
 import { auditLogs } from "@/lib/db/schema";
+import { isCronAuthorized } from "@/lib/security/cron-auth";
 import { captureError, captureMessage } from "@/lib/sentry";
 import { runCompleteTrips } from "@/server/services/complete-trips";
 
@@ -23,7 +24,7 @@ const SENTRY_TRIP_ID_SAMPLE = 20;
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (!env.CRON_SECRET || authHeader !== `Bearer ${env.CRON_SECRET}`) {
+  if (!isCronAuthorized(authHeader, env.CRON_SECRET)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
