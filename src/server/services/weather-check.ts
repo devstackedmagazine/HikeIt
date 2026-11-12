@@ -42,7 +42,8 @@ function passesSensitivity(
   level: AlertLevel,
   sensitivity: "low" | "medium" | "high" | undefined,
 ): boolean {
-  const floor = sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
+  const floor =
+    sensitivity === "low" ? 3 : sensitivity === "high" ? 1 : 2; // medium default
   return LEVEL_RANK[level] >= floor;
 }
 
