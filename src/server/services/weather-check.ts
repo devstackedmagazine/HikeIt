@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 
 import { env } from "@/config/env";
@@ -12,7 +13,6 @@ import {
 } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 import { WeatherAlert } from "@/lib/email/templates/weather-alert";
-import { captureError } from "@/lib/sentry";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { getWeatherForLocation, type WeatherData } from "@/lib/weather/client";
 import {
@@ -134,8 +134,8 @@ export async function runWeatherCheck(): Promise<WeatherCheckResult> {
       // so it gets the trip and the error's type only. The error itself (a
       // failed query's message carries its bound values) goes to Sentry,
       // which scrubs those.
-      captureError(error, {
-        action: "cron.weather_check",
+      Sentry.captureException(error, {
+        tags: { action: "cron.weather_check" },
         extra: { tripId: trip.id },
       });
       result.errors.push(
