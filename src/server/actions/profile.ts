@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gt, inArray, isNull, ne } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -15,6 +15,7 @@ import { getImageUrl } from "@/lib/cloudinary/urls";
 import { db } from "@/lib/db";
 import {
   accounts,
+  clubInvitations,
   hikes,
   imageHashes,
   notifications,
@@ -240,7 +241,7 @@ export async function deleteAccount(
   try {
     await db.transaction(async (tx) => {
       const [me] = await tx
-        .select({ role: users.role })
+        .select({ role: users.role, email: users.email })
         .from(users)
         .where(eq(users.id, userId))
         .for("update");
@@ -331,6 +332,19 @@ export async function deleteAccount(
       // Pending password-reset tokens store the user id as their value; a
       // leftover one could otherwise recreate a password login.
       await tx.delete(verifications).where(eq(verifications.value, userId));
+      // Club invitations store the invited address itself. Remove the ones
+      // sent to this user (pending, declined or accepted), or their email
+      // would outlive the account.
+      if (me) {
+        await tx
+          .delete(clubInvitations)
+          .where(
+            or(
+              eq(clubInvitations.email, me.email.trim().toLowerCase()),
+              eq(clubInvitations.acceptedBy, userId),
+            ),
+          );
+      }
 
       // Free the seat on trips that haven't started; past ones stay as history.
       const upcoming = tx
