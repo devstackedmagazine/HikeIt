@@ -22,6 +22,14 @@ assert.match(
 );
 console.log("ok  /update-user is disabled");
 
+// 1b. Email sign-up can't set an avatar URL either (same hole, other door).
+const signUp = source.match(
+  /ctx\?\.path === "\/sign-up\/email"\) \{([\s\S]*?)\n {10}\}/,
+)?.[1];
+assert.ok(signUp, "email sign-up branch not found");
+assert.match(signUp, /image:\s*null/, "sign-up must drop the client's image");
+console.log("ok  email sign-up drops a client-supplied image");
+
 // 2. Every custom rate-limit rule names an endpoint that exists. A rule for
 //    a path Better Auth doesn't serve silently falls back to the baseline.
 const rules = source.match(/customRules:\s*\{([\s\S]*?)\n {4}\},/)?.[1] ?? "";

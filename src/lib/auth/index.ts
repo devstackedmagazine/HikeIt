@@ -165,7 +165,18 @@ export const auth = betterAuth({
                 message: "Duhet të konfirmoni që jeni 18 vjeç ose më shumë.",
               });
             }
-            return { data: user };
+            // The sign-up body can carry an `image` URL and a name of any
+            // length. Avatars only ever come from the upload pipeline, and
+            // the name gets the cap `updateProfile` applies.
+            return {
+              data: {
+                ...user,
+                image: null,
+                name: String(user.name ?? "")
+                  .trim()
+                  .slice(0, 100),
+              },
+            };
           }
           if (ctx?.path?.startsWith("/callback")) {
             const state = await getOAuthState();
