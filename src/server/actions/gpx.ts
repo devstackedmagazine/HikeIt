@@ -11,6 +11,7 @@ import { sanitizeGpx } from "@/lib/gpx/sanitize";
 import { enforceRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import { isGpxStorageConfigured, uploadGpx } from "@/lib/storage/gpx-storage";
+import { gpxUploadReview } from "@/lib/trails/gpx-review";
 import { generateSlug } from "@/lib/utils/slug";
 import {
   OTHER_REGION,
@@ -187,9 +188,14 @@ async function notifySuperAdmins(trailName: string): Promise<void> {
 export interface ActionResult {
   success: boolean;
   error?: string;
+  /** The trail went back to review and is off the public listing. */
+  needsReview?: boolean;
 }
 
-/** Upload GPX to an existing trail. Super admins or the trail's submitter only. */
+/**
+ * Upload GPX to an existing trail. Super admins or the trail's submitter only.
+ * A submitter's file is never public unreviewed: see `gpxUploadReview`.
+ */
 export async function uploadTrailGpx(
   trailId: string,
   gpxContent: string,
@@ -247,10 +253,15 @@ export async function uploadTrailGpx(
   }
 
   const gpxTrack = downsampleTrack(parsed.points);
+  const review = gpxUploadReview({
+    verified: trail.verified,
+    bySuperAdmin: isSuperAdmin,
+  });
 
   await db
     .update(trails)
     .set({
+      ...(review.unverify && { verified: false }),
       gpxUrl,
       gpxTrack,
       gpxMetadata: {
@@ -276,9 +287,14 @@ export async function uploadTrailGpx(
     })
     .where(eq(trails.id, trailId));
 
+  if (review.notifyReviewers) {
+    await notifySuperAdmins(trail.name);
+    revalidatePath("/dashboard/admin");
+  }
+
   revalidatePath(`/trails/${trail.slug}`);
   revalidatePath("/trails");
-  return { success: true };
+  return { success: true, needsReview: review.notifyReviewers };
 }
 
 /** Upload a GPX for an existing trip (admin); backfills meeting coordinates. */
