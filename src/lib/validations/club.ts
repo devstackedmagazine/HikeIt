@@ -121,3 +121,16 @@ export type RedeemInviteCodeInput = z.infer<typeof redeemInviteCodeSchema>;
 export type ClubBasicInfo = z.infer<typeof clubBasicInfoSchema>;
 export type ClubContact = z.infer<typeof clubContactSchema>;
 export type CreateClubInput = z.infer<typeof createClubSchema>;
+
+/**
+ * Who may invite into which role. An admin invites members and organizers;
+ * an organizer invites members only, so an organizer can't hand out their
+ * own level. Nobody is invited as admin: that is a promotion
+ * (`changeMemberRole`), which only an admin can make.
+ */
+export function canInviteAs(inviterRole: unknown, role: unknown): boolean {
+  if (role === "member") {
+    return inviterRole === "admin" || inviterRole === "organizer";
+  }
+  return role === "organizer" && inviterRole === "admin";
+}
