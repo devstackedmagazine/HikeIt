@@ -22,7 +22,10 @@ import { TripCancellation } from "@/lib/email/templates/trip-cancellation";
 import { TripConfirmation } from "@/lib/email/templates/trip-confirmation";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { trackEvent } from "@/lib/sentry";
-import { decideSignUp } from "@/lib/trips/registration-rules";
+import {
+  decideSignUp,
+  isAdminSettableStatus,
+} from "@/lib/trips/registration-rules";
 import { formatTripDateTime, googleCalendarUrl } from "@/lib/utils/datetime";
 
 /**
@@ -156,6 +159,7 @@ async function createRegistration(
         status: locked.status,
         maxParticipants: locked.maxParticipants,
         confirmed: await confirmedCountFor(locked.id, tx),
+        waitlisted: await countFor(locked.id, "waitlisted", tx),
       });
       if (decision.kind === "closed") return null;
 
@@ -213,9 +217,10 @@ async function createRegistration(
   return { success: true, status };
 }
 
-/** Count of confirmed registrations for a trip. */
-async function confirmedCountFor(
+/** Count of a trip's registrations in one status. */
+async function countFor(
   tripId: string,
+  status: "confirmed" | "waitlisted",
   executor: Pick<typeof db, "select"> = db,
 ): Promise<number> {
   const [row] = await executor
@@ -224,10 +229,18 @@ async function confirmedCountFor(
     .where(
       and(
         eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.status, "confirmed"),
+        eq(tripRegistrations.status, status),
       ),
     );
   return row?.value ?? 0;
+}
+
+/** Count of confirmed registrations for a trip. */
+function confirmedCountFor(
+  tripId: string,
+  executor: Pick<typeof db, "select"> = db,
+): Promise<number> {
+  return countFor(tripId, "confirmed", executor);
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -386,6 +399,9 @@ export async function updateRegistrationStatus(
 ): Promise<ActionResult> {
   const session = await getOptionalSession();
   if (!session) return { success: false, error: "Duhet të jeni i kyçur." };
+  if (!isAdminSettableStatus(status)) {
+    return { success: false, error: "Statusi është i pavlefshëm." };
+  }
 
   const registration = await db.query.tripRegistrations.findFirst({
     where: eq(tripRegistrations.id, registrationId),
@@ -569,6 +585,8 @@ export async function removeRegistration(
   return { success: true };
 }
 
+const MAX_CANCEL_REASON_LENGTH = 1000;
+
 /** Admin: cancel a whole trip and email every registrant the reason. */
 export async function cancelTrip(
   tripId: string,
@@ -583,10 +601,19 @@ export async function cancelTrip(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  await db
+  // Canceling emails every registrant, so it must happen once: the status
+  // condition makes a repeat (or a second click) match no row.
+  const cleanReason = String(reason ?? "")
+    .trim()
+    .slice(0, MAX_CANCEL_REASON_LENGTH);
+  const [canceled] = await db
     .update(trips)
-    .set({ status: "canceled", canceledReason: reason })
-    .where(eq(trips.id, tripId));
+    .set({ status: "canceled", canceledReason: cleanReason })
+    .where(and(eq(trips.id, tripId), ne(trips.status, "canceled")))
+    .returning({ id: trips.id });
+  if (!canceled) {
+    return { success: false, error: "Udhëtimi është anuluar tashmë." };
+  }
 
   await db.insert(auditLogs).values({
     userId: session.user.id,
@@ -600,7 +627,7 @@ export async function cancelTrip(
     `Udhëtimi u anulua: ${trip.title}`,
     TripCancellation({
       tripTitle: trip.title,
-      reason,
+      reason: cleanReason,
       tripsUrl: `${env.NEXT_PUBLIC_APP_URL}/trips`,
     }),
   );

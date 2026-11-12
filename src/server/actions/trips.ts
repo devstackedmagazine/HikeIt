@@ -205,6 +205,12 @@ export async function updateTrip(
   }
   const clubSlug = club.slug;
 
+  // A changed time or meeting point emails every confirmed registrant.
+  const limited = await enforceRateLimit("ratelimit.trip.update", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const parsed = createTripSchema.safeParse(data);
   if (!parsed.success) {
     return { success: false, error: "Të dhëna të pavlefshme." };
@@ -219,22 +225,41 @@ export async function updateTrip(
     };
   }
 
-  // Registration-based locks.
-  const [confirmed] = await db
-    .select({ value: count() })
-    .from(tripRegistrations)
-    .where(
-      and(
-        eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.status, "confirmed"),
-      ),
-    );
-  const confirmedCount = confirmed?.value ?? 0;
-
-  if (input.maxParticipants != null && input.maxParticipants < confirmedCount) {
+  // The new limit is checked and written under the trip's row lock — the lock
+  // sign-ups take — so a hiker confirmed while this runs can't end up above
+  // it. Returns the confirmed count when the limit is too low, else null.
+  const overCapacity = await db.transaction(async (tx) => {
+    await tx
+      .select({ id: trips.id })
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .for("update");
+    const [confirmed] = await tx
+      .select({ value: count() })
+      .from(tripRegistrations)
+      .where(
+        and(
+          eq(tripRegistrations.tripId, tripId),
+          eq(tripRegistrations.status, "confirmed"),
+        ),
+      );
+    const confirmedCount = confirmed?.value ?? 0;
+    if (
+      input.maxParticipants != null &&
+      input.maxParticipants < confirmedCount
+    ) {
+      return confirmedCount;
+    }
+    await tx
+      .update(trips)
+      .set({ maxParticipants: input.maxParticipants ?? null })
+      .where(eq(trips.id, tripId));
+    return null;
+  });
+  if (overCapacity !== null) {
     return {
       success: false,
-      error: `Nuk mund të ulni max nën regjistrimet aktuale (${confirmedCount}).`,
+      error: `Nuk mund të ulni max nën regjistrimet aktuale (${overCapacity}).`,
     };
   }
 

@@ -58,6 +58,7 @@ export const RATE_LIMITS = {
   "ratelimit.club.create": { max: 5, windowMs: 60 * 60 * 1000 },
   "ratelimit.club.join": { max: 20, windowMs: 60 * 60 * 1000 },
   "ratelimit.trip.create": { max: 20, windowMs: 60 * 60 * 1000 },
+  "ratelimit.trip.update": { max: 30, windowMs: 60 * 60 * 1000 },
   "ratelimit.trip.gpx.upload": { max: 10, windowMs: 60 * 60 * 1000 },
   "ratelimit.trail.review": { max: 20, windowMs: 60 * 60 * 1000 },
 } as const;
