@@ -122,6 +122,27 @@ assert.equal(w.opensAt.toISOString(), "2026-10-29T07:00:00.000Z");
 assert.equal(w.closesAt.toISOString(), "2026-11-03T15:00:00.000Z");
 console.log("ok  window bounds");
 
+// The end time is the organiser's own input. Set far ahead, it must not keep
+// the window open: at most 14 days of trip count, then the 2 days after.
+const farEnd = { ...trip, endDatetime: new Date("2027-06-01T15:00:00Z") };
+assert.equal(
+  contactWindow(farEnd).closesAt.toISOString(),
+  "2026-11-17T07:00:00.000Z",
+);
+const afterCap = contactAccess({
+  viewerRole: "organizer",
+  trip: farEnd,
+  now: at("2026-11-17T07:00:00.001Z"),
+});
+assert.deepEqual(afterCap, { allowed: false, reason: "after-window" });
+// A real multi-day trek is not affected.
+const trek = { ...trip, endDatetime: new Date("2026-11-06T15:00:00Z") };
+assert.equal(
+  contactWindow(trek).closesAt.toISOString(),
+  "2026-11-08T15:00:00.000Z",
+);
+console.log("ok  a far-off end date doesn't stretch the window");
+
 // Per-registration: every status in the enum, so a new status fails here
 // until someone decides whether it shows contacts. There is no "rejected"
 // status; a rejected sign-up is "canceled".
