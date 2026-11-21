@@ -1,0 +1,182 @@
+import assert from "node:assert/strict";
+
+import {
+  END_BEFORE_START_ERROR,
+  PAST_START_ERROR,
+  tripTimesError,
+} from "../src/lib/trips/trip-times";
+import {
+  formatTripDateTime,
+  fromKosovoWallTime,
+  googleCalendarUrl,
+  kosovoDateKey,
+  toKosovoInputValue,
+} from "../src/lib/utils/datetime";
+
+/**
+ * Kosovo wall time ↔ UTC instant, including both DST changes. Must pass
+ * whatever the machine's own zone is:
+ *
+ *   TZ=UTC pnpm exec tsx scripts/check-trip-times.ts
+ *   TZ=America/New_York pnpm exec tsx scripts/check-trip-times.ts
+ */
+const iso = (wall: string) => fromKosovoWallTime(wall)?.toISOString();
+
+const cases: [string, string, string][] = [
+  // [name, form input, expected UTC instant]
+  ["winter (UTC+1)", "2026-11-01T08:00", "2026-11-01T07:00:00.000Z"],
+  ["summer (UTC+2)", "2026-07-12T08:00", "2026-07-12T06:00:00.000Z"],
+  ["midnight in winter", "2027-01-01T00:30", "2026-12-31T23:30:00.000Z"],
+  // Spring change 2026-03-29: 02:00 CET → 03:00 CEST.
+  ["just before spring change", "2026-03-29T01:59", "2026-03-29T00:59:00.000Z"],
+  [
+    "spring gap 02:30 → reads as 03:30",
+    "2026-03-29T02:30",
+    "2026-03-29T01:30:00.000Z",
+  ],
+  ["just after spring change", "2026-03-29T03:00", "2026-03-29T01:00:00.000Z"],
+  // Autumn change 2026-10-25: 03:00 CEST → 02:00 CET (02:xx happens twice).
+  ["just before autumn change", "2026-10-25T01:59", "2026-10-24T23:59:00.000Z"],
+  [
+    "autumn repeated 02:30 → first (summer) one",
+    "2026-10-25T02:30",
+    "2026-10-25T00:30:00.000Z",
+  ],
+  ["just after autumn change", "2026-10-25T03:00", "2026-10-25T02:00:00.000Z"],
+  ["seconds accepted", "2026-11-01T08:00:30", "2026-11-01T07:00:30.000Z"],
+];
+for (const [name, wall, expected] of cases) {
+  assert.equal(iso(wall), expected, name);
+  console.log(`ok  ${name}: ${wall} → ${expected}`);
+}
+
+for (const bad of [
+  "",
+  "2026-11-01",
+  "2026-13-01T08:00",
+  "08:00",
+  "2026-11-01T24:00",
+  "x",
+]) {
+  assert.equal(fromKosovoWallTime(bad), null, `rejects ${JSON.stringify(bad)}`);
+}
+console.log("ok  malformed input rejected");
+
+// Edit form round trip: what the organiser typed comes back unchanged.
+for (const wall of [
+  "2026-11-01T08:00",
+  "2026-07-12T08:00",
+  "2026-03-29T03:00",
+  "2026-10-25T01:59",
+  "2026-10-25T03:00",
+]) {
+  assert.equal(
+    toKosovoInputValue(fromKosovoWallTime(wall)!),
+    wall,
+    `round trip ${wall}`,
+  );
+}
+console.log("ok  edit form round trip");
+
+// Display and calendar.
+// ICU's exact separator ("," vs "në") varies by version; check the parts.
+const winter = formatTripDateTime(new Date("2026-11-01T07:00:00Z"));
+assert.ok(/^1 nëntor 2026\b.*\b08:00$/.test(winter), winter);
+const summer = formatTripDateTime(new Date("2026-07-12T06:00:00Z"));
+assert.ok(/^12 korrik 2026\b.*\b08:00$/.test(summer), summer);
+assert.equal(kosovoDateKey(new Date("2026-12-31T23:30:00Z")), "2027-01-01");
+const cal = googleCalendarUrl({
+  title: "Test",
+  start: fromKosovoWallTime("2026-11-01T08:00")!,
+});
+assert.ok(cal.includes("dates=20261101T070000Z%2F20261101T100000Z"), cal);
+console.log("ok  display in Kosovo time, 24h; calendar link in UTC");
+
+// Server-side start/end rules (createTrip and updateTrip).
+// 2026-10-25 14:00 Kosovo (winter, after the autumn change) = 13:00Z.
+const now = new Date("2026-10-25T13:00:00Z");
+const k = (v: string) => fromKosovoWallTime(v)!;
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T13:59"), end: null }, now),
+  PAST_START_ERROR,
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T14:00"), end: null }, now),
+  null,
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T14:01"), end: null }, now),
+  null,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T08:00") },
+    now,
+  ),
+  END_BEFORE_START_ERROR,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T07:00") },
+    now,
+  ),
+  END_BEFORE_START_ERROR,
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T08:00"), end: k("2026-11-01T16:00") },
+    now,
+  ),
+  null,
+);
+// Across the night: end on the next day is fine.
+assert.equal(
+  tripTimesError(
+    { start: k("2026-11-01T22:00"), end: k("2026-11-02T06:00") },
+    now,
+  ),
+  null,
+);
+console.log("ok  past start and end-before-start rejected");
+
+// Editing (updateTrip passes the stored start).
+const started = k("2026-10-25T08:00"); // already started at `now`
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T08:00"), end: null }, now, started),
+  null,
+  "unchanged past start: other fields can be edited",
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-10-25T08:00"), end: k("2026-10-25T16:00") },
+    now,
+    new Date(started.getTime() + 30 * 1000), // stored with seconds
+  ),
+  null,
+  "same minute counts as unchanged",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T09:00"), end: null }, now, started),
+  PAST_START_ERROR,
+  "moving a start to another past time",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-11-01T08:00"), end: null }, now, started),
+  null,
+  "moving a start into the future",
+);
+assert.equal(
+  tripTimesError(
+    { start: k("2026-10-25T08:00"), end: k("2026-10-25T07:00") },
+    now,
+    started,
+  ),
+  END_BEFORE_START_ERROR,
+  "end before start is rejected even when the start is unchanged",
+);
+assert.equal(
+  tripTimesError({ start: k("2026-10-25T08:00"), end: null }, now),
+  PAST_START_ERROR,
+  "new trip (no stored start) can't start in the past",
+);
+console.log("ok  edits: past start allowed only when unchanged");

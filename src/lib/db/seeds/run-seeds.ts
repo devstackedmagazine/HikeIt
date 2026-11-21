@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
+import { fromKosovoWallTime, kosovoDateKey } from "../../utils/datetime";
 import { organizations, trails, trips } from "../schema";
 import { clubSeeds, tripSeeds } from "./clubs";
 import { trailSeeds } from "./trails";
@@ -58,9 +59,9 @@ async function main() {
         const organizationId = clubBySlug.get(t.clubSlug);
         const trail = trailBySlug.get(t.trailSlug);
         if (!organizationId) return null;
-        const start = new Date();
-        start.setDate(start.getDate() + t.daysFromNow);
-        start.setHours(7, 0, 0, 0);
+        // 07:00 Kosovo time, whatever zone the seed runs in.
+        const day = new Date(Date.now() + t.daysFromNow * 24 * 60 * 60 * 1000);
+        const start = fromKosovoWallTime(`${kosovoDateKey(day)}T07:00`)!;
         return {
           slug: t.slug,
           organizationId,

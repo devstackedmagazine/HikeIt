@@ -22,6 +22,7 @@ import { getRequiredUser, getUserAdminClub } from "@/lib/auth/helpers";
 import type { Trail, Trip } from "@/lib/db/schema";
 import { displayTripStatus } from "@/lib/trips/display-status";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE, wallTimeOf } from "@/lib/utils/datetime";
 import type { ClubWithStats } from "@/server/queries/clubs";
 import { getClubs, getClubStats } from "@/server/queries/clubs";
 import { getClubDashboard, getHikerStats } from "@/server/queries/dashboard";
@@ -32,7 +33,11 @@ const getFirstName = (displayName: string) =>
   displayName.trim().split(" ")[0] ?? displayName;
 
 function shortDate(date: Date): string {
-  return new Intl.DateTimeFormat("sq-AL", { day: "numeric", month: "short" })
+  return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
+    day: "numeric",
+    month: "short",
+  })
     .format(date)
     .toUpperCase();
 }
@@ -606,10 +611,11 @@ function StatusDot({ status }: { status: Trip["status"] }) {
 
 function formatAdminDate(date: Date): string {
   const dm = new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "2-digit",
     month: "long",
   }).format(date);
-  return `${dm}, ${date.getFullYear()}`.toUpperCase();
+  return `${dm}, ${wallTimeOf(date).year}`.toUpperCase();
 }
 
 function initials(name: string | null): string {

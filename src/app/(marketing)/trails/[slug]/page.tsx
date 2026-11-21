@@ -23,6 +23,7 @@ import {
   trailTypeLabels,
 } from "@/lib/i18n/labels";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 import { isTrailFavorited } from "@/server/queries/favorites";
 import { getTrailReviews, type TrailReview } from "@/server/queries/reviews";
 import { getTrailBySlug, getTrailsByRegion } from "@/server/queries/trails";
@@ -155,6 +156,7 @@ function initials(name: string | null): string {
 
 function formatReviewDate(date: Date): string {
   return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -418,6 +420,7 @@ export default async function TrailDetailPage({
                   >
                     <p className="text-moss mb-[3px] text-[9px] font-bold tracking-[0.1em] uppercase">
                       {new Intl.DateTimeFormat("sq-AL", {
+                        timeZone: APP_TIME_ZONE,
                         day: "numeric",
                         month: "long",
                       })

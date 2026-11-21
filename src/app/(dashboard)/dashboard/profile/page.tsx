@@ -20,6 +20,7 @@ import { LogoutButton } from "@/components/shared/logout-button";
 import { getRequiredUser } from "@/lib/auth/helpers";
 import { getSocialErrorCopy, providerLabel } from "@/lib/auth/social-errors";
 import { cn } from "@/lib/utils/cn";
+import { APP_TIME_ZONE, wallTimeOf } from "@/lib/utils/datetime";
 import { getUserProfile } from "@/server/queries/users";
 
 export const metadata: Metadata = { title: "Profili" };
@@ -32,15 +33,20 @@ const ROLE_LABELS: Record<string, string> = {
 
 function memberSince(date: Date): string {
   return `Anëtar që nga ${new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     month: "long",
     year: "numeric",
   }).format(date)}`.toUpperCase();
 }
 
 function rowDate(date: Date): string {
-  return new Intl.DateTimeFormat("sq-AL", { day: "2-digit", month: "long" })
+  return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
+    day: "2-digit",
+    month: "long",
+  })
     .format(date)
-    .concat(`, ${date.getFullYear()}`)
+    .concat(`, ${wallTimeOf(date).year}`)
     .toUpperCase();
 }
 

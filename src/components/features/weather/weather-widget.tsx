@@ -9,6 +9,7 @@ import {
   Wind,
 } from "lucide-react";
 
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
 import { getWeatherForLocation } from "@/lib/weather/client";
 
 const CONDITION_ICON: Record<string, LucideIcon> = {
@@ -23,7 +24,10 @@ const CONDITION_ICON: Record<string, LucideIcon> = {
 
 /** Full weekday in Albanian, uppercased (e.g. "E HËNË"). */
 function dayLabel(date: Date): string {
-  return new Intl.DateTimeFormat("sq-AL", { weekday: "long" })
+  return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
+    weekday: "long",
+  })
     .format(date)
     .toUpperCase();
 }
@@ -42,7 +46,7 @@ export async function WeatherWidget({
     data = await getWeatherForLocation(lat, lng);
   } catch {
     return (
-      <div className="border border-summit/10 bg-summit/[0.03] p-4 text-xs text-summit/40">
+      <div className="border-summit/10 bg-summit/[0.03] text-summit/40 border p-4 text-xs">
         Moti nuk disponohet
       </div>
     );
@@ -52,36 +56,36 @@ export async function WeatherWidget({
   const CurrentIcon = CONDITION_ICON[current.condition] ?? Cloud;
 
   return (
-    <div className="border border-summit/10 bg-summit/[0.03] p-4">
+    <div className="border-summit/10 bg-summit/[0.03] border p-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="mb-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+          <p className="text-summit/30 mb-1 text-[9px] font-semibold tracking-[0.12em] uppercase">
             Moti Sot
           </p>
-          <p className="font-heading text-[32px] leading-none font-extrabold tracking-[-0.02em] text-summit">
+          <p className="font-heading text-summit text-[32px] leading-none font-extrabold tracking-[-0.02em]">
             {current.temperature}°C
           </p>
         </div>
-        <CurrentIcon className="size-7 text-summit/50" />
+        <CurrentIcon className="text-summit/50 size-7" />
       </div>
 
       <div className="mt-3">
         {daily.slice(0, 3).map((day) => (
           <div
             key={day.date.toISOString()}
-            className="flex items-center justify-between border-b border-summit/[0.06] py-1.5"
+            className="border-summit/[0.06] flex items-center justify-between border-b py-1.5"
           >
-            <span className="text-[11px] font-medium text-summit/50 uppercase">
+            <span className="text-summit/50 text-[11px] font-medium uppercase">
               {dayLabel(day.date)}
             </span>
-            <span className="text-[11px] font-semibold text-summit/60">
+            <span className="text-summit/60 text-[11px] font-semibold">
               {day.tempMax}° / {day.tempMin}°
             </span>
           </div>
         ))}
       </div>
 
-      <p className="mt-2 text-[9px] text-summit/20">
+      <p className="text-summit/20 mt-2 text-[9px]">
         Burimi:{" "}
         <a
           href="https://open-meteo.com"

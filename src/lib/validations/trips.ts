@@ -62,7 +62,10 @@ export const createTripSchema = z
   .refine(
     (data) => {
       if (!data.endDatetime) return true;
-      return new Date(data.endDatetime) > new Date(data.startDatetime);
+      // Both are "YYYY-MM-DDTHH:mm" in the same (Kosovo) zone, so string
+      // order is time order — no Date parsing, which would use the zone of
+      // whichever machine runs this.
+      return data.endDatetime > data.startDatetime;
     },
     { message: "Mbarimi duhet të jetë pas nisjes", path: ["endDatetime"] },
   )

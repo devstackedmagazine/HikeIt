@@ -1,3 +1,5 @@
+import { APP_TIME_ZONE } from "@/lib/utils/datetime";
+
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -7,6 +9,7 @@ export function formatDuration(minutes: number): string {
 
 export function formatHikeDate(date: Date): string {
   return new Intl.DateTimeFormat("sq-AL", {
+    timeZone: APP_TIME_ZONE,
     day: "numeric",
     month: "long",
     year: "numeric",

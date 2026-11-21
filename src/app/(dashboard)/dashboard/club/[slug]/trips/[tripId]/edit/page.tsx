@@ -7,18 +7,13 @@ import { TripCoverField } from "@/components/features/trips/trip-cover-field";
 import { TripForm } from "@/components/features/trips/trip-form";
 import { TripGpxSection } from "@/components/features/trips/trip-gpx-section";
 import { getRequiredUser, requireClubAdmin } from "@/lib/auth/helpers";
+import { toKosovoInputValue } from "@/lib/utils/datetime";
 import { getTrailOptions } from "@/server/queries/trails";
 import { getTripById } from "@/server/queries/trips";
 
 export const metadata: Metadata = { title: "Ndryshoni Udhëtimin" };
 
 /** Convert a Date to the `YYYY-MM-DDTHH:mm` value a datetime-local input wants. */
-function toLocalInput(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 export default async function EditTripPage({
   params,
@@ -68,8 +63,10 @@ export default async function EditTripPage({
             description: trip.description ?? "",
             trailId: trip.trailId ?? "",
             difficulty: trip.difficulty ?? undefined,
-            startDatetime: toLocalInput(trip.startDatetime),
-            endDatetime: trip.endDatetime ? toLocalInput(trip.endDatetime) : "",
+            startDatetime: toKosovoInputValue(trip.startDatetime),
+            endDatetime: trip.endDatetime
+              ? toKosovoInputValue(trip.endDatetime)
+              : "",
             meetingPoint: trip.meetingPoint ?? "",
             maxParticipants: trip.maxParticipants ?? undefined,
             minParticipants: trip.minParticipants,

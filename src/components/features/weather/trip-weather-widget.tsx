@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
+import { kosovoDateKey, wallTimeOf } from "@/lib/utils/datetime";
 import { getWeatherForLocation } from "@/lib/weather/client";
 
 const CONDITION_ICON: Record<string, LucideIcon> = {
@@ -43,16 +44,21 @@ export async function TripWeatherWidget({
   }
 
   // Pick the hourly samples on the trip's calendar day at the target hours.
-  const sameDay = data.hourly.filter(
-    (h) => h.time.toDateString() === tripDate.toDateString(),
-  );
+  // In Kosovo time: the server's own zone (UTC on Vercel) would shift both
+  // the day and the hours.
+  const tripDay = kosovoDateKey(tripDate);
+  const sameDay = data.hourly.filter((h) => kosovoDateKey(h.time) === tripDay);
   const slots = TARGET_HOURS.map((hour) => {
-    const match = sameDay.find((h) => h.time.getHours() === hour);
-    return match ? { hour, temp: match.temp, condition: match.condition } : null;
-  }).filter((s): s is { hour: number; temp: number; condition: string } => s !== null);
+    const match = sameDay.find((h) => wallTimeOf(h.time).hour === hour);
+    return match
+      ? { hour, temp: match.temp, condition: match.condition }
+      : null;
+  }).filter(
+    (s): s is { hour: number; temp: number; condition: string } => s !== null,
+  );
 
   // Highlight the target hour closest to the trip's start time.
-  const tripHour = tripDate.getHours();
+  const tripHour = wallTimeOf(tripDate).hour;
   const activeHour = TARGET_HOURS.reduce((best, h) =>
     Math.abs(h - tripHour) < Math.abs(best - tripHour) ? h : best,
   );
@@ -60,24 +66,24 @@ export async function TripWeatherWidget({
   const CurrentIcon = CONDITION_ICON[data.current.condition] ?? Cloud;
 
   return (
-    <div className="grid items-center gap-8 border border-summit/[0.08] bg-summit/[0.03] px-6 py-5 sm:grid-cols-[auto_1fr]">
+    <div className="border-summit/[0.08] bg-summit/[0.03] grid items-center gap-8 border px-6 py-5 sm:grid-cols-[auto_1fr]">
       {/* Current */}
       <div>
-        <p className="mb-2 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+        <p className="text-summit/30 mb-2 text-[9px] font-semibold tracking-[0.12em] uppercase">
           Moti në {locationLabel}
         </p>
         <div className="flex items-center gap-3">
-          <span className="font-heading text-[40px] leading-none font-extrabold tracking-[-0.03em] text-summit">
+          <span className="font-heading text-summit text-[40px] leading-none font-extrabold tracking-[-0.03em]">
             {data.current.temperature}°C
           </span>
-          <CurrentIcon className="size-8 text-summit/60" />
+          <CurrentIcon className="text-summit/60 size-8" />
         </div>
       </div>
 
       {/* Hourly */}
       {slots.length > 0 ? (
         <div>
-          <p className="mb-3 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
+          <p className="text-summit/30 mb-3 text-[9px] font-semibold tracking-[0.12em] uppercase">
             Parashikimi për ditën e udhëtimit
           </p>
           <div className="flex justify-between gap-4">
@@ -102,15 +108,17 @@ export async function TripWeatherWidget({
                   </span>
                   <Icon
                     className={cn(
-                      active ? "size-[18px] text-summit" : "size-4 text-summit/50",
+                      active
+                        ? "text-summit size-[18px]"
+                        : "text-summit/50 size-4",
                     )}
                   />
                   <span
                     className={cn(
                       "text-[11px]",
                       active
-                        ? "font-bold text-summit"
-                        : "font-semibold text-summit/50",
+                        ? "text-summit font-bold"
+                        : "text-summit/50 font-semibold",
                     )}
                   >
                     {slot.temp}°C
