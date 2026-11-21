@@ -15,6 +15,7 @@ import { tripStatusLabels } from "@/lib/i18n/labels";
 import { displayTripStatus } from "@/lib/trips/display-status";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { getTripPhotos } from "@/server/queries/photos";
+import { getTripContactsForOrganiser } from "@/server/queries/trip-contacts";
 import { getTripById, getTripRegistrations } from "@/server/queries/trips";
 
 export const metadata: Metadata = { title: "Udhëtimi" };
@@ -32,9 +33,11 @@ export default async function AdminTripDetailPage({
   const trip = await getTripById(tripId);
   if (!trip || trip.club.id !== access.organization.id) notFound();
 
-  const [registrations, photos] = await Promise.all([
+  const [registrations, photos, contacts] = await Promise.all([
     getTripRegistrations(trip.id),
     getTripPhotos(trip.id),
+    // Re-checks role, status and time window itself; never trust the page.
+    getTripContactsForOrganiser(trip.id, user.id),
   ]);
   const confirmed = registrations.filter((r) => r.status === "confirmed");
   const waitlisted = registrations.filter((r) => r.status === "waitlisted");
@@ -137,6 +140,7 @@ export default async function AdminTripDetailPage({
           <TripRegistrationsPanel
             tripId={trip.id}
             registrations={registrations}
+            contacts={contacts}
           />
         </TabsContent>
 

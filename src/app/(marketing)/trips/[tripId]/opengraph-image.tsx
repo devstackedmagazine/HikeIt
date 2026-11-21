@@ -18,7 +18,12 @@ export default async function Image({
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  const trip = await getTripById(tripId);
+  const found = await getTripById(tripId);
+  // Same rule as the page: a draft or deleted trip shows nothing.
+  const trip =
+    found && found.status !== "draft" && found.deletedAt === null
+      ? found
+      : null;
   const subtitle = trip
     ? `${trip.club.name} · ${formatTripDate(trip.startDatetime)}`
     : undefined;

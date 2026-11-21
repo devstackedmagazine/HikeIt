@@ -70,8 +70,8 @@ export default async function BillingPage() {
           tone="dark"
           icon={Building2}
           title="Ende pa klub"
-          description="Krijo klubin tënd për të menaxhuar abonimin."
-          action={{ label: "Krijo klubin", href: "/dashboard/club/create" }}
+          description="Krijoni klubin tuaj për të menaxhuar abonimin."
+          action={{ label: "Krijoni klubin", href: "/dashboard/club/create" }}
         />
       </div>
     );
@@ -180,7 +180,7 @@ export default async function BillingPage() {
           <div className="border-summit/10 bg-summit/[0.04] border px-5 py-4">
             <p className="text-summit/60 text-[12px] leading-relaxed">
               Abonimet Pro dhe Team hapen për klubet së shpejti. Deri atëherë
-              çdo klub përdor platformën falas gjatë provës. Shiko planet dhe
+              çdo klub përdor platformën falas gjatë provës. Shikoni planet dhe
               çmimet te{" "}
               <Link
                 href="/pricing"

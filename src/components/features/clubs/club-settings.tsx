@@ -98,7 +98,7 @@ export function ClubSettings({
               value={form.city}
               onChange={(e) => set("city", e.target.value)}
             >
-              <option value="">Zgjidh qytetin</option>
+              <option value="">Zgjidhni qytetin</option>
               {CLUB_CITIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -140,7 +140,7 @@ export function ClubSettings({
           ) : null}
           <Button onClick={save} disabled={saving}>
             {saving ? <Loader2 className="animate-spin" /> : null}
-            Ruaj ndryshimet
+            Ruani ndryshimet
           </Button>
         </CardContent>
       </Card>
@@ -160,7 +160,7 @@ export function ClubSettings({
             href="/dashboard/billing"
             className="text-sm font-semibold underline-offset-4 hover:underline"
           >
-            Shiko planin dhe faturimin →
+            Shikoni planin dhe faturimin →
           </Link>
         </CardContent>
       </Card>
@@ -260,7 +260,7 @@ function DangerZone({ club }: { club: Organization }) {
       <CardContent>
         <Dialog>
           <DialogTrigger
-            render={<Button variant="destructive">Fshij klubin</Button>}
+            render={<Button variant="destructive">Fshini klubin</Button>}
           />
           <DialogContent>
             <DialogHeader>
