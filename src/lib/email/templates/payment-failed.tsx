@@ -11,7 +11,7 @@ export function PaymentFailed({ billingUrl }: { billingUrl: string }) {
         përditësoni metodën e pagesës për të mbajtur aktive veçoritë e klubit.
       </Text>
       <Button href={billingUrl} style={button}>
-        Përditëso metodën e pagesës
+        Përditësoni metodën e pagesës
       </Button>
     </EmailLayout>
   );

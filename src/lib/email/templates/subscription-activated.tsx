@@ -18,7 +18,7 @@ export function SubscriptionActivated({
         dashboard analitike.
       </Text>
       <Button href={dashboardUrl} style={button}>
-        Shko te Paneli
+        Shkoni te Paneli
       </Button>
     </EmailLayout>
   );
