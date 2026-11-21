@@ -40,7 +40,7 @@ export function TrialEnding({
       </Text>
 
       <Button href={billingUrl} style={button}>
-        Shiko planet
+        Shikoni planet
       </Button>
 
       <Text style={footer}>

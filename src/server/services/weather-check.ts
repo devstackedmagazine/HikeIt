@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 
 import { env } from "@/config/env";
@@ -133,8 +134,16 @@ export async function runWeatherCheck(): Promise<WeatherCheckResult> {
         }
       }
     } catch (error) {
+      // The result is returned to the cron caller and stored in audit_logs,
+      // so it gets the trip and the error's type only. The error itself (a
+      // failed query's message carries its bound values) goes to Sentry,
+      // which scrubs those.
+      Sentry.captureException(error, {
+        tags: { action: "cron.weather_check" },
+        extra: { tripId: trip.id },
+      });
       result.errors.push(
-        `Trip ${trip.slug}: ${error instanceof Error ? error.message : "unknown"}`,
+        `Trip ${trip.slug}: ${error instanceof Error ? error.name : "unknown"}`,
       );
     }
     await sleep(500);
