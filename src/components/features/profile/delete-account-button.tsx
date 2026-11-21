@@ -8,6 +8,7 @@ import { deleteAccount } from "@/server/actions/profile";
 export function DeleteAccountButton({ email }: { email: string }) {
   const [confirming, setConfirming] = useState(false);
   const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const matches = value.trim().toLowerCase() === email.toLowerCase();
@@ -32,17 +33,29 @@ export function DeleteAccountButton({ email }: { email: string }) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={email}
-            aria-label="Konfirmo emailin"
+            aria-label="Konfirmoni emailin"
             className="h-9 w-full border border-danger/30 bg-abyss px-3 text-[11px] text-summit placeholder:text-summit/25 focus:border-danger focus:outline-none"
           />
           <button
             type="button"
             disabled={!matches || pending}
-            onClick={() => startTransition(() => void deleteAccount(value))}
+            onClick={() =>
+              startTransition(async () => {
+                setError(null);
+                // Redirects on success; a returned result means it was refused.
+                const result = await deleteAccount(value);
+                if (!result.success) setError(result.error ?? "Fshirja dështoi.");
+              })
+            }
             className="w-full bg-danger py-2.5 text-[11px] font-extrabold tracking-[0.08em] text-summit uppercase transition-colors hover:bg-red-900 disabled:opacity-40"
           >
-            {pending ? "Duke fshirë…" : "Konfirmo fshirjen"}
+            {pending ? "Duke fshirë…" : "Konfirmoni fshirjen"}
           </button>
+          {error ? (
+            <p role="alert" className="text-[11px] leading-[1.55] text-danger">
+              {error}
+            </p>
+          ) : null}
         </div>
       ) : (
         <button
@@ -50,7 +63,7 @@ export function DeleteAccountButton({ email }: { email: string }) {
           onClick={() => setConfirming(true)}
           className="w-full bg-danger py-2.5 text-[11px] font-extrabold tracking-[0.08em] text-summit uppercase transition-colors hover:bg-red-900"
         >
-          Fshi llogarinë
+          Fshini llogarinë
         </button>
       )}
     </div>

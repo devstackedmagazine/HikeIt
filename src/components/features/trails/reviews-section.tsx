@@ -35,7 +35,9 @@ export function ReviewsSection({
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Vlerësimet</h2>
+          <h2 className="font-heading text-2xl font-black uppercase">
+            Vlerësimet
+          </h2>
           {count > 0 ? (
             <div className="mt-1 flex items-center gap-2">
               <StarRating value={average} />
@@ -48,7 +50,7 @@ export function ReviewsSection({
         {!isLoggedIn ? (
           <Button render={<Link href="/login?redirect=/trails" />}>
             <Star />
-            Shto vlerësim
+            Shtoni vlerësim
           </Button>
         ) : null}
       </div>
@@ -57,7 +59,7 @@ export function ReviewsSection({
 
       {count === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center">
-          Bëhu i pari që vlerëson këtë shteg.
+          Bëhuni i pari që vlerëson këtë shteg.
         </p>
       ) : (
         <ul className="space-y-4">

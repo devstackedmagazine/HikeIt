@@ -2,10 +2,12 @@
 
 import { and, count, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import { env } from "@/config/env";
 import { getOptionalSession, requireClubAdmin } from "@/lib/auth/helpers";
 import { canSetImageField } from "@/lib/cloudinary/ownership";
+import { leavesClubWithoutAdmin } from "@/lib/clubs/admin-rules";
 import { db } from "@/lib/db";
 import {
   auditLogs,
@@ -23,6 +25,7 @@ import {
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/sentry";
 import {
+  clubContactSchema,
   type CreateClubInput,
   createClubSchema,
   redeemInviteCodeSchema,
@@ -38,6 +41,12 @@ export interface ActionResult {
   success: boolean;
   error?: string;
 }
+
+const inviteEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email().max(254));
 
 /** True if no club currently uses this slug. */
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
@@ -80,6 +89,11 @@ export async function createClub(
   }
   const input = parsed.data;
 
+  const limited = await enforceRateLimit("ratelimit.club.create", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   // Promote to club_admin if they aren't already (e.g. skipped onboarding).
   const me = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
@@ -93,7 +107,10 @@ export async function createClub(
   }
 
   if (!(await checkSlugAvailability(input.slug))) {
-    return { success: false, error: "Ky emër është i zënë, provo një tjetër" };
+    return {
+      success: false,
+      error: "Ky emër është i zënë, provoni një tjetër",
+    };
   }
 
   // Club creation, membership and any invite-code claim commit together: a
@@ -295,6 +312,11 @@ export async function joinClub(organizationId: string): Promise<ActionResult> {
     return { success: false, error: "Duhet të jeni i kyçur." };
   }
 
+  const limited = await enforceRateLimit("ratelimit.club.join", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const club = await db.query.organizations.findFirst({
     where: eq(organizations.id, organizationId),
     columns: { slug: true },
@@ -351,6 +373,19 @@ export async function updateClub(
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  // Website and Facebook become links on the public club page.
+  const contact = clubContactSchema.safeParse({
+    website: data.website ?? "",
+    instagram: data.instagram ?? "",
+    facebook: data.facebook ?? "",
+  });
+  if (!contact.success) {
+    return {
+      success: false,
+      error: contact.error.issues[0]?.message ?? "Të dhëna të pavlefshme.",
+    };
+  }
+
   await db
     .update(organizations)
     .set({
@@ -358,9 +393,9 @@ export async function updateClub(
       description: data.description,
       city: data.city,
       foundedYear: data.foundedYear ?? null,
-      website: data.website || null,
-      instagram: data.instagram || null,
-      facebook: data.facebook || null,
+      website: contact.data.website || null,
+      instagram: contact.data.instagram || null,
+      facebook: contact.data.facebook || null,
     })
     .where(eq(organizations.id, access.organization.id));
 
@@ -408,6 +443,20 @@ export async function inviteMember(
   const access = await requireClubAdmin(session.user.id, slug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
 
+  // The type alone doesn't stop a caller passing "admin".
+  if (role !== "member" && role !== "organizer") {
+    return { success: false, error: "Roli është i pavlefshëm." };
+  }
+  const parsedEmail = inviteEmailSchema.safeParse(email);
+  if (!parsedEmail.success) {
+    return { success: false, error: "Email i pavlefshëm." };
+  }
+  // Each invite emails an address the caller picks, from our domain.
+  const limited = await enforceRateLimit("ratelimit.club.invite_member", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   // Free tier: cap at 50 active members. Resolved, not read straight off the
   // row — a club inside its trial is entitled to Pro and must not be capped.
   if (resolveEntitlement(access.organization).tier === "free") {
@@ -429,7 +478,7 @@ export async function inviteMember(
     }
   }
 
-  const normalized = email.trim().toLowerCase();
+  const normalized = parsedEmail.data;
   const clubUrl = `${env.NEXT_PUBLIC_APP_URL}/clubs/${slug}`;
 
   const existingUser = await db.query.users.findFirst({
@@ -480,21 +529,67 @@ export async function inviteMember(
 
 /** Admin: change a member's role. */
 const LAST_ADMIN_ERROR =
-  "Nuk mund të ndryshosh rolin tënd — je administratori i vetëm i klubit. Cakto një admin tjetër fillimisht.";
+  "Nuk mund ta ndryshoni rolin tuaj — jeni administratori i vetëm i klubit. Caktoni fillimisht një admin tjetër.";
 
-/** True if this organization currently has one active admin or fewer. */
-async function isOnlyAdmin(organizationId: string): Promise<boolean> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(organizationMembers)
-    .where(
-      and(
+/**
+ * Apply `change` to a membership with the club's active admin rows locked.
+ * The lock is what makes the last-admin rule hold when two admins act at the
+ * same moment: each demoting or removing the other (or themselves) used to
+ * pass a plain count and leave the club with no admin.
+ */
+async function updateMembership(
+  organizationId: string,
+  actorUserId: string,
+  membershipId: string,
+  change: { role: "member" | "organizer" | "admin" } | { leftAt: Date },
+): Promise<ActionResult> {
+  return db.transaction(async (tx): Promise<ActionResult> => {
+    const admins = await tx
+      .select({
+        id: organizationMembers.id,
+        userId: organizationMembers.userId,
+      })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organizationId),
+          eq(organizationMembers.role, "admin"),
+          isNull(organizationMembers.leftAt),
+        ),
+      )
+      // One lock order for every caller, so two of these can't deadlock.
+      .orderBy(organizationMembers.id)
+      .for("update");
+    // Re-checked under the lock: the caller may have just been demoted.
+    if (!admins.some((admin) => admin.userId === actorUserId)) {
+      return { success: false, error: "Nuk keni qasje." };
+    }
+
+    const target = await tx.query.organizationMembers.findFirst({
+      where: and(
+        eq(organizationMembers.id, membershipId),
         eq(organizationMembers.organizationId, organizationId),
-        eq(organizationMembers.role, "admin"),
-        isNull(organizationMembers.leftAt),
       ),
-    );
-  return (row?.value ?? 0) <= 1;
+      columns: { id: true },
+    });
+    if (!target) return { success: false, error: "Anëtari nuk u gjet." };
+
+    if (
+      leavesClubWithoutAdmin({
+        activeAdminIds: admins.map((admin) => admin.id),
+        targetId: target.id,
+        staysAdmin: "role" in change && change.role === "admin",
+      })
+    ) {
+      return { success: false, error: LAST_ADMIN_ERROR };
+    }
+
+    await tx
+      .update(organizationMembers)
+      .set(change)
+      .where(eq(organizationMembers.id, membershipId));
+    return { success: true };
+  });
 }
 
 export async function changeMemberRole(
@@ -510,32 +605,21 @@ export async function changeMemberRole(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  const target = await db.query.organizationMembers.findFirst({
-    where: and(
-      eq(organizationMembers.id, membershipId),
-      eq(organizationMembers.organizationId, access.organization.id),
-    ),
-  });
-  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
-
-  // Prevent an admin demoting themselves when they're the only admin left —
-  // that would lock the club out of management entirely.
-  if (
-    target.userId === session.user.id &&
-    target.role === "admin" &&
-    role !== "admin" &&
-    (await isOnlyAdmin(access.organization.id))
-  ) {
-    return { success: false, error: LAST_ADMIN_ERROR };
+  // The type alone doesn't stop a caller passing something else.
+  if (role !== "member" && role !== "organizer" && role !== "admin") {
+    return { success: false, error: "Roli është i pavlefshëm." };
   }
 
-  await db
-    .update(organizationMembers)
-    .set({ role })
-    .where(eq(organizationMembers.id, membershipId));
-
-  revalidatePath(`/dashboard/club/${slug}`);
-  return { success: true };
+  // The only admin can't be demoted — that would lock the club out of
+  // management entirely.
+  const result = await updateMembership(
+    access.organization.id,
+    session.user.id,
+    membershipId,
+    { role },
+  );
+  if (result.success) revalidatePath(`/dashboard/club/${slug}`);
+  return result;
 }
 
 /** Admin: remove a member (marks them as left). */
@@ -551,30 +635,15 @@ export async function removeMember(
     return { success: false, error: "Nuk keni qasje." };
   }
 
-  const target = await db.query.organizationMembers.findFirst({
-    where: and(
-      eq(organizationMembers.id, membershipId),
-      eq(organizationMembers.organizationId, access.organization.id),
-    ),
-  });
-  if (!target) return { success: false, error: "Anëtari nuk u gjet." };
-
-  // Same guard as changeMemberRole — the only admin can't remove themselves.
-  if (
-    target.userId === session.user.id &&
-    target.role === "admin" &&
-    (await isOnlyAdmin(access.organization.id))
-  ) {
-    return { success: false, error: LAST_ADMIN_ERROR };
-  }
-
-  await db
-    .update(organizationMembers)
-    .set({ leftAt: new Date() })
-    .where(eq(organizationMembers.id, membershipId));
-
-  revalidatePath(`/dashboard/club/${slug}`);
-  return { success: true };
+  // Same guard as changeMemberRole — the only admin can't be removed.
+  const result = await updateMembership(
+    access.organization.id,
+    session.user.id,
+    membershipId,
+    { leftAt: new Date() },
+  );
+  if (result.success) revalidatePath(`/dashboard/club/${slug}`);
+  return result;
 }
 
 /** Admin: set club logo / cover Cloudinary public ids. */
@@ -595,7 +664,10 @@ export async function setClubImages(
     (await canSetImageField(session.user.id, images.logoUrl, club.logoUrl)) &&
     (await canSetImageField(session.user.id, images.coverUrl, club.coverUrl));
   if (!allowed) {
-    return { success: false, error: "Mund të përdorni vetëm foto që keni ngarkuar vetë." };
+    return {
+      success: false,
+      error: "Mund të përdorni vetëm foto që keni ngarkuar vetë.",
+    };
   }
 
   await db

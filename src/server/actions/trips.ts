@@ -22,9 +22,18 @@ import {
   TripUpdated,
 } from "@/lib/email/templates/trip-updated";
 import { resolveEntitlement } from "@/lib/entitlements";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { formatTripDateTime } from "@/lib/utils/datetime";
 import { generateSlug } from "@/lib/utils/slug";
-import { type CreateTripInput,createTripSchema } from "@/lib/validations/trips";
+import {
+  type CreateTripInput,
+  createTripSchema,
+} from "@/lib/validations/trips";
+import {
+  emailPromoted,
+  lockTrip,
+  promoteFromWaitlist,
+} from "@/server/services/trip-roster";
 
 export interface CreateTripResult {
   success: boolean;
@@ -43,6 +52,11 @@ export async function createTrip(
 
   const access = await requireClubAdmin(session.user.id, clubSlug);
   if (!access) return { success: false, error: "Nuk keni qasje." };
+
+  const limited = await enforceRateLimit("ratelimit.trip.create", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
 
   // Free tier: cap at 3 trips per calendar month. Resolved, not read straight
   // off the row — a club inside its trial is entitled to Pro and isn't capped.
@@ -196,6 +210,12 @@ export async function updateTrip(
   }
   const clubSlug = club.slug;
 
+  // A changed time or meeting point emails every confirmed registrant.
+  const limited = await enforceRateLimit("ratelimit.trip.update", {
+    userId: session.user.id,
+  });
+  if (limited) return { success: false, error: limited };
+
   const parsed = createTripSchema.safeParse(data);
   if (!parsed.success) {
     return { success: false, error: "Të dhëna të pavlefshme." };
@@ -204,28 +224,56 @@ export async function updateTrip(
 
   const newStart = new Date(input.startDatetime);
   if (newStart.getTime() < Date.now()) {
-    return { success: false, error: "Data e nisjes nuk mund të jetë në të kaluarën." };
-  }
-
-  // Registration-based locks.
-  const [confirmed] = await db
-    .select({ value: count() })
-    .from(tripRegistrations)
-    .where(
-      and(
-        eq(tripRegistrations.tripId, tripId),
-        eq(tripRegistrations.status, "confirmed"),
-      ),
-    );
-  const confirmedCount = confirmed?.value ?? 0;
-
-  if (
-    input.maxParticipants != null &&
-    input.maxParticipants < confirmedCount
-  ) {
     return {
       success: false,
-      error: `Nuk mund të ulni max nën regjistrimet aktuale (${confirmedCount}).`,
+      error: "Data e nisjes nuk mund të jetë në të kaluarën.",
+    };
+  }
+
+  // The new limit is checked and written under the trip's row lock — the lock
+  // sign-ups take — so a hiker confirmed while this runs can't end up above
+  // it. Returns the confirmed count when the limit is too low, else null.
+  let promoted: string[] = [];
+  const overCapacity = await db.transaction(async (tx) => {
+    const locked = await lockTrip(tx, tripId);
+    const [confirmed] = await tx
+      .select({ value: count() })
+      .from(tripRegistrations)
+      .where(
+        and(
+          eq(tripRegistrations.tripId, tripId),
+          eq(tripRegistrations.status, "confirmed"),
+        ),
+      );
+    const confirmedCount = confirmed?.value ?? 0;
+    if (
+      input.maxParticipants != null &&
+      input.maxParticipants < confirmedCount
+    ) {
+      return confirmedCount;
+    }
+    const newMax = input.maxParticipants ?? null;
+    await tx
+      .update(trips)
+      .set({ maxParticipants: newMax })
+      .where(eq(trips.id, tripId));
+    // A raised (or removed) limit frees spots for the waitlist.
+    if (
+      locked &&
+      locked.maxParticipants !== null &&
+      (newMax === null || newMax > locked.maxParticipants)
+    ) {
+      promoted = await promoteFromWaitlist(tx, {
+        ...locked,
+        maxParticipants: newMax,
+      });
+    }
+    return null;
+  });
+  if (overCapacity !== null) {
+    return {
+      success: false,
+      error: `Nuk mund të ulni max nën regjistrimet aktuale (${overCapacity}).`,
     };
   }
 
@@ -275,6 +323,8 @@ export async function updateTrip(
       changes: changes.map((c) => c.label),
     },
   });
+
+  void emailPromoted(promoted, tripId);
 
   // Notify confirmed registrants when date/time or meeting point changed.
   if (changes.length > 0) {

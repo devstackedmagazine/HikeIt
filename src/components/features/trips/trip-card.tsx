@@ -141,7 +141,7 @@ export function TripCard({ trip }: { trip: TripWithClub }) {
           href={`/trips/${trip.slug}`}
           className="mt-auto block border border-moss/25 bg-moss/10 py-2.5 text-center text-[10px] font-bold tracking-[0.1em] text-moss uppercase transition-colors hover:border-moss/45 hover:bg-moss/20"
         >
-          Shiko Udhëtimin →
+          Shikoni Udhëtimin →
         </Link>
       </div>
     </div>

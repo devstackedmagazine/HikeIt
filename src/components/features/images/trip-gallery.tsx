@@ -23,7 +23,7 @@ export function TripGallery({ photos }: { photos: TripGalleryPhoto[] }) {
   if (photos.length === 0) {
     return (
       <p className="border border-dashed border-summit/12 px-6 py-10 text-center text-xs text-summit/40">
-        Nuk ka foto ende. Bëhu i pari që ndan kujtimet e këtij udhëtimi.
+        Nuk ka foto ende. Bëhuni i pari që ndan kujtimet e këtij udhëtimi.
       </p>
     );
   }

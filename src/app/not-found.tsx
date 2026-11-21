@@ -12,16 +12,16 @@ export default function NotFound() {
           ?
         </span>
       </div>
-      <h1 className="text-3xl font-bold tracking-tight">
+      <h1 className="font-heading text-3xl font-black uppercase">
         404 — Faqja nuk u gjet
       </h1>
       <p className="text-muted-foreground mt-2 max-w-md">
-        Ndoshta shtegu që po kërkon ka humbur në mal...
+        Ndoshta shtegu që po kërkoni ka humbur në mal...
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button render={<Link href="/" />}>Shko në Faqen Kryesore</Button>
+        <Button render={<Link href="/" />}>Shkoni në Faqen Kryesore</Button>
         <Button variant="outline" render={<Link href="/trails" />}>
-          Shfleto Shtigjet
+          Shfletoni Shtigjet
         </Button>
       </div>
     </main>

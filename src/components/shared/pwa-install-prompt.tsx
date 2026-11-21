@@ -100,15 +100,15 @@ export function PwaInstallPrompt() {
         {showIos ? (
           <p className="text-summit/70 text-[11px] leading-[1.4] font-medium">
             <span className="text-summit font-bold tracking-[0.04em] uppercase">
-              SHTO NË EKRAN KRYESOR
+              SHTONI NË EKRANIN KRYESOR
             </span>
             <br />
-            Shtyp <Share className="text-moss mb-0.5 inline size-3.5" /> pastaj
-            &quot;Add to Home Screen&quot;
+            Shtypni <Share className="text-moss mb-0.5 inline size-3.5" />{" "}
+            pastaj &quot;Add to Home Screen&quot;
           </p>
         ) : (
           <p className="text-summit text-[11px] font-bold tracking-[0.04em] uppercase">
-            INSTALO HIKEIT PËR AKSES MË TË SHPEJTË
+            INSTALONI HIKEIT PËR AKSES MË TË SHPEJTË
           </p>
         )}
       </div>
@@ -118,13 +118,13 @@ export function PwaInstallPrompt() {
           onClick={install}
           className="border-moss bg-moss text-abyss hover:bg-pine border-2"
         >
-          INSTALO
+          INSTALONI
         </Button>
       ) : null}
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Mbyll"
+        aria-label="Mbyllni"
         className="border-summit/40 text-summit/40 hover:text-summit flex size-7 items-center justify-center border"
       >
         <X className="size-3.5" />

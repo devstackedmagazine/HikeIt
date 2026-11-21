@@ -7,6 +7,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import {
+  InAppBrowserNotice,
+  useInAppBrowser,
+} from "@/components/features/auth/in-app-browser-notice";
 import { signIn, signUp } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/cn";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
@@ -18,6 +22,26 @@ const LEFT_FEATURES = [
 ];
 
 /** 0–4 password strength score for the 4-segment meter. */
+/**
+ * Albanian message for a failed email sign-up. Better Auth's own messages are
+ * English, so they're never shown directly.
+ */
+function registerErrorMessage(code: string | undefined): string {
+  switch (code) {
+    case "USER_ALREADY_EXISTS":
+    case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
+      return "Ekziston tashmë një llogari me këtë email. Provoni të hyni, ose përdorni “Keni harruar fjalëkalimin?”.";
+    case "INVALID_EMAIL":
+      return "Adresa email nuk është e vlefshme.";
+    case "PASSWORD_TOO_SHORT":
+      return "Fjalëkalimi duhet të ketë të paktën 10 karaktere.";
+    case "PASSWORD_TOO_LONG":
+      return "Fjalëkalimi është shumë i gjatë.";
+    default:
+      return "Nuk mundëm ta krijojmë llogarinë. Ju lutemi provoni sërish.";
+  }
+}
+
 function scorePassword(pw: string): number {
   if (!pw) return 0;
   let s = 0;
@@ -45,6 +69,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedAge, setConfirmedAge] = useState(false);
+  const [socialFailed, setSocialFailed] = useState(false);
+  const inAppBrowser = useInAppBrowser();
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -56,42 +83,64 @@ export default function RegisterPage() {
   const password = useWatch({ control: form.control, name: "password" });
   const strengthScore = scorePassword(password);
 
+  /** Both boxes are required for every sign-up method; null when ticked. */
+  function consentError(): string | null {
+    if (!confirmedAge) {
+      return "Ju lutem konfirmoni që jeni 18 vjeç ose më shumë.";
+    }
+    if (!acceptedTerms) return "Ju lutem pranoni Kushtet e Përdorimit.";
+    return null;
+  }
+
   async function onSubmit(values: RegisterInput) {
     setFormError(null);
-    if (!acceptedTerms) {
-      setFormError("Ju lutem pranoni Kushtet e Përdorimit.");
+    const consent = consentError();
+    if (consent) {
+      setFormError(consent);
       return;
     }
-    const { error } = await signUp.email({
+    // `ageConfirmed` is required server-side (databaseHooks in lib/auth).
+    // It isn't a user field, so it's absent from the client's body type;
+    // the endpoint accepts and ignores extra keys.
+    const body = {
       name: values.name,
       email: values.email,
       password: values.password,
-    });
+      ageConfirmed: true,
+    };
+    const { error } = await signUp.email(body);
     if (error) {
-      setFormError(error.message ?? "Nuk mundëm të krijojmë llogarinë.");
+      setFormError(registerErrorMessage(error.code));
       return;
     }
     setSubmittedEmail(values.email);
   }
 
-  async function handleGoogleSignIn() {
-    // New Google users go through onboarding to pick hiker vs club, same as
-    // the email registration flow.
-    await signIn.social({
-      provider: "google",
-      callbackURL: "/onboarding",
-      errorCallbackURL: "/social-login-error?provider=google",
-    });
-  }
-
-  async function handleFacebookSignIn() {
-    // Same onboarding redirect as Google — new social users still need to
-    // pick hiker vs club.
-    await signIn.social({
-      provider: "facebook",
-      callbackURL: "/onboarding",
-      errorCallbackURL: "/social-login-error?provider=facebook",
-    });
+  // New social users go through onboarding to pick hiker vs club, same as
+  // the email registration flow. Social sign-up is explicit (`requestSignUp`)
+  // and carries the 18+ confirmation through the OAuth state, where the
+  // server checks it before creating the account.
+  async function handleSocialSignUp(provider: "google" | "facebook") {
+    setFormError(null);
+    const consent = consentError();
+    if (consent) {
+      setFormError(consent);
+      return;
+    }
+    // A failed request (typically inside an in-app browser) shows the
+    // open-in-browser notice instead of an unhandled rejection.
+    try {
+      const { error } = await signIn.social({
+        provider,
+        callbackURL: "/onboarding",
+        errorCallbackURL: `/social-login-error?provider=${provider}`,
+        requestSignUp: true,
+        additionalData: { ageConfirmed: true },
+      });
+      if (error) setSocialFailed(true);
+    } catch {
+      setSocialFailed(true);
+    }
   }
 
   return (
@@ -132,11 +181,11 @@ export default function RegisterPage() {
 
         <div className="relative z-10">
           <h2 className="font-heading text-summit text-[clamp(40px,6vw,72px)] leading-[1.2] font-extrabold tracking-[-0.04em] uppercase">
-            Fillo
+            Filloni
             <br />
             Udhëtimin
             <br />
-            Tënd
+            Tuaj
           </h2>
           <ul className="mt-8 space-y-3">
             {LEFT_FEATURES.map((f) => (
@@ -177,24 +226,24 @@ export default function RegisterPage() {
                 <span className="text-forest font-semibold">
                   {submittedEmail}
                 </span>
-                . Kliko lidhjen për të aktivizuar llogarinë.
+                . Klikoni linkun në email për të aktivizuar llogarinë.
               </p>
               <p className="text-forest/70 mt-3 text-xs leading-[1.6]">
-                Nuk erdhi? Kontrollo dosjen e spam-it, ose{" "}
+                Nuk ju erdhi? Kontrolloni dosjen e spam-it, ose{" "}
                 <Link href="/login" className="text-forest underline">
-                  provo të kyçesh
+                  provoni të hyni
                 </Link>{" "}
-                — do të të dërgojmë një lidhje të re.
+                — do t&apos;ju dërgojmë një link të ri.
               </p>
             </div>
           ) : (
             <>
               <h1 className="font-heading text-forest text-[clamp(28px,4vw,40px)] leading-[1.2] font-extrabold tracking-[-0.03em] uppercase">
-                Regjistrohu
+                Regjistrohuni
               </h1>
               <p className="text-forest/70 mt-3 mb-8 text-[14px] leading-[1.5] md:mt-2 md:mb-4">
-                Krijo llogarinë tënde në ekosistemin më të madh të shtigjeve në
-                Ballkan.
+                Krijoni llogarinë tuaj për të gjetur shtigje dhe udhëtime me
+                klubet e alpinizmit në Kosovë.
               </p>
 
               <form
@@ -205,7 +254,7 @@ export default function RegisterPage() {
                   <label className={LABEL}>Emri dhe mbiemri</label>
                   <input
                     className={INPUT}
-                    placeholder="Shkruaj emrin tënd..."
+                    placeholder="Emri dhe mbiemri juaj"
                     autoComplete="name"
                     {...register("name")}
                   />
@@ -244,7 +293,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      aria-label="Shfaq fjalëkalimin"
+                      aria-label="Shfaqni fjalëkalimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showPassword ? (
@@ -277,7 +326,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className={LABEL}>Konfirmo fjalëkalimin</label>
+                  <label className={LABEL}>Konfirmoni fjalëkalimin</label>
                   <div className="relative">
                     <input
                       className={cn(INPUT, "pr-12")}
@@ -288,7 +337,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
-                      aria-label="Shfaq konfirmimin"
+                      aria-label="Shfaqni konfirmimin"
                       className="text-forest/70 hover:text-forest absolute top-1/2 right-3 -translate-y-1/2"
                     >
                       {showConfirm ? (
@@ -304,6 +353,28 @@ export default function RegisterPage() {
                     </p>
                   ) : null}
                 </div>
+
+                <label className="text-forest/70 flex items-center gap-2.5 text-[13px]">
+                  <input
+                    type="checkbox"
+                    checked={confirmedAge}
+                    onChange={(e) => setConfirmedAge(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span
+                    className={cn(
+                      "flex size-4 shrink-0 items-center justify-center border-[1.5px]",
+                      confirmedAge
+                        ? "border-forest bg-forest"
+                        : "border-forest/30",
+                    )}
+                  >
+                    {confirmedAge ? (
+                      <Check className="text-summit size-3" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span>Konfirmoj që jam 18 vjeç ose më shumë</span>
+                </label>
 
                 <label className="text-forest/70 flex items-center gap-2.5 text-[13px]">
                   <input
@@ -344,7 +415,7 @@ export default function RegisterPage() {
                   {formState.isSubmitting ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : null}
-                  Regjistrohu →
+                  Regjistrohuni →
                 </button>
               </form>
 
@@ -352,20 +423,25 @@ export default function RegisterPage() {
                 <p className="text-forest/70 text-center text-[13px]">
                   Keni llogari?{" "}
                   <Link href="/login" className="text-forest font-bold">
-                    KYÇU
+                    KYÇUNI
                   </Link>
                 </p>
+                {inAppBrowser || socialFailed ? (
+                  <div className="mt-4">
+                    <InAppBrowserNotice />
+                  </div>
+                ) : null}
                 <div className="mt-4 flex gap-2.5">
                   <button
                     type="button"
-                    onClick={handleGoogleSignIn}
+                    onClick={() => void handleSocialSignUp("google")}
                     className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Google
                   </button>
                   <button
                     type="button"
-                    onClick={handleFacebookSignIn}
+                    onClick={() => void handleSocialSignUp("facebook")}
                     className="border-forest/60 text-forest/70 hover:border-forest hover:text-forest h-10 flex-1 border-[1.5px] text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
                   >
                     Facebook

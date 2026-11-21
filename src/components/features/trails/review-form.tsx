@@ -136,7 +136,7 @@ export function ReviewForm({ trailId }: { trailId: string }) {
             Duke dërguar…
           </>
         ) : (
-          "Dërgo vlerësimin"
+          "Dërgoni vlerësimin"
         )}
       </Button>
     </form>

@@ -26,47 +26,93 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { registrationStatusLabels } from "@/lib/i18n/labels";
 import {
+  type ActionResult,
   emailTripRegistrants,
   removeRegistration,
   updateRegistrationStatus,
 } from "@/server/actions/trip-registrations";
+import type { TripContacts } from "@/server/queries/trip-contacts";
 import type { RegistrationWithUser } from "@/server/queries/trips";
+
+/** One CSV cell: quoted, and defused if it would start a spreadsheet formula. */
+function csvCell(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
 
 export function TripRegistrationsPanel({
   tripId,
   registrations,
+  contacts,
 }: {
   tripId: string;
   registrations: RegistrationWithUser[];
+  /** Checked and filtered on the server; empty unless access is allowed. */
+  contacts: TripContacts;
 }) {
   const router = useRouter();
+  const contactOf = (id: string) =>
+    contacts.available ? (contacts.contacts[id] ?? null) : null;
+  const emergency = (c: ReturnType<typeof contactOf>) =>
+    [c?.emergencyContactName, c?.emergencyContactPhone]
+      .filter(Boolean)
+      .join(" · ");
 
   async function setStatus(
     id: string,
     status: "confirmed" | "waitlisted" | "canceled",
-  ) {
-    await updateRegistrationStatus(id, status);
+  ): Promise<ActionResult> {
+    const result = await updateRegistrationStatus(id, status);
     router.refresh();
+    return result;
   }
 
   function exportCsv() {
-    const header = "Name,Email,Status,Registered\n";
-    const rows = registrations
-      .map((r) =>
-        [
-          r.userName ?? "",
-          r.userEmail,
-          r.status,
-          r.registeredAt.toISOString(),
-        ].join(","),
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
+    const registeredAt = new Intl.DateTimeFormat("sq-AL", {
+      dateStyle: "short",
+      timeStyle: "short",
+      hourCycle: "h23",
+      timeZone: "Europe/Belgrade",
+    });
+    const header = [
+      "Emri",
+      "Email",
+      "Statusi",
+      "Regjistruar më",
+      ...(contacts.available
+        ? ["Telefoni", "Kontakti emergjent", "Telefoni emergjent"]
+        : []),
+    ]
+      .map(csvCell)
+      .join(",");
+    const rows = registrations.map((r) => {
+      const c = contactOf(r.id);
+      return [
+        r.userName ?? "",
+        r.userEmail,
+        registrationStatusLabels[r.status] ?? r.status,
+        registeredAt.format(r.registeredAt),
+        ...(contacts.available
+          ? [
+              c?.phone ?? "",
+              c?.emergencyContactName ?? "",
+              c?.emergencyContactPhone ?? "",
+            ]
+          : []),
+      ]
+        .map(csvCell)
+        .join(",");
+    });
+    // The BOM makes Excel read the file as UTF-8, so ë and ç survive.
+    const blob = new Blob(["\uFEFF" + [header, ...rows].join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "registrations.csv";
+    a.download = "regjistrimet.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -86,6 +132,8 @@ export function TripRegistrationsPanel({
         </div>
       </div>
 
+      <ContactsNote contacts={contacts} />
+
       {registrations.length === 0 ? (
         <p className="text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
           Asnjë regjistrim ende.
@@ -98,6 +146,12 @@ export function TripRegistrationsPanel({
                 <TableHead>Emri</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Statusi</TableHead>
+                {contacts.available ? (
+                  <>
+                    <TableHead>Telefoni</TableHead>
+                    <TableHead>Kontakti emergjent</TableHead>
+                  </>
+                ) : null}
                 <TableHead>Veprime</TableHead>
               </TableRow>
             </TableHeader>
@@ -120,6 +174,16 @@ export function TripRegistrationsPanel({
                   <TableCell>
                     <StatusBadge status={r.status} />
                   </TableCell>
+                  {contacts.available ? (
+                    <>
+                      <TableCell className="text-muted-foreground">
+                        {contactOf(r.id)?.phone ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {emergency(contactOf(r.id)) || "—"}
+                      </TableCell>
+                    </>
+                  ) : null}
                   <TableCell>
                     <RegistrationActions
                       registration={r}
@@ -134,6 +198,27 @@ export function TripRegistrationsPanel({
       )}
     </div>
   );
+}
+
+const windowDate = new Intl.DateTimeFormat("sq-AL", {
+  dateStyle: "long",
+  timeStyle: "short",
+  hourCycle: "h23",
+  timeZone: "Europe/Belgrade",
+});
+
+/** Why phone / emergency contact columns are or aren't shown. */
+function ContactsNote({ contacts }: { contacts: TripContacts }) {
+  let text: string | null = null;
+  if (contacts.available) {
+    text = `Telefoni dhe kontakti emergjent i pjesëmarrësve të konfirmuar shihen deri më ${windowDate.format(contacts.closesAt)}. Përdorini vetëm për sigurinë e udhëtimit.`;
+  } else if (contacts.reason === "before-window" && contacts.opensAt) {
+    text = `Telefoni dhe kontakti emergjent i pjesëmarrësve të konfirmuar do të shihen nga ${windowDate.format(contacts.opensAt)} (3 ditë para nisjes).`;
+  } else if (contacts.reason === "after-window") {
+    text =
+      "Telefoni dhe kontakti emergjent nuk shihen më: kanë kaluar 2 ditë nga përfundimi i udhëtimit.";
+  }
+  return text ? <p className="text-muted-foreground text-xs">{text}</p> : null;
 }
 
 /** Status badge shown in the status column. */
@@ -157,10 +242,16 @@ function RegistrationActions({
   onSetStatus: (
     id: string,
     status: "confirmed" | "waitlisted" | "canceled",
-  ) => void | Promise<void>;
+  ) => Promise<ActionResult>;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+
+  async function confirm() {
+    setError(null);
+    const result = await onSetStatus(r.id, "confirmed");
+    if (!result.success) setError(result.error ?? "Diçka shkoi keq.");
+  }
 
   async function remove() {
     setError(null);
@@ -188,13 +279,13 @@ function RegistrationActions({
           <Button
             size="xs"
             className="border-moss bg-moss/20 text-moss hover:bg-moss/30 border-2 font-bold uppercase"
-            onClick={() => onSetStatus(r.id, "confirmed")}
+            onClick={confirm}
           >
-            Konfirmo
+            Konfirmoni
           </Button>
           <ConfirmRemoveDialog
-            triggerLabel="Hiq"
-            title="Hiq nga udhëtimi"
+            triggerLabel="Hiqni"
+            title="Hiqni nga udhëtimi"
             description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi."
             onConfirm={remove}
           />
@@ -210,8 +301,8 @@ function RegistrationActions({
   return (
     <div className="space-y-1">
       <ConfirmRemoveDialog
-        triggerLabel="Hiq"
-        title="Hiq nga udhëtimi"
+        triggerLabel="Hiqni"
+        title="Hiqni nga udhëtimi"
         description="A jeni i sigurt? Ky person do të hiqet nga udhëtimi dhe do të njoftohet me email."
         onConfirm={remove}
       />
@@ -285,7 +376,7 @@ function ConfirmRemoveDialog({
                 />
               }
             >
-              Anulo
+              Anuloni
             </AlertDialog.Close>
             <Button
               onClick={confirm}
@@ -293,7 +384,7 @@ function ConfirmRemoveDialog({
               className="border-danger bg-danger text-summit border-2 font-bold tracking-[0.04em] uppercase hover:border-red-900 hover:bg-red-900 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" /> : null}
-              Hiq
+              Hiqni
             </Button>
           </div>
         </AlertDialog.Popup>
@@ -326,7 +417,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
         render={
           <Button variant="outline" size="sm">
             <Mail />
-            Dërgo Email të Gjithëve
+            Dërgoni Email të Gjithëve
           </Button>
         }
       />
@@ -340,6 +431,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             <Input
               id="email-subject"
               className="h-9"
+              maxLength={150}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
             />
@@ -349,6 +441,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             <Textarea
               id="email-message"
               rows={5}
+              maxLength={5000}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
@@ -362,7 +455,7 @@ function EmailAllDialog({ tripId }: { tripId: string }) {
             className="w-full"
           >
             {loading ? <Loader2 className="animate-spin" /> : null}
-            Dërgo
+            Dërgoni
           </Button>
         </div>
       </DialogContent>

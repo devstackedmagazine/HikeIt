@@ -11,23 +11,18 @@ import {
 export const metadata: Metadata = { title: "Mirë se vini" };
 
 const HIKER_POINTS = [
-  "Gjej shtigje",
-  "Bashkohu me udhëtime",
-  "Ndiq historinë",
-  "Merr njoftime moti",
+  "Gjeni shtigje",
+  "Bashkohuni me udhëtime",
+  "Ndiqni historinë",
+  "Merrni njoftime moti",
 ];
 const CLUB_POINTS = [
-  "Menaxho anëtarët",
-  "Krijo udhëtime",
-  "Mblidh pagesa",
-  "Dërgo alerts",
+  "Menaxhoni anëtarët",
+  "Krijoni udhëtime",
+  "Menaxhoni regjistrimet",
+  "Njoftoni anëtarët",
 ];
 
-const STATS = [
-  { value: "4.8k+", label: "Hiker Aktiv" },
-  { value: "120+", label: "Klube Alpike" },
-  { value: "900+", label: "Shtigje Të Shkelura" },
-];
 
 export default async function OnboardingPage() {
   const user = await getRequiredUser();
@@ -68,7 +63,7 @@ export default async function OnboardingPage() {
               type="submit"
               className="flex w-full items-center justify-center gap-2 bg-moss py-3.5 text-[13px] font-extrabold tracking-[0.06em] text-abyss uppercase transition-colors hover:bg-pine hover:text-summit"
             >
-              Fillo si Hiker →
+              Filloni si Hiker →
             </button>
           </form>
         </div>
@@ -97,27 +92,10 @@ export default async function OnboardingPage() {
               type="submit"
               className="flex w-full items-center justify-center gap-2 bg-sunset py-3.5 text-[13px] font-extrabold tracking-[0.06em] text-summit uppercase transition-colors hover:bg-sunset/85"
             >
-              Regjistro Klubin →
+              Regjistroni Klubin →
             </button>
           </form>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mt-12 flex items-center justify-center gap-8 sm:gap-12">
-        {STATS.map((stat, i) => (
-          <div key={stat.label} className="flex items-center gap-8 sm:gap-12">
-            {i > 0 ? <div className="h-10 w-px bg-summit/12" /> : null}
-            <div className="text-center">
-              <p className="font-heading text-[28px] font-black tracking-[-0.02em] text-summit">
-                {stat.value}
-              </p>
-              <p className="mt-1 text-[9px] font-semibold tracking-[0.12em] text-summit/30 uppercase">
-                {stat.label}
-              </p>
-            </div>
-          </div>
-        ))}
       </div>
     </main>
   );

@@ -23,7 +23,7 @@ const STATUS_LABELS: Record<InviteCodeStatus, string> = {
 };
 
 const STATUS_TONE: Record<InviteCodeStatus, string> = {
-  active: "text-moss",
+  active: "text-forest",
   inactive: "text-forest/40",
   expired: "text-alert",
   exhausted: "text-alert",
@@ -98,7 +98,7 @@ function CreateCodeForm() {
     <div className="border-2 border-forest bg-summit">
       <div className="border-b-2 border-forest p-5">
         <h2 className="font-heading text-[15px] font-black tracking-tight text-forest uppercase">
-          Krijo kod të ri
+          Krijoni kod të ri
         </h2>
       </div>
       <div className="space-y-4 p-5">
@@ -114,11 +114,11 @@ function CreateCodeForm() {
               <button
                 type="button"
                 onClick={() => setCode(generateCode())}
-                title="Gjenero kod"
+                title="Gjeneroni kod"
                 className="flex items-center gap-1.5 border-2 border-l-0 border-forest bg-forest px-3 py-2.5 text-[10px] font-bold tracking-[0.06em] text-summit uppercase transition-colors hover:bg-pine"
               >
                 <RefreshCw className="size-3.5" />
-                Gjenero
+                Gjeneroni
               </button>
             </div>
           </Field>
@@ -179,7 +179,7 @@ function CreateCodeForm() {
           </p>
         ) : null}
         {success ? (
-          <p className="text-[13px] font-bold text-moss">{success}</p>
+          <p className="text-[13px] font-bold text-forest">{success}</p>
         ) : null}
 
         <button
@@ -189,7 +189,7 @@ function CreateCodeForm() {
           className="flex items-center gap-2 border-2 border-forest bg-forest px-6 py-3 text-[12px] font-bold tracking-[0.06em] text-summit uppercase transition-colors hover:bg-pine disabled:opacity-50"
         >
           {saving ? <Loader2 className="size-4 animate-spin" /> : null}
-          Krijo kodin
+          Krijoni kodin
         </button>
       </div>
     </div>
@@ -248,7 +248,7 @@ function CodeRow({ code }: { code: InviteCodeRow }) {
         </span>
       </Td>
       <Td align="right">
-        <span className="font-heading text-[15px] font-black text-sage">
+        <span className="font-heading text-[15px] font-black text-forest">
           {code.trialMonths}
         </span>
       </Td>
@@ -287,7 +287,7 @@ function CodeRow({ code }: { code: InviteCodeRow }) {
               : "border-forest bg-summit text-forest hover:bg-forest hover:text-summit",
           )}
         >
-          {pending ? "…" : code.isActive ? "Çaktivizo" : "Aktivizo"}
+          {pending ? "…" : code.isActive ? "Çaktivizoni" : "Aktivizoni"}
         </button>
       </Td>
     </tr>

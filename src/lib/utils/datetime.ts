@@ -6,6 +6,9 @@ export function formatTripDateTime(date: Date): string {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    // sq-AL defaults to a 12-hour clock ("07:00 p.d."), which reads as
+    // morning to most people here.
+    hourCycle: "h23",
   }).format(date);
 }
 

@@ -17,8 +17,10 @@ export default async function MyTripsPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Udhëtimet e mia</h1>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <h1 className="font-heading text-2xl font-black uppercase">
+        Udhëtimet e mia
+      </h1>
       <MyTripsView
         upcoming={upcoming}
         past={past}

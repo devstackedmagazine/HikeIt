@@ -115,7 +115,7 @@ export function TrailFilters({ regions }: { regions: string[] }) {
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <span className="text-summit text-[11px] font-bold tracking-[0.1em] uppercase">
-          Filtro
+          Filtroni
         </span>
         {hasActive ? (
           <button
@@ -123,7 +123,7 @@ export function TrailFilters({ regions }: { regions: string[] }) {
             onClick={reset}
             className="text-moss text-[10px] font-medium tracking-[0.08em] uppercase transition-opacity hover:opacity-70"
           >
-            Pastro
+            Pastroni
           </button>
         ) : null}
       </div>

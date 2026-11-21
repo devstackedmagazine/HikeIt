@@ -21,7 +21,7 @@ export function ResetPassword({
         butonin më poshtë.
       </Text>
       <Button href={resetUrl} style={button}>
-        Reset password · Rivendos fjalëkalimin
+        Reset password · Rivendosni fjalëkalimin
       </Button>
       <Text style={warning}>
         This link expires in 1 hour. · Ky link skadon për 1 orë.

@@ -49,7 +49,7 @@ export function TripOrganizerCard({
         href={`/clubs/${clubSlug}`}
         className="border-summit/40 text-summit/45 hover:border-moss hover:text-moss mt-3 block border py-2 text-center text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors"
       >
-        Shiko Klubin →
+        Shikoni Klubin →
       </Link>
     </div>
   );

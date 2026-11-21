@@ -13,7 +13,7 @@ export const contentType = OG_CONTENT_TYPE;
 export default function OpengraphImage() {
   return new ImageResponse(
     ogTemplate({
-      title: "Gjej shtigjet, gjej komunitetin tënd",
+      title: "Gjeni shtigjet, gjeni komunitetin tuaj",
       subtitle: "Komuniteti i Alpinizmit në Kosovë",
     }),
     { ...size },

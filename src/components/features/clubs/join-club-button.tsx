@@ -30,7 +30,7 @@ export function JoinClubButton({
         render={<Link href={`/login?redirect=/clubs/${slug}`} />}
       >
         <UserPlus />
-        Bëhu anëtar
+        Bëhuni anëtar
       </Button>
     );
   }
@@ -51,7 +51,7 @@ export function JoinClubButton({
     <div className={className}>
       <Button onClick={handleJoin} disabled={loading} className="w-full">
         {loading ? <Loader2 className="animate-spin" /> : <UserPlus />}
-        Bëhu anëtar
+        Bëhuni anëtar
       </Button>
       {error ? (
         <p className="mt-2 text-sm text-destructive">{error}</p>

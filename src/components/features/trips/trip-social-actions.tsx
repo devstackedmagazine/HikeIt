@@ -44,14 +44,14 @@ export function TripSocialActions({
             render={
               <button
                 type="button"
-                aria-label="Raporto"
+                aria-label="Raportoni"
                 className="border-summit/40 text-summit/40 hover:border-summit/60 hover:text-summit/70 flex size-11 items-center justify-center border transition-colors md:size-8"
               />
             }
           >
             <Flag className="size-3.5" />
           </TooltipTrigger>
-          <TooltipContent>Raporto një problem — së shpejti</TooltipContent>
+          <TooltipContent>Raportoni një problem — së shpejti</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>

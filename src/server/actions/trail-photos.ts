@@ -1,48 +1,17 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getOptionalSession } from "@/lib/auth/helpers";
 import { getOwnedImageUrls, releaseImage } from "@/lib/cloudinary/ownership";
 import { db } from "@/lib/db";
-import {
-  reviews,
-  trailPhotos,
-  trails,
-  tripRegistrations,
-  trips,
-} from "@/lib/db/schema";
+import { trailPhotos, trails } from "@/lib/db/schema";
+import { eligibleForTrail } from "@/server/services/entity-access";
 
 export interface ActionResult {
   success: boolean;
   error?: string;
-}
-
-/** A user may add trail photos if they reviewed it or joined a trip on it. */
-async function eligibleForTrail(
-  userId: string,
-  trailId: string,
-): Promise<boolean> {
-  const review = await db.query.reviews.findFirst({
-    where: and(eq(reviews.trailId, trailId), eq(reviews.userId, userId)),
-    columns: { id: true },
-  });
-  if (review) return true;
-
-  const reg = await db
-    .select({ id: tripRegistrations.id })
-    .from(tripRegistrations)
-    .innerJoin(trips, eq(trips.id, tripRegistrations.tripId))
-    .where(
-      and(
-        eq(tripRegistrations.userId, userId),
-        eq(trips.trailId, trailId),
-        inArray(tripRegistrations.status, ["confirmed", "attended"]),
-      ),
-    )
-    .limit(1);
-  return reg.length > 0;
 }
 
 export async function addTrailPhotos(
@@ -70,7 +39,10 @@ export async function addTrailPhotos(
   // else's photo.
   const urlByPublicId = await getOwnedImageUrls(session.user.id, publicIds);
   if (!urlByPublicId) {
-    return { success: false, error: "Mund të shtoni vetëm foto që keni ngarkuar vetë." };
+    return {
+      success: false,
+      error: "Mund të shtoni vetëm foto që keni ngarkuar vetë.",
+    };
   }
 
   await db.insert(trailPhotos).values(

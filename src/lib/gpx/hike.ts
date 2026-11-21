@@ -59,7 +59,7 @@ export interface HikeAnalysis {
 }
 
 const TOO_FAST_MESSAGE =
-  "Shpejtësia mesatare e kësaj gjurme është shumë e lartë për ecje — duket si udhëtim me biçikletë ose automjet. Ngarko vetëm gjurmë ecjesh.";
+  "Shpejtësia mesatare e kësaj gjurme është shumë e lartë për ecje — duket si udhëtim me biçikletë ose automjet. Ngarkoni vetëm gjurmë ecjesh.";
 
 /**
  * Elevation gain with a noise threshold: a rise only counts once it clears
@@ -163,12 +163,12 @@ export function analyzeHike(
   // this was drawn in a planner, not walked.
   if (timed.length < 2 || first == null || last == null || last - first < 60_000) {
     throw new GpxError(
-      "Ky skedar GPX nuk ka kohë të regjistruara për pikat e gjurmës, prandaj duket si një rrugë e planifikuar, jo si një ecje e kryer. Ngarko gjurmën e regjistruar nga ora ose aplikacioni yt GPS gjatë ecjes.",
+      "Ky skedar GPX nuk ka kohë të regjistruara për pikat e gjurmës, prandaj duket si një rrugë e planifikuar, jo si një ecje e kryer. Ngarkoni gjurmën e regjistruar nga ora ose aplikacioni juaj GPS gjatë ecjes.",
     );
   }
 
   if (first > now + FUTURE_TOLERANCE_MS) {
-    throw new GpxError("Data e ecjes është në të ardhmen. Kontrollo skedarin GPX.");
+    throw new GpxError("Data e ecjes është në të ardhmen. Kontrolloni skedarin GPX.");
   }
   if (first < EARLIEST_VALID) {
     throw new GpxError(

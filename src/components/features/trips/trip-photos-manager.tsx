@@ -74,7 +74,7 @@ export function TripPhotosManager({
               {confirmingId === p.id ? (
                 <div className="bg-abyss/85 absolute inset-0 flex flex-col items-center justify-center gap-2 p-2 text-center">
                   <span className="text-summit text-[10px] font-bold tracking-[0.06em] uppercase">
-                    Fshi foton?
+                    Ta fshini foton?
                   </span>
                   <div className="flex gap-1.5">
                     <button
@@ -104,8 +104,8 @@ export function TripPhotosManager({
                 <button
                   type="button"
                   onClick={() => setConfirmingId(p.id)}
-                  className="bg-background/90 text-destructive absolute top-1 right-1 hidden size-8 items-center justify-center rounded-full shadow group-focus-within:flex group-hover:flex [@media(hover:none)]:flex"
-                  aria-label="Fshi foton"
+                  className="bg-background/90 text-destructive absolute top-1 right-1 hidden size-8 items-center justify-center border border-forest/20 group-focus-within:flex group-hover:flex [@media(hover:none)]:flex"
+                  aria-label="Fshini foton"
                 >
                   <Trash2 className="size-4" />
                 </button>

@@ -49,7 +49,7 @@ export default function GlobalError({
             cursor: "pointer",
           }}
         >
-          Provo Përsëri
+          Provoni Përsëri
         </button>
       </body>
     </html>

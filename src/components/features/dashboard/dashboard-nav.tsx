@@ -69,7 +69,7 @@ function buildItems(
       { href: `${club}?tab=members`, label: "Anëtarët", icon: Users },
       {
         href: `${club}?tab=settings#invite-code`,
-        label: "Përmirëso",
+        label: "Përmirësoni",
         icon: Sparkles,
       },
       { href: `${club}?tab=settings`, label: "Cilësimet", icon: Settings },
@@ -300,7 +300,7 @@ export function DashboardMobileTabs({
                   Më shumë
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Close
-                  aria-label="Mbyll"
+                  aria-label="Mbyllni"
                   className="text-summit/60 hover:text-summit -mr-1 p-1"
                 >
                   <X className="size-4" />

@@ -34,11 +34,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { tripId } = await params;
   const trip = await getTripById(tripId);
-  if (!trip) return { title: "Udhëtimi nuk u gjet" };
+  if (!trip || !isPubliclyVisible(trip)) {
+    return { title: "Udhëtimi nuk u gjet" };
+  }
   return {
     title: trip.title,
     description: trip.description ?? `Udhëtim me ${trip.club.name}.`,
   };
+}
+
+/** Drafts and deleted trips have no public page, even by direct URL. */
+function isPubliclyVisible(trip: { status: string; deletedAt: Date | null }) {
+  return trip.status !== "draft" && trip.deletedAt === null;
 }
 
 const EQUIPMENT_ICONS: LucideIcon[] = [Footprints, Droplets, Shirt, Flashlight];
@@ -91,7 +98,7 @@ export default async function PublicTripPage({
 }) {
   const { tripId } = await params;
   const trip = await getTripById(tripId);
-  if (!trip) notFound();
+  if (!trip || !isPubliclyVisible(trip)) notFound();
 
   const [session, photos, clubStats] = await Promise.all([
     getOptionalSession(),
@@ -125,6 +132,7 @@ export default async function PublicTripPage({
   const timeLabel = new Intl.DateTimeFormat("sq-AL", {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   }).format(trip.startDatetime);
   const location = [trip.club.city, "Kosovë"]
     .filter(Boolean)
@@ -282,7 +290,7 @@ export default async function PublicTripPage({
             href={`/trails/${trail.slug}`}
             className="border-summit/40 text-summit/60 hover:border-moss hover:text-moss border px-4 py-2.5 text-[11px] font-bold tracking-[0.08em] uppercase transition-colors"
           >
-            Shiko Shtegun →
+            Shikoni Shtegun →
           </Link>
         </div>
       ) : null}
@@ -332,7 +340,7 @@ export default async function PublicTripPage({
                 href="/dashboard/my-trips"
                 className="text-moss font-semibold hover:underline"
               >
-                Shto fotot e tua te Udhëtimet e mia → Të kaluara
+                Shtoni fotot tuaja te Udhëtimet e mia → Të kaluara
               </Link>
             ) : (
               "Fotot mund të shtohen pasi udhëtimi të përfundojë."

@@ -12,7 +12,7 @@ export const SUBMIT_TRAIL_PATH = "/dashboard/trails/submit";
 export function ProposeTrailLink({
   isLoggedIn,
   tone = "light",
-  label = "Propozo një shteg",
+  label = "Propozoni një shteg",
   className,
 }: {
   isLoggedIn: boolean;

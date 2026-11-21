@@ -44,14 +44,14 @@ export default async function HikesPage({
             className="border-moss bg-moss text-abyss hover:bg-pine hover:text-summit flex items-center gap-1.5 border-2 px-4 py-2 text-[10px] font-bold tracking-[0.1em] uppercase transition-colors"
           >
             <Plus className="size-3.5" />
-            Shto një ecje
+            Shtoni një ecje
           </Link>
         ) : (
           <Link
             href="/dashboard/hikes"
             className="text-forest/60 hover:text-forest text-[10px] font-bold tracking-[0.08em] uppercase"
           >
-            Mbyll
+            Mbyllni
           </Link>
         )}
       </div>
@@ -68,8 +68,8 @@ export default async function HikesPage({
         <EmptyState
           icon={Footprints}
           title="Ende pa ecje personale"
-          description="Ngarko gjurmën GPX të çdo ecjeje — edhe atyre vetëm — dhe kilometrat numërohen në totalin tënd."
-          action={{ label: "Shto një ecje", href: "/dashboard/hikes?shto=1" }}
+          description="Ngarkoni gjurmën GPX të çdo ecjeje — edhe atyre vetëm — dhe kilometrat numërohen në totalin tuaj."
+          action={{ label: "Shtoni një ecje", href: "/dashboard/hikes?shto=1" }}
         />
       ) : null}
     </div>

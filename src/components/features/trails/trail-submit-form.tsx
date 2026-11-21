@@ -63,7 +63,7 @@ export function TrailSubmitForm({ regions }: { regions: string[] }) {
       description,
     };
     const next: FieldErrors = {};
-    if (!gpx) next.gpx = "Ngarko një skedar GPX.";
+    if (!gpx) next.gpx = "Ngarkoni një skedar GPX.";
     const check = submitTrailSchema.safeParse(values);
     if (!check.success) {
       for (const issue of check.error.issues) {
@@ -83,7 +83,7 @@ export function TrailSubmitForm({ regions }: { regions: string[] }) {
       // above the button only when nothing more specific is.
       setFormError(
         result.fieldErrors && Object.keys(result.fieldErrors).length > 0
-          ? "Kontrollo fushat e shënuara."
+          ? "Kontrolloni fushat e shënuara."
           : (result.error ?? "Diçka shkoi keq."),
       );
       return;
@@ -141,7 +141,7 @@ export function TrailSubmitForm({ regions }: { regions: string[] }) {
               >
                 {/* Native options render on the OS popup's light surface. */}
                 <option value="" className="text-abyss">
-                  Zgjidh rajonin...
+                  Zgjidhni rajonin...
                 </option>
                 {regions.map((r) => (
                   <option key={r} value={r} className="text-abyss">
@@ -208,7 +208,7 @@ export function TrailSubmitForm({ regions }: { regions: string[] }) {
             id="trail-desc"
             rows={5}
             className={cn(INPUT, "py-2.5 leading-[1.6]")}
-            placeholder="Si arrihet, çfarë të presësh, sezoni më i mirë..."
+            placeholder="Si arrihet, çfarë të prisni, sezoni më i mirë..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             {...invalidProps(errors, "description")}
@@ -228,7 +228,7 @@ export function TrailSubmitForm({ regions }: { regions: string[] }) {
         className="bg-moss text-abyss hover:bg-sage focus-visible:ring-summit flex w-full items-center justify-center gap-2 px-6 py-3.5 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors outline-none focus-visible:ring-2 disabled:opacity-60 sm:w-auto"
       >
         {loading ? <Loader2 className="size-4 animate-spin" /> : null}
-        {loading ? "Duke dërguar…" : "Dërgo shtegun"}
+        {loading ? "Duke dërguar…" : "Dërgoni shtegun"}
       </button>
     </form>
   );

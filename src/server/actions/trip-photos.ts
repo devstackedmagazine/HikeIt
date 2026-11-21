@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { getOptionalSession } from "@/lib/auth/helpers";
@@ -10,45 +10,12 @@ import {
   releaseImage,
 } from "@/lib/cloudinary/ownership";
 import { db } from "@/lib/db";
-import {
-  organizationMembers,
-  tripPhotos,
-  tripRegistrations,
-  trips,
-} from "@/lib/db/schema";
+import { tripPhotos, trips } from "@/lib/db/schema";
+import { attendedTrip, isClubManager } from "@/server/services/entity-access";
 
 export interface ActionResult {
   success: boolean;
   error?: string;
-}
-
-async function isClubManager(
-  userId: string,
-  organizationId: string,
-): Promise<boolean> {
-  const row = await db.query.organizationMembers.findFirst({
-    where: and(
-      eq(organizationMembers.organizationId, organizationId),
-      eq(organizationMembers.userId, userId),
-    ),
-    columns: { role: true, leftAt: true },
-  });
-  if (!row || row.leftAt !== null) return false;
-  return row.role === "admin" || row.role === "organizer";
-}
-
-async function attendedTrip(userId: string, tripId: string): Promise<boolean> {
-  // Accept "confirmed" as well as "attended": there is no attendance-marking
-  // flow yet, so confirmed registrants of a completed trip may add memories.
-  const reg = await db.query.tripRegistrations.findFirst({
-    where: and(
-      eq(tripRegistrations.tripId, tripId),
-      eq(tripRegistrations.userId, userId),
-      inArray(tripRegistrations.status, ["confirmed", "attended"]),
-    ),
-    columns: { id: true },
-  });
-  return Boolean(reg);
 }
 
 /** Set a trip's cover image (club manager only). */
@@ -66,8 +33,13 @@ export async function setTripCover(
   if (!trip || !(await isClubManager(session.user.id, trip.organizationId))) {
     return { success: false, error: "Nuk keni qasje." };
   }
-  if (!(await canSetImageField(session.user.id, publicId, trip.coverImageUrl))) {
-    return { success: false, error: "Mund të përdorni vetëm foto që keni ngarkuar vetë." };
+  if (
+    !(await canSetImageField(session.user.id, publicId, trip.coverImageUrl))
+  ) {
+    return {
+      success: false,
+      error: "Mund të përdorni vetëm foto që keni ngarkuar vetë.",
+    };
   }
 
   await db
@@ -106,7 +78,10 @@ export async function addTripPhotos(
   // else's photo.
   const urlByPublicId = await getOwnedImageUrls(session.user.id, publicIds);
   if (!urlByPublicId) {
-    return { success: false, error: "Mund të shtoni vetëm foto që keni ngarkuar vetë." };
+    return {
+      success: false,
+      error: "Mund të shtoni vetëm foto që keni ngarkuar vetë.",
+    };
   }
 
   // Append after the photos already on the trip; photos now arrive one per

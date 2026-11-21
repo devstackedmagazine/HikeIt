@@ -49,7 +49,7 @@ export function WeatherAlert({
       <Text style={{ ...messageStyle, color: meta.color }}>{message}</Text>
       <Text style={advice}>{meta.advice}</Text>
       <Button href={tripUrl} style={{ ...button, backgroundColor: meta.color }}>
-        Shiko Udhëtimin
+        Shikoni Udhëtimin
       </Button>
       <Text style={footer}>
         Do të njoftoheni nëse kushtet ndryshojnë.

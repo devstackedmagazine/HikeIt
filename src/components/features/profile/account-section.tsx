@@ -55,7 +55,7 @@ function ChangePasswordCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ndrysho fjalëkalimin</CardTitle>
+        <CardTitle>Ndryshoni fjalëkalimin</CardTitle>
       </CardHeader>
       <CardContent className="max-w-sm space-y-3">
         <div className="space-y-1.5">
@@ -83,7 +83,7 @@ function ChangePasswordCard() {
         ) : null}
         <Button onClick={submit} disabled={loading || !current || !next}>
           {loading ? <Loader2 className="animate-spin" /> : null}
-          Ruaj
+          Ruani
         </Button>
       </CardContent>
     </Card>
@@ -104,20 +104,20 @@ function DangerZone({ email }: { email: string }) {
   return (
     <Card className="border-destructive/40">
       <CardHeader>
-        <CardTitle className="text-destructive">Fshij llogarinë</CardTitle>
+        <CardTitle className="text-destructive">Fshini llogarinë</CardTitle>
         <CardDescription>Ky veprim nuk kthehet mbrapsht.</CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog>
           <DialogTrigger
-            render={<Button variant="destructive">Fshij llogarinë</Button>}
+            render={<Button variant="destructive">Fshini llogarinë</Button>}
           />
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Je i sigurt?</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              Shkruaj email-in tënd <strong>{email}</strong> për të konfirmuar.
+              Shkruani email-in tuaj <strong>{email}</strong> për të konfirmuar.
             </p>
             <Input
               className="h-9"

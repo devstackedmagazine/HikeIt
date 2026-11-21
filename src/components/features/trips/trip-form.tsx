@@ -1,7 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, CreditCard, Loader2, Search } from "lucide-react";
+import {
+  ChevronDown,
+  CreditCard,
+  ImagePlus,
+  Loader2,
+  Search,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,7 +19,6 @@ import {
   Field,
   Section,
 } from "@/components/features/forms/brutal-form";
-import { CoverPhotoUploader } from "@/components/features/images/cover-photo-uploader";
 import { SUBMIT_TRAIL_PATH } from "@/components/features/trails/propose-trail-link";
 import {
   type Difficulty,
@@ -133,7 +138,7 @@ export function TripForm({
           />
         </Field>
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <Field label="Shtegu (kërko)">
+          <Field label="Shtegu (kërkoni)">
             <div className="border-summit/40 bg-summit/[0.05] relative h-10 border-2">
               <Search className="text-summit/30 pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2" />
               <select
@@ -141,7 +146,7 @@ export function TripForm({
                 {...register("trailId")}
               >
                 <option value="" className="text-abyss">
-                  Zgjidh shtegun...
+                  Zgjidhni shtegun...
                 </option>
                 {trailOptions.map((t) => (
                   <option key={t.id} value={t.id} className="text-abyss">
@@ -159,7 +164,7 @@ export function TripForm({
                 rel="noopener"
                 className="text-moss font-semibold hover:underline"
               >
-                Nuk e gjen shtegun? Propozo një të ri →
+                Nuk e gjeni shtegun? Propozoni një të ri →
               </a>
               <span className="text-summit/40 block">
                 Hapet në skedë të re. Shtegu shfaqet në këtë listë pasi të
@@ -178,8 +183,20 @@ export function TripForm({
         </div>
       </Section>
 
-      {/* Cover photo (standalone, outside cards) */}
-      <CoverPhotoUploader />
+      {/* The photo and GPX upload need the trip's id, so they live on the
+          edit page. Say so here instead of offering a drop zone that
+          silently discards the file. */}
+      {mode === "create" ? (
+        <div className="border-summit/20 bg-summit/[0.03] flex items-start gap-2.5 border border-dashed px-3.5 py-3">
+          <ImagePlus className="text-summit/50 mt-0.5 size-4 shrink-0" />
+          <p className="text-summit/70 text-[12px] leading-[1.55]">
+            <span className="text-summit font-semibold">
+              Foto kryesore dhe skedari GPX:
+            </span>{" "}
+            i shtoni pasi ta ruani udhëtimin, te butoni “Ndryshoni”.
+          </p>
+        </div>
+      ) : null}
 
       {/* 02 — Date & location */}
       <Section number="02" title="Data dhe vendndodhja">
@@ -317,7 +334,7 @@ export function TripForm({
             className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/30 flex items-center gap-2 border px-6 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
           >
             {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-            Ruaj ndryshimet
+            Ruani ndryshimet
           </button>
         ) : (
           <>
@@ -327,7 +344,7 @@ export function TripForm({
               onClick={() => submit(false)}
               className="border-summit/40 text-summit/60 hover:border-summit/60 hover:text-summit/80 border px-6 py-3 text-xs font-bold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
             >
-              Ruaj si draft
+              Ruani si draft
             </button>
             <button
               type="button"
@@ -336,7 +353,7 @@ export function TripForm({
               className="border-moss/40 bg-moss/20 text-moss hover:bg-moss/30 flex items-center gap-2 border px-6 py-3 text-xs font-extrabold tracking-[0.08em] uppercase transition-colors disabled:opacity-50"
             >
               {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
-              Publiko tani →
+              Publikoni tani →
             </button>
           </>
         )}
