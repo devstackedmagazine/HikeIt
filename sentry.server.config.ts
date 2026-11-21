@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 
+import { scrubEvent } from "@/lib/sentry/scrub";
+
 // Skip Sentry.init() entirely outside production. `enabled: false` still
 // spins up tracing/transport machinery, which is unnecessary overhead in
 // local dev (and can be slow if outbound network to Sentry is restricted),
@@ -29,10 +31,10 @@ if (process.env.NODE_ENV === "production") {
         }
       }
 
-      // Scrub cookies before the event ever leaves the server.
-      if (event.request?.cookies) {
-        delete event.request.cookies;
-      }
+      // Safety net for anything that didn't come through `captureError`:
+      // bound query values, emails, phone numbers, personal fields, request
+      // bodies and cookies are removed before the event leaves the server.
+      scrubEvent(event);
 
       return event;
     },

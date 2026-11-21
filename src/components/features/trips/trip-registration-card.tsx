@@ -180,6 +180,11 @@ export function TripRegistrationCard({
                 .
               </span>
             </label>
+            <p className="text-summit/45 text-[11px] leading-[1.5]">
+              Organizatori i klubit do të shohë numrin tuaj të telefonit dhe
+              kontaktin e emergjencës (nëse i keni plotësuar në profil), për
+              sigurinë tuaj ditën e ecjes.
+            </p>
             <button
               type="button"
               onClick={register}
