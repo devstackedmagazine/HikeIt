@@ -263,6 +263,69 @@ export const organizationMembers = pgTable(
   ],
 );
 
+/**
+ * Email invitations to join a club. Membership is created only when the
+ * invitee opens the link, logs in with the invited email and accepts.
+ * Source of truth: `sql/2026-10-24-club-invitations.sql`. RLS is enabled with
+ * no policies there (server-side access only, like `invite_codes`).
+ *
+ * Only a SHA-256 hash of the link token is stored, never the token itself.
+ * Pending = `acceptedAt` and `declinedAt` both NULL; expiry is checked by the
+ * app, and a re-invite refreshes the pending row's token and expiry.
+ */
+export const clubInvitations = pgTable(
+  "club_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    // Stored lowercase.
+    email: text("email").notNull(),
+    role: orgMemberRoleEnum("role").notNull().default("member"),
+    tokenHash: text("token_hash").notNull(),
+    invitedBy: uuid("invited_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    acceptedBy: uuid("accepted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    declinedAt: timestamp("declined_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique("club_invitations_token_hash_unique").on(t.tokenHash),
+    check(
+      "club_invitations_token_hash_sha256",
+      sql`${t.tokenHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "club_invitations_email_lowercase",
+      sql`${t.email} = lower(${t.email})`,
+    ),
+    check(
+      "club_invitations_role_not_admin",
+      sql`${t.role} IN ('member', 'organizer')`,
+    ),
+    check(
+      "club_invitations_single_outcome",
+      sql`${t.acceptedAt} IS NULL OR ${t.declinedAt} IS NULL`,
+    ),
+    uniqueIndex("club_invitations_pending_unique")
+      .on(t.organizationId, t.email)
+      .where(sql`${t.acceptedAt} IS NULL AND ${t.declinedAt} IS NULL`),
+    index("club_invitations_organization_id_idx").on(t.organizationId),
+  ],
+);
+
 export const trails = pgTable(
   "trails",
   {
@@ -740,6 +803,9 @@ export type NewOrganization = typeof organizations.$inferInsert;
 
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type NewOrganizationMember = typeof organizationMembers.$inferInsert;
+
+export type ClubInvitation = typeof clubInvitations.$inferSelect;
+export type NewClubInvitation = typeof clubInvitations.$inferInsert;
 
 export type InviteCode = typeof inviteCodes.$inferSelect;
 export type NewInviteCode = typeof inviteCodes.$inferInsert;
